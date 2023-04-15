@@ -21,9 +21,6 @@
 - [Background](#background)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Train](#train)
-  - [Test](#test)
-  - [Demo](#demo)
 - [Maintainers](#maintainers)
 - [Thanks](#thanks)
 - [Contributing](#contributing)
@@ -37,11 +34,7 @@ This repository references many repositories implementations, including [tztztzt
 
 ## Installation
 
-Development environment (Use nvidia docker container)
-
-```shell
-docker run --gpus all -it --rm -v </path/to/YOLOv3>:/app/YOLOv3 -v </path/to/COCO>:/app/YOLOv3/COCO nvcr.io/nvidia/pytorch:22.08-py3
-```
+...
 
 ## Usage
 
