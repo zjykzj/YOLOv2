@@ -7,7 +7,7 @@
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31226" main_amp.py -b 256 --workers 4 --lr 0.1 --weight-decay 1e-4 --epochs 120 --opt-level O1 ./imagenet/
 ```
 
-The implementation of the fc layer is as follows
+The implementation of the fc layer is as follows:
 
 ```python
         self.fc = nn.Sequential(
@@ -21,6 +21,24 @@ The training results are as follows:
 
 ```text
 * Prec@1 74.034 Prec@5 91.858
+```
+
+Another implementation is as follows:
+
+```python
+        self.fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(1024 * 7 * 7, 4096),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(4096, self.num_classes)
+        )
+```
+
+The training results are as follows:
+
+```text
+* Prec@1 74.006 Prec@5 91.730
 ```
 
 ## Recipe
