@@ -113,10 +113,17 @@ class Darknet19(nn.Module):
                         act='leaky_relu'),
             nn.AdaptiveAvgPool2d((1, 1))
         )
+        # self.fc = nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(1024 * 7 * 7, 4096),
+        #     nn.LeakyReLU(0.1, inplace=True),
+        #     nn.Dropout(p=0.5),
+        #     nn.Linear(4096, self.num_classes)
+        # )
 
     def forward(self, x):
         x = self.backbone(x)
-        x = self.fc(x).view(-1, self.num_classes)
+        x = self.fc(x)
         return x
 
 
