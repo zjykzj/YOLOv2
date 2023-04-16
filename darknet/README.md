@@ -7,6 +7,22 @@
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31226" main_amp.py -b 256 --workers 4 --lr 0.1 --weight-decay 1e-4 --epochs 120 --opt-level O1 ./imagenet/
 ```
 
+The implementation of the fc layer is as follows
+
+```python
+        self.fc = nn.Sequential(
+            conv_bn_act(1024, num_classes, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
+                        act='leaky_relu'),
+            nn.AdaptiveAvgPool2d((1, 1))
+        )
+```
+
+The training results are as follows:
+
+```text
+* Prec@1 74.034 Prec@5 91.858
+```
+
 ## Recipe
 
 * `Model`: 
