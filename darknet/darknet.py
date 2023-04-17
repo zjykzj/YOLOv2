@@ -53,16 +53,30 @@ class Backbone(nn.Module):
         'layer5': ['M', [1024, 3], [512, 1], [1024, 3], [512, 1], [1024, 3]]
     }
 
-    def __init__(self, in_channel=3):
+    fast_cfg = {
+        'layer0': [[32, 3]],
+        'layer1': ['M', [64, 3]],
+        'layer2': ['M', [128, 3]],
+        'layer3': ['M', [256, 3]],
+        'layer4': ['M', [512, 3]],
+        'layer5': ['M', [1024, 3], [512, 1], [1024, 3]]
+    }
+
+    def __init__(self, in_channel=3, is_fast=False):
         super(Backbone, self).__init__()
         self.in_channel = in_channel
+        self.is_fast = is_fast
 
-        self.layer0 = self._make_layers(self.cfg['layer0'])
-        self.layer1 = self._make_layers(self.cfg['layer1'])
-        self.layer2 = self._make_layers(self.cfg['layer2'])
-        self.layer3 = self._make_layers(self.cfg['layer3'])
-        self.layer4 = self._make_layers(self.cfg['layer4'])
-        self.layer5 = self._make_layers(self.cfg['layer5'])
+        if is_fast:
+            cfg = self.fast_cfg
+        else:
+            cfg = self.cfg
+        self.layer0 = self._make_layers(cfg['layer0'])
+        self.layer1 = self._make_layers(cfg['layer1'])
+        self.layer2 = self._make_layers(cfg['layer2'])
+        self.layer3 = self._make_layers(cfg['layer3'])
+        self.layer4 = self._make_layers(cfg['layer4'])
+        self.layer5 = self._make_layers(cfg['layer5'])
 
     def _make_layers(self, layer_cfg):
         layers = []
@@ -101,13 +115,32 @@ class Backbone(nn.Module):
         return x
 
 
+class FastDarknet19(nn.Module):
+
+    def __init__(self, in_channel=3, num_classes=1000):
+        super(FastDarknet19, self).__init__()
+        self.num_classes = num_classes
+
+        self.backbone = Backbone(in_channel=in_channel, is_fast=True)
+        self.fc = nn.Sequential(
+            conv_bn_act(1024, num_classes, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
+                        act='leaky_relu'),
+            nn.AdaptiveAvgPool2d((1, 1))
+        )
+
+    def forward(self, x):
+        x = self.backbone(x)
+        x = self.fc(x)
+        return x.reshape(-1, self.num_classes)
+
+
 class Darknet19(nn.Module):
 
-    def __init__(self, num_classes=1000):
+    def __init__(self, in_channel=3, num_classes=1000):
         super(Darknet19, self).__init__()
         self.num_classes = num_classes
 
-        self.backbone = Backbone()
+        self.backbone = Backbone(in_channel=in_channel, is_fast=False)
         self.fc = nn.Sequential(
             conv_bn_act(1024, num_classes, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
                         act='leaky_relu'),
@@ -124,11 +157,29 @@ class Darknet19(nn.Module):
     def forward(self, x):
         x = self.backbone(x)
         x = self.fc(x)
-        return x
+        return x.reshape(-1, self.num_classes)
 
 
 if __name__ == '__main__':
+    print("=> Darknet19")
     m = Darknet19()
+
+    ckpt_path = "/home/zj/pp/YOLOv2/darknet/weights/darknet19/model_best.pth.tar"
+    print(f"Load {ckpt_path}")
+    state_dict = torch.load(ckpt_path, map_location='cpu')
+    if 'state_dict' in state_dict:
+        state_dict = state_dict['state_dict']
+    state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}  # strip the names
+    m.load_state_dict(state_dict, strict=True)
+
+    m.eval()
+
+    data = torch.randn(1, 3, 224, 224)
+    output = m(data)
+    print(output.shape)
+
+    print("=> FastDarknet19")
+    m = FastDarknet19()
     m.eval()
 
     data = torch.randn(1, 3, 224, 224)
