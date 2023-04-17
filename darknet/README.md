@@ -1,10 +1,10 @@
 
 # Darknet19
 
-## Train
+## Train for Darknet19
 
 ```shell
-CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31226" main_amp.py -b 256 --workers 4 --lr 0.1 --weight-decay 1e-4 --epochs 120 --opt-level O1 ./imagenet/
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31226" main_amp.py --arch darknet19 -b 256 --workers 4 --lr 0.1 --weight-decay 1e-4 --epochs 120 --opt-level O1 ./imagenet/
 ```
 
 The implementation of the fc layer is as follows:
@@ -39,6 +39,12 @@ The training results are as follows:
 
 ```text
 * Prec@1 74.006 Prec@5 91.730
+```
+
+## Train for FastDarknet19
+
+```shell
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31326" main_amp.py --arch fastdarknet19 -b 256 --workers 4 --lr 0.1 --weight-decay 1e-5 --epochs 120 --opt-level O1 ./imagenet/
 ```
 
 ## Recipe
