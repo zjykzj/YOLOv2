@@ -45,6 +45,8 @@ def parse():
     model_names = sorted(name for name in models.__dict__
                          if name.islower() and not name.startswith("__")
                          and callable(models.__dict__[name]))
+    model_names.append('darknet19')
+    model_names.append('fastdarknet19')
 
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
     parser.add_argument('data', metavar='DIR',
@@ -140,9 +142,16 @@ def main():
     # else:
     #     print("=> creating model '{}'".format(args.arch))
     #     model = models.__dict__[args.arch]()
-    print("=> creating model Darknet19")
-    from darknet import Darknet19
-    model = Darknet19(num_classes=1000)
+    if args.arch == 'darknet19':
+        print("=> creating model Darknet19")
+        from darknet import Darknet19
+        model = Darknet19(num_classes=1000)
+    elif args.arch == 'fastdarknet19':
+        print("=> creating model FastDarknet19")
+        from darknet import FastDarknet19
+        model = FastDarknet19(num_classes=1000)
+    else:
+        raise ValueError(f"{args.arch} doesn't supports")
 
     if args.sync_bn:
         import apex
