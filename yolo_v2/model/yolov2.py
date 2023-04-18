@@ -9,7 +9,6 @@
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
 from darknet.darknet import conv_bn_act, Darknet19
 
@@ -37,7 +36,7 @@ class ReorgLayer(nn.Module):
         x = x.view(N, C, hs * ws, int(H / hs), int(W / ws)).transpose(1, 2).contiguous()
         # [N, S * S, C, H/S, W/S] -> [N, S * S * C, H/S, W/S]
         # [1, 2*2, 64, 13, 13] -> [1, 2*2*64, 13, 13]
-        x = x.view(N, hs * ws * C, int(H / hs), int(W / ws))
+        x = x.view(N, hs * ws * C, int(H / hs), int(W / ws)).contiguous()
         # [1, 256, 13, 13]
         return x
 
@@ -74,7 +73,10 @@ class Head(nn.Module):
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
-        # detection layers
+        self.downsampler = conv_bn_act(512, 64, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
+                                       act='leaky_relu')
+        self.reorg = ReorgLayer()
+
         self.conv3 = nn.Sequential(
             conv_bn_act(1024, 1024, kernel_size=3, stride=1, padding=1, bias=False, is_bn=True,
                         act='leaky_relu'),
@@ -82,10 +84,7 @@ class Head(nn.Module):
                         act='leaky_relu'),
         )
 
-        self.downsampler = conv_bn_act(512, 64, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
-                                       act='leaky_relu')
-        self.reorg = ReorgLayer()
-
+        # detection layers
         self.conv4 = nn.Sequential(
             conv_bn_act(1280, 1024, kernel_size=3, stride=1, padding=1, bias=False, is_bn=True,
                         act='leaky_relu'),
@@ -113,35 +112,34 @@ class Head(nn.Module):
 
 class YOLOLayer(nn.Module):
 
-    def __init__(self):
+    def __init__(self, num_anchors=5, num_classes=20):
         super(YOLOLayer, self).__init__()
+        self.num_anchors = num_anchors
+        self.num_classes = num_classes
 
-    def forward(self, out):
-        N, C, H, W = out.size()
+    def forward(self, x):
+        N, C, H, W = x.shape[:4]
 
-        # [1, 125, 13, 13] -> [1, 13, 13, 125] -> [1, 13*13*5, 5+20] -> [1, 845, 25]
-        out = out.permute(0, 2, 3, 1).contiguous().view(N, H * W * self.num_anchors, 5 + self.num_classes).contiguous()
+        # [N, C, H, W] -> [N, H, W, C]
+        x = x.permute(0, 2, 3, 1).contiguous()
+        # [N, H, W, C] -> [N, H, W, num_anchors*4] -> [N, H, W, num_anchors, 4]
+        pred_box_offsets = x[..., :self.num_anchors * 4].reshape(N, H, W, self.num_anchors, 4)
+        # [N, H, W, C] -> [N, H, W, num_anchors]
+        pred_confs = x[..., self.num_anchors * 4:self.num_anchors * 5]
+        # [N, H, W, C] -> [N, H, W, num_classes]
+        pred_cls_probs = x[..., self.num_anchors * 5:]
 
-        # activate the output tensor
-        # `sigmoid` for t_x, t_y, t_c; `exp` for t_h, t_w;
-        # `softmax` for (class1_score, class2_score, ...)
-        # [xc, yc]数值压缩到(0, 1)
-        # [N, h*w*num_anchors, 2]
-        xy_pred = torch.sigmoid(out[:, :, 0:2])
-        # [box_conf]数值压缩到(0, 1)
-        # [N, h*w*num_anchors, 1]
-        conf_pred = torch.sigmoid(out[:, :, 4:5])
-        # [box_h, box_w]数值进行指数运算
-        # [N, h*w*num_anchors, 2]
-        hw_pred = torch.exp(out[:, :, 2:4])
-        # [N, h*w*num_anchors, num_classes]
-        class_score = out[:, :, 5:]
-        # 计算每个锚点框的分类概率
-        class_pred = F.softmax(class_score, dim=-1)
-        # [N, h*w*num_anchors, xc+yc+box_w+box_h]
-        delta_pred = torch.cat([xy_pred, hw_pred], dim=-1)
+        # 坐标转换
+        # b_x = sigmoid(t_x) + c_x
+        # b_y = sigmoid(t_y) + c_y
+        # b_w = p_w * e^t_w
+        # b_h = p_h * e^t_h
+        pred_box_offsets[..., :2] = torch.sigmoid(pred_box_offsets[..., :2])
+        pred_box_offsets[..., 2:] = torch.exp(pred_box_offsets[..., 2:])
+        # 分类概率压缩
+        pred_cls_probs = torch.softmax(pred_cls_probs, dim=-1)
 
-        return delta_pred, conf_pred, class_pred
+        return pred_box_offsets, pred_confs, pred_cls_probs
 
 
 class YOLOv2(nn.Module):
@@ -159,5 +157,5 @@ class YOLOv2(nn.Module):
         x, last_x = self.backbone(x)
         x = self.head(x, last_x)
 
-        delta_pred, conf_pred, class_pred = self.yolo_layer(x)
-        return delta_pred, conf_pred, class_pred
+        pred_box_offsets, pred_confs, pred_cls_probs = self.yolo_layer(x)
+        return pred_box_offsets, pred_confs, pred_cls_probs

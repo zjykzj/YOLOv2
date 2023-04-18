@@ -10,7 +10,12 @@
 from torch import nn
 
 
-class YOLOLoss(nn.Module):
+class YOLOv2Loss(nn.Module):
 
     def __init__(self):
-        super(YOLOLoss, self).__init__()
+        super(YOLOv2Loss, self).__init__()
+
+
+
+    def forward(self, outputs, targets):
+        pass
