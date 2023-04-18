@@ -47,6 +47,12 @@ The training results are as follows:
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31326" main_amp.py --arch fastdarknet19 -b 256 --workers 4 --lr 0.1 --weight-decay 1e-5 --epochs 120 --opt-level O1 ./imagenet/
 ```
 
+The training results are as follows:
+
+```text
+* Prec@1 68.758 Prec@5 88.152
+```
+
 ## Recipe
 
 * `Model`: 
@@ -75,7 +81,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
   * `Optimizer`: 
     * Type: SGD
     * LR: 1e-1
-    * Weight decay: 1e-4
+    * Weight decay: 
+      * 1e-4 for Darknet19
+      * 1e-5 for FastDarknet19
     * Momentum: 0.9
   * `Lr_Scheduler`:
     * Warmup: 5
