@@ -73,7 +73,7 @@ class Head(nn.Module):
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
-        self.downsampler = conv_bn_act(512, 64, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
+        self.down_sample = conv_bn_act(512, 64, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
                                        act='leaky_relu')
         self.reorg = ReorgLayer()
 
@@ -93,7 +93,7 @@ class Head(nn.Module):
 
     def forward(self, x, last_x):
         # last_x: [1, 512, 26, 26]
-        last_x = self.downsampler(last_x)
+        last_x = self.down_sample(last_x)
         # last_x: [1, 64, 26, 26]
         last_x = self.reorg(last_x)
         # last_x: [1, 256, 13, 13]
@@ -112,10 +112,21 @@ class Head(nn.Module):
 
 class YOLOLayer(nn.Module):
 
-    def __init__(self, num_anchors=5, num_classes=20):
+    def __init__(self, anchors, num_anchors=5, num_classes=20, target_size=416, stride=32):
         super(YOLOLayer, self).__init__()
+        self.anchors = anchors
         self.num_anchors = num_anchors
         self.num_classes = num_classes
+        self.target_size = target_size
+        self.stride = stride
+
+        F_size = target_size // stride
+        # [F_H, F_W]
+        self.shift_y, self.shift_x = torch.meshgrid([torch.arange(0, F_size), torch.arange(0, F_size)])
+        assert tuple(self.anchors.shape) == (self.num_anchors, 2)
+        # [num_anchors, 2] -> [1, 1, num_anchors, 2] -> [F_H, F_W, num_anchors, 2] -> [1, F_H, F_W, num_anchors, 2]
+        self.all_grid_anchors = \
+            self.anchors.view(1, 1, self.num_anchors, 2).expand(F_size, F_size, self.num_anchors, 2).unsqueeze(0)
 
     def forward(self, x):
         N, C, H, W = x.shape[:4]
@@ -123,7 +134,7 @@ class YOLOLayer(nn.Module):
         # [N, C, H, W] -> [N, H, W, C]
         x = x.permute(0, 2, 3, 1).contiguous()
         # [N, H, W, C] -> [N, H, W, num_anchors*4] -> [N, H, W, num_anchors, 4]
-        pred_box_offsets = x[..., :self.num_anchors * 4].reshape(N, H, W, self.num_anchors, 4)
+        pred_box_deltas = x[..., :self.num_anchors * 4].reshape(N, H, W, self.num_anchors, 4)
         # [N, H, W, C] -> [N, H, W, num_anchors]
         pred_confs = x[..., self.num_anchors * 4:self.num_anchors * 5]
         # [N, H, W, C] -> [N, H, W, num_classes]
@@ -134,24 +145,30 @@ class YOLOLayer(nn.Module):
         # b_y = sigmoid(t_y) + c_y
         # b_w = p_w * e^t_w
         # b_h = p_h * e^t_h
-        pred_box_offsets[..., :2] = torch.sigmoid(pred_box_offsets[..., :2])
-        pred_box_offsets[..., 2:] = torch.exp(pred_box_offsets[..., 2:])
+        #
+        pred_box_deltas[..., :2] = torch.sigmoid(pred_box_deltas[..., :2])
+        # [B, F_H, F_W, num_anchors] + []
+        pred_box_deltas[..., 0] += self.shift_x
+        pred_box_deltas[..., 1] += self.shift_y
+        # [B, F_H, F_W, num_anchors, 2] * [1, F_H, F_W, num_anchors, 2] -> [B, F_H, F_W, num_anchors, 2]
+        pred_box_deltas[..., 2:] = torch.exp(pred_box_deltas[..., 2:]) * self.all_grid_anchors
         # 分类概率压缩
         pred_cls_probs = torch.softmax(pred_cls_probs, dim=-1)
 
-        return pred_box_offsets, pred_confs, pred_cls_probs
+        return pred_box_deltas, pred_confs, pred_cls_probs
 
 
 class YOLOv2(nn.Module):
 
-    def __init__(self, num_classes=20, num_anchors=5):
+    def __init__(self, anchors, target_size=416, num_classes=20, num_anchors=5):
         super(YOLOv2, self).__init__()
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
         self.backbone = Backbone()
         self.head = Head()
-        self.yolo_layer = YOLOLayer()
+        self.yolo_layer = YOLOLayer(anchors, target_size=target_size,
+                                    num_anchors=num_anchors, num_classes=num_classes)
 
     def forward(self, x):
         x, last_x = self.backbone(x)
