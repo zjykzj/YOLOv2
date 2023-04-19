@@ -32,6 +32,12 @@ def coco2yolobox(labels):
     return labels
 
 
+def xywh2xyxy(boxes):
+    boxes[:, 2] = (boxes[:, 0] + boxes[:, 2])
+    boxes[:, 3] = (boxes[:, 1] + boxes[:, 3])
+    return boxes
+
+
 class VOCDataset(Dataset):
 
     def __init__(self, root, name, train=True, transform=None, target_transform=None, target_size=416, max_det_nums=50):
@@ -110,7 +116,8 @@ class VOCDataset(Dataset):
         image = torch.from_numpy(image).permute(2, 0, 1).contiguous() / 255
 
         boxes = boxes / self.target_size
-        boxes = coco2yolobox(boxes)
+        # boxes = coco2yolobox(boxes)
+        boxes = xywh2xyxy(boxes)
         target = self.build_target(boxes, labels)
         if self.train:
             return image, target
