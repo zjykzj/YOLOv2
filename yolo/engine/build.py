@@ -31,7 +31,7 @@ except ImportError:
 
 from yolo.optim.lr_schedulers.build import adjust_learning_rate
 from yolo.util.metric import AverageMeter
-from yolo.util.utils import postprocess, yolobox2label
+from yolo.util.utils import postprocess, yolobox2label, to_python_float
 
 from yolo.util import logging
 
@@ -50,7 +50,9 @@ def train(args, cfg, train_loader, model, criterion, optimizer, device=None, epo
     model.train()
     end = time.time()
 
-    assert hasattr(train_loader.dataset, 'set_img_size')
+    random_resize = cfg['AUGMENTATION']['RANDOM_RESIZE']
+    if random_resize:
+        assert hasattr(train_loader.dataset, 'set_img_size')
     optimizer.zero_grad()
     for i, (input, target) in enumerate(train_loader):
         if is_warmup and epoch < warmup_epoch:
@@ -102,13 +104,14 @@ def train(args, cfg, train_loader, model, criterion, optimizer, device=None, epo
                 batch_time=batch_time,
                 loss=losses))
 
-            # 每隔10轮都重新指定输入图像大小
-            img_size = (random.randint(0, 9) % 10 + 10) * 32
-            train_loader.dataset.set_img_size(img_size)
+            # 每隔N轮都重新指定输入图像大小
+            if random_resize:
+                img_size = (random.randint(0, 9) % 10 + 10) * 32
+                train_loader.dataset.set_img_size(img_size)
 
 
 @torch.no_grad()
-def validate(val_loader, model, conf_threshold, nms_threshold, device=None):
+def validate(val_loader, val_evaluator, model, conf_threshold, nms_threshold, device=None):
     batch_time = AverageMeter()
 
     # switch to evaluate mode
