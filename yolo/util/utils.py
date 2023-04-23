@@ -14,6 +14,13 @@ import shutil
 import numpy as np
 
 
+def to_python_float(t):
+    if hasattr(t, 'item'):
+        return t.item()
+    else:
+        return t[0]
+
+
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar', output_dir='./'):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
