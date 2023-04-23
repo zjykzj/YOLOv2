@@ -40,10 +40,8 @@ def t_yolov2():
     model.eval()
     image_size = cfg['TEST']['IMGSIZE']
     data = torch.randn(1, 3, image_size, image_size)
-    pred_boxes, pred_confs, pred_cls_probs = model(data.to(device))
-    print("pred_boxes:", pred_boxes.shape)
-    print("pred_confs:", pred_confs.shape)
-    print("pred_cls_probs:", pred_cls_probs.shape)
+    outputs = model(data.to(device))
+    print("outputs:", outputs.shape)
 
 
 if __name__ == '__main__':
