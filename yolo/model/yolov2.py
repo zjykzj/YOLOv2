@@ -6,10 +6,9 @@
 @author: zj
 @description: 
 """
-from collections import OrderedDict
 import os
 
-from numpy import ndarray
+import numpy as np
 
 import torch
 from torch import Tensor
@@ -187,83 +186,77 @@ class YOLOLayer(nn.Module):
     2. 结合锚点框数据进行预测框坐标转换
     """
 
-    def __init__(self, anchors, num_anchors=5, num_classes=20, target_size=416, stride=32):
+    def __init__(self, anchors, num_classes=20, target_size=416, stride=32):
         super(YOLOLayer, self).__init__()
         assert isinstance(anchors, Tensor)
         self.anchors = anchors
-        self.num_anchors = num_anchors
         self.num_classes = num_classes
         self.target_size = target_size
         self.stride = stride
 
+        self.num_anchors = len(self.anchors)
         self.F_size = target_size // stride
 
-    def forward(self, x: Tensor):
-        B, C, H, W = x.shape[:4]
+    def forward(self, outputs: Tensor):
+        B, C, H, W = outputs.shape[:4]
         assert H == W == self.F_size
-        dtype = x.dtype
-        device = x.device
+        n_ch = 5 + self.num_classes
+        assert C == (self.num_anchors * n_ch)
 
-        # [N, C, H, W] -> [N, H, W, C]
-        x = x.permute(0, 2, 3, 1).contiguous()
-        # [N, H, W, C] -> [N, H, W, num_anchors*4] -> [N, H, W, num_anchors, 4]
-        pred_boxes = x[..., :self.num_anchors * 4].reshape(B, H, W, self.num_anchors, 4)
-        # [N, H, W, C] -> [N, H, W, num_anchors]
-        pred_confs = x[..., self.num_anchors * 4:self.num_anchors * 5]
-        # [N, H, W, C] -> [N, H, W, num_classes]
-        pred_cls_probs = x[..., self.num_anchors * 5:]
+        dtype = outputs.dtype
+        device = outputs.device
+
+        # [B, num_anchors * (5+num_classes), H, W] ->
+        # [B, num_anchors, 5+num_classes, H, W] ->
+        # [B, num_anchors, H, W, 5+num_classes]
+        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, self.F_size, self.F_size) \
+            .permute(0, 1, 3, 4, 2)
 
         # grid coordinate
-        # [F_size] -> [B, num_anchors, H, W] -> [B, H, W, num_anchors]
+        # [F_size] -> [B, num_anchors, H, W]
         x_shift = torch.broadcast_to(torch.arange(self.F_size), (B, self.num_anchors, self.F_size, self.F_size)) \
-            .permute(0, 2, 3, 1).to(dtype=dtype, device=device)
-        # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W] -> [B, H, W, num_anchors]
+            .to(dtype=dtype, device=device)
+        # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
         y_shift = torch.broadcast_to(torch.arange(self.F_size).reshape(self.F_size, 1),
                                      (B, self.num_anchors, self.F_size, self.F_size)) \
-            .permute(0, 2, 3, 1).to(dtype=dtype, device=device)
+            .to(dtype=dtype, device=device)
 
         # broadcast anchors to all grids
         # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
         w_anchors = torch.broadcast_to(
             self.anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, self.F_size, self.F_size]).permute(0, 2, 3, 1).to(dtype=dtype, device=device)
+            [B, self.num_anchors, self.F_size, self.F_size]).to(dtype=dtype, device=device)
         h_anchors = torch.broadcast_to(
             self.anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, self.F_size, self.F_size]).permute(0, 2, 3, 1).to(dtype=dtype, device=device)
+            [B, self.num_anchors, self.F_size, self.F_size]).to(dtype=dtype, device=device)
 
-        # 坐标转换
         # b_x = sigmoid(t_x) + c_x
         # b_y = sigmoid(t_y) + c_y
         # b_w = p_w * e^t_w
         # b_h = p_h * e^t_h
         #
-        pred_boxes[..., :2] = torch.sigmoid(pred_boxes[..., :2])
-        # [B, F_H, F_W, num_anchors] + [B, F_H, F_W, num_anchors]
-        pred_boxes[..., 0] += x_shift
-        pred_boxes[..., 1] += y_shift
+        # x/y/conf compress to [0,1]
+        outputs[..., np.r_[:2, 4:5]] = torch.sigmoid(outputs[..., np.r_[:2, 4:5]])
+        outputs[..., 0] += x_shift
+        outputs[..., 1] += y_shift
         # exp()
-        # [B, F_H, F_W, num_anchors, 2] * [1, F_H, F_W, num_anchors, 2] -> [B, F_H, F_W, num_anchors, 2]
-        pred_boxes[..., 2:] = torch.exp(pred_boxes[..., 2:])
-        pred_boxes[..., 2] *= w_anchors
-        pred_boxes[..., 3] *= h_anchors
+        outputs[..., 2:4] = torch.exp(outputs[..., 2:3])
+        outputs[..., 2] *= w_anchors
+        outputs[..., 3] *= h_anchors
         # 分类概率压缩
-        pred_cls_probs = torch.softmax(pred_cls_probs, dim=-1)
+        outputs = torch.softmax(outputs[..., 5:], dim=-1)
 
-        return pred_boxes, pred_confs, pred_cls_probs
+        return outputs.reshape(B, -1, n_ch)
 
 
 class YOLOv2(nn.Module):
 
-    def __init__(self, anchors, target_size=416,
-                 num_classes=20, num_anchors=5, arch='Darknet19', pretrained=None):
+    def __init__(self, anchors, target_size=416, num_classes=20, arch='Darknet19', pretrained=None):
         super(YOLOv2, self).__init__()
-        self.num_classes = num_classes
-        self.num_anchors = num_anchors
 
         self.backbone = Backbone(arch=arch, pretrained=pretrained)
-        self.head = Head(num_classes=num_classes, num_anchors=num_anchors)
-        self.yolo_layer = YOLOLayer(anchors, target_size=target_size,
-                                    num_anchors=num_anchors, num_classes=num_classes)
+        self.head = Head(num_classes=num_classes, num_anchors=len(anchors))
+        self.yolo_layer = YOLOLayer(anchors, target_size=target_size, num_classes=num_classes)
 
     def forward(self, x):
         x, last_x = self.backbone(x)
