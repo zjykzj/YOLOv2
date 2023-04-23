@@ -180,6 +180,12 @@ class Head(nn.Module):
 
 
 class YOLOLayer(nn.Module):
+    """
+    YOLOLayer层操作：
+
+    1. 获取预测框数据 / 置信度数据 / 分类数据
+    2. 结合锚点框数据进行预测框坐标转换
+    """
 
     def __init__(self, anchors, num_anchors=5, num_classes=20, target_size=416, stride=32):
         super(YOLOLayer, self).__init__()
@@ -190,25 +196,40 @@ class YOLOLayer(nn.Module):
         self.target_size = target_size
         self.stride = stride
 
-        F_size = target_size // stride
-        # [F_H, F_W]
-        self.shift_y, self.shift_x = torch.meshgrid([torch.arange(0, F_size), torch.arange(0, F_size)])
-        assert tuple(self.anchors.shape) == (self.num_anchors, 2)
-        # [num_anchors, 2] -> [1, 1, num_anchors, 2] -> [F_H, F_W, num_anchors, 2] -> [1, F_H, F_W, num_anchors, 2]
-        self.all_grid_anchors = \
-            self.anchors.view(1, 1, self.num_anchors, 2).expand(F_size, F_size, self.num_anchors, 2).unsqueeze(0)
+        self.F_size = target_size // stride
 
-    def forward(self, x):
-        N, C, H, W = x.shape[:4]
+    def forward(self, x: Tensor):
+        B, C, H, W = x.shape[:4]
+        assert H == W == self.F_size
+        dtype = x.dtype
+        device = x.device
 
         # [N, C, H, W] -> [N, H, W, C]
         x = x.permute(0, 2, 3, 1).contiguous()
         # [N, H, W, C] -> [N, H, W, num_anchors*4] -> [N, H, W, num_anchors, 4]
-        pred_box_deltas = x[..., :self.num_anchors * 4].reshape(N, H, W, self.num_anchors, 4)
+        pred_boxes = x[..., :self.num_anchors * 4].reshape(B, H, W, self.num_anchors, 4)
         # [N, H, W, C] -> [N, H, W, num_anchors]
         pred_confs = x[..., self.num_anchors * 4:self.num_anchors * 5]
         # [N, H, W, C] -> [N, H, W, num_classes]
         pred_cls_probs = x[..., self.num_anchors * 5:]
+
+        # grid coordinate
+        # [F_size] -> [B, num_anchors, H, W] -> [B, H, W, num_anchors]
+        x_shift = torch.broadcast_to(torch.arange(self.F_size), (B, self.num_anchors, self.F_size, self.F_size)) \
+            .permute(0, 2, 3, 1).to(dtype=dtype, device=device)
+        # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W] -> [B, H, W, num_anchors]
+        y_shift = torch.broadcast_to(torch.arange(self.F_size).reshape(self.F_size, 1),
+                                     (B, self.num_anchors, self.F_size, self.F_size)) \
+            .permute(0, 2, 3, 1).to(dtype=dtype, device=device)
+
+        # broadcast anchors to all grids
+        # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
+        w_anchors = torch.broadcast_to(
+            self.anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
+            [B, self.num_anchors, self.F_size, self.F_size]).permute(0, 2, 3, 1).to(dtype=dtype, device=device)
+        h_anchors = torch.broadcast_to(
+            self.anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
+            [B, self.num_anchors, self.F_size, self.F_size]).permute(0, 2, 3, 1).to(dtype=dtype, device=device)
 
         # 坐标转换
         # b_x = sigmoid(t_x) + c_x
@@ -216,16 +237,19 @@ class YOLOLayer(nn.Module):
         # b_w = p_w * e^t_w
         # b_h = p_h * e^t_h
         #
-        pred_box_deltas[..., :2] = torch.sigmoid(pred_box_deltas[..., :2])
-        # [B, F_H, F_W, num_anchors] + []
-        pred_box_deltas[..., 0] += self.shift_x
-        pred_box_deltas[..., 1] += self.shift_y
+        pred_boxes[..., :2] = torch.sigmoid(pred_boxes[..., :2])
+        # [B, F_H, F_W, num_anchors] + [B, F_H, F_W, num_anchors]
+        pred_boxes[..., 0] += x_shift
+        pred_boxes[..., 1] += y_shift
+        # exp()
         # [B, F_H, F_W, num_anchors, 2] * [1, F_H, F_W, num_anchors, 2] -> [B, F_H, F_W, num_anchors, 2]
-        pred_box_deltas[..., 2:] = torch.exp(pred_box_deltas[..., 2:]) * self.all_grid_anchors
+        pred_boxes[..., 2:] = torch.exp(pred_boxes[..., 2:])
+        pred_boxes[..., 2] *= w_anchors
+        pred_boxes[..., 3] *= h_anchors
         # 分类概率压缩
         pred_cls_probs = torch.softmax(pred_cls_probs, dim=-1)
 
-        return pred_box_deltas, pred_confs, pred_cls_probs
+        return pred_boxes, pred_confs, pred_cls_probs
 
 
 class YOLOv2(nn.Module):
