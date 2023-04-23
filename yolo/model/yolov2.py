@@ -6,11 +6,20 @@
 @author: zj
 @description: 
 """
+from collections import OrderedDict
+import os
+
+from numpy import ndarray
 
 import torch
+from torch import Tensor
 from torch import nn
 
-from darknet.darknet import conv_bn_act, Darknet19
+from darknet.darknet import conv_bn_act, Darknet19, FastDarknet19
+
+from yolo.util import logging
+
+logger = logging.get_logger(__name__)
 
 
 class ReorgLayer(nn.Module):
@@ -43,18 +52,63 @@ class ReorgLayer(nn.Module):
 
 class Backbone(nn.Module):
 
-    def __init__(self):
+    def __init__(self, arch='Darknet19', pretrained=None):
         super(Backbone, self).__init__()
+        self.arch = arch
 
-        darknet19 = Darknet19()
-        # darknet backbone
-        self.conv1 = nn.Sequential(darknet19.backbone.layer0,
-                                   darknet19.backbone.layer1,
-                                   darknet19.backbone.layer2,
-                                   darknet19.backbone.layer3,
-                                   darknet19.backbone.layer4)
+        if 'Darknet19' == arch:
+            self.darknet = Darknet19()
+        elif 'FastDarknet19' == arch:
+            self.darknet = FastDarknet19()
+        else:
+            raise ValueError(f"{arch} doesn't supports")
+        # # darknet backbone
+        # self.conv1 = nn.Sequential(darknet19.backbone.layer0,
+        #                            darknet19.backbone.layer1,
+        #                            darknet19.backbone.layer2,
+        #                            darknet19.backbone.layer3,
+        #                            darknet19.backbone.layer4)
+        #
+        # self.conv2 = darknet19.backbone.layer5
 
-        self.conv2 = darknet19.backbone.layer5
+        self._init_weights(pretrained=pretrained)
+
+    def _init_weights(self, pretrained=None):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+                # nn.init.normal_(m.weight, 0, 0.01)
+                # nn.init.constant_(m.weight, 0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.normal_(m.weight, 0, 0.01)
+                # nn.init.constant_(m.weight, 0.01)
+                nn.init.constant_(m.bias, 0)
+
+        if pretrained is not None:
+            assert os.path.isfile(pretrained), pretrained
+            logger.info(f'Loading pretrained {self.arch}: {pretrained}')
+
+            state_dict = torch.load(pretrained, map_location='cpu')
+            if 'state_dict' in state_dict:
+                state_dict = state_dict['state_dict']
+            state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}  # strip the names
+
+            self.darknet.load_state_dict(state_dict, strict=True)
+
+    def conv1(self, x):
+        x = self.darknet.backbone.layer0(x)
+        x = self.darknet.backbone.layer1(x)
+        x = self.darknet.backbone.layer2(x)
+        x = self.darknet.backbone.layer3(x)
+        x = self.darknet.backbone.layer4(x)
+
+        return x
+
+    def conv2(self, x):
+        x = self.darknet.backbone.layer5(x)
+        return x
 
     def forward(self, x):
         # x: [1, 3, 416, 416]
@@ -91,6 +145,21 @@ class Head(nn.Module):
             nn.Conv2d(1024, (5 + self.num_classes) * self.num_anchors, kernel_size=1)
         )
 
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+                # nn.init.normal_(m.weight, 0, 0.01)
+                # nn.init.constant_(m.weight, 0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.normal_(m.weight, 0, 0.01)
+                # nn.init.constant_(m.weight, 0.01)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x, last_x):
         # last_x: [1, 512, 26, 26]
         last_x = self.down_sample(last_x)
@@ -114,6 +183,7 @@ class YOLOLayer(nn.Module):
 
     def __init__(self, anchors, num_anchors=5, num_classes=20, target_size=416, stride=32):
         super(YOLOLayer, self).__init__()
+        assert isinstance(anchors, Tensor)
         self.anchors = anchors
         self.num_anchors = num_anchors
         self.num_classes = num_classes
@@ -160,13 +230,14 @@ class YOLOLayer(nn.Module):
 
 class YOLOv2(nn.Module):
 
-    def __init__(self, anchors, target_size=416, num_classes=20, num_anchors=5):
+    def __init__(self, anchors, target_size=416,
+                 num_classes=20, num_anchors=5, arch='Darknet19', pretrained=None):
         super(YOLOv2, self).__init__()
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
-        self.backbone = Backbone()
-        self.head = Head()
+        self.backbone = Backbone(arch=arch, pretrained=pretrained)
+        self.head = Head(num_classes=num_classes, num_anchors=num_anchors)
         self.yolo_layer = YOLOLayer(anchors, target_size=target_size,
                                     num_anchors=num_anchors, num_classes=num_classes)
 
