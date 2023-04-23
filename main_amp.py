@@ -33,13 +33,13 @@ logger = logging.get_logger(__name__)
 
 def parse():
     parser = argparse.ArgumentParser(description='PyTorch YOLOv2 Training')
-    parser.add_argument('data', metavar='DIR',
+    parser.add_argument('data', metavar='DIR', type=str,
                         help='path to dataset')
-    parser.add_argument('-c', "--cfg", default='config/yolov2_default.cfg', type=str, metavar='CFG',
+    parser.add_argument('-c', "--cfg", metavar='CFG', type=str, default='configs/yolov2_default.cfg',
                         help='path to config file (default: config/yolov2_default.cfg)')
-    parser.add_argument('--print-freq', '-p', default=10, type=int,
-                        metavar='N', help='print frequency (default: 10)')
-    parser.add_argument('--resume', default='', type=str, metavar='PATH',
+    parser.add_argument('-p', '--print-freq', metavar='N', type=int, default=10,
+                        help='print frequency (default: 10)')
+    parser.add_argument('-r', '--resume', metavar='RESUME', type=str, default=None,
                         help='path to latest checkpoint (default: none)')
     parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                         help='evaluate model on validation set')
@@ -59,7 +59,7 @@ def parse():
 
 
 def main():
-    global best_ap50, best_ap50_95, args
+    global best_ap50, args
 
     args = parse()
     # load cfg
@@ -77,7 +77,6 @@ def main():
 
     cudnn.benchmark = True
     best_ap50 = 0
-    best_ap50_95 = 0
     if args.deterministic:
         cudnn.benchmark = False
         cudnn.deterministic = True
@@ -146,9 +145,8 @@ def main():
                 # checkpoint = torch.load(args.resume, map_location=lambda storage, loc: storage.cuda(args.gpu))
                 start_epoch = checkpoint['epoch']
 
-                global best_ap50, best_ap50_95
+                global best_ap50
                 best_ap50 = checkpoint['ap50']
-                best_ap50_95 = checkpoint['ap50_95']
 
                 if args.distributed:
                     state_dict = {key.replace("module.", ""): value for key, value in checkpoint['state_dict'].items()}
@@ -168,7 +166,7 @@ def main():
         resume()
 
     # Data loading code
-    train_sampler, train_loader, val_loader = build_data(args, cfg)
+    train_sampler, train_loader, val_loader, val_evaluator = build_data(args, cfg)
 
     conf_thresh = cfg['TEST']['CONFTHRE']
     nms_thresh = float(cfg['TEST']['NMSTHRE'])
@@ -208,21 +206,19 @@ def main():
             # evaluate on validation set
             logger.info("Begin evaluating ...")
             start = time.time()
-            ap50_95, ap50 = validate(val_loader, model, conf_thresh, nms_thresh, device=device)
+            ap50_95, ap50 = validate(val_loader, val_evaluator, model, conf_thresh, nms_thresh, device=device)
             logger.info("One epoch validate need: {:.3f}".format((time.time() - start)))
 
             # save checkpoint
             is_best = ap50 > best_ap50
             if is_best:
                 best_ap50 = ap50
-                best_ap50_95 = ap50_95
 
             save_checkpoint({
                 'epoch': epoch + 1,
                 'ap50': ap50,
                 'ap50_95': ap50_95,
                 'best_ap50': best_ap50,
-                'best_ap50_95': best_ap50_95,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict()
