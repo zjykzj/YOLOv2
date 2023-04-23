@@ -128,27 +128,27 @@ def color_dithering(src_img, hue, saturation, exposure):
 class Transform(object):
 
     def __init__(self, cfg: Dict, is_train: bool = True):
-    # def __init__(self, is_train: bool = True):
+        # def __init__(self, is_train: bool = True):
         self.is_train = is_train
 
         # 空间抖动
-        # self.jitter_ratio = cfg['AUGMENTATION']['JITTER']
-        self.jitter_ratio = 0.3
+        self.jitter_ratio = cfg['AUGMENTATION']['JITTER']
+        # self.jitter_ratio = 0.3
         # 随机放置
-        # self.random_placing = cfg['AUGMENTATION']['RANDOM_PLACING']
-        self.random_placing = True
+        self.random_placing = cfg['AUGMENTATION']['RANDOM_PLACING']
+        # self.random_placing = True
         # 左右翻转
-        # self.is_flip = cfg['AUGMENTATION']['RANDOM_HORIZONTAL_FLIP']
-        self.is_flip = True
+        self.is_flip = cfg['AUGMENTATION']['RANDOM_HORIZONTAL_FLIP']
+        # self.is_flip = True
         # 颜色抖动
-        # self.color_jitter = cfg['AUGMENTATION']['COLOR_DITHERING']
-        # self.hue = cfg['AUGMENTATION']['HUE']
-        # self.saturation = cfg['AUGMENTATION']['SATURATION']
-        # self.exposure = cfg['AUGMENTATION']['EXPOSURE']
-        self.color_jitter = True
-        self.hue = 0.1
-        self.saturation = 1.5
-        self.exposure = 1.5
+        self.color_jitter = cfg['AUGMENTATION']['COLOR_DITHERING']
+        self.hue = cfg['AUGMENTATION']['HUE']
+        self.saturation = cfg['AUGMENTATION']['SATURATION']
+        self.exposure = cfg['AUGMENTATION']['EXPOSURE']
+        # self.color_jitter = True
+        # self.hue = 0.1
+        # self.saturation = 1.5
+        # self.exposure = 1.5
 
     def __call__(self, img: ndarray, bboxes: List, img_size: int):
         # BGR -> RGB

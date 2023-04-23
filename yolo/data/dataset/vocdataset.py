@@ -16,7 +16,7 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import T_co
 
-from transform import Transform
+from ..transform import Transform
 
 
 def coco2yolobox(labels):
@@ -40,7 +40,14 @@ def xywh2xyxy(boxes):
 
 class VOCDataset(Dataset):
 
-    def __init__(self, root, name, train=True, transform=None, target_transform=None, target_size=416, max_det_nums=50):
+    def __init__(self,
+                 root: str,
+                 name: str,
+                 train: bool = True,
+                 transform: Transform = None,
+                 target_transform: Transform = None,
+                 target_size: int = 416,
+                 max_det_nums: int = 50):
         self.root = root
         self.name = name
         self.train = train

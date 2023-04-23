@@ -12,8 +12,9 @@ from argparse import Namespace
 
 import torch
 
-from .vocdataset import VOCDataset
+from .dataset.vocdataset import VOCDataset
 from .transform import Transform
+from .evaluate.vocevaluator import VOCEvaluator
 
 
 def build_data(args: Namespace, cfg: Dict):
@@ -22,20 +23,30 @@ def build_data(args: Namespace, cfg: Dict):
     val_transform = Transform(cfg, is_train=False)
 
     # 创建数据集
-    train_dataset = VOCDataset(root=args.data,
-                               name='train2017',
-                               transform=train_transform,
-                               target_transform=None,
-                               target_size=416,
-                               max_det_nums=50
-                               )
-    val_dataset = VOCDataset(root=args.data,
-                             name='val2017',
-                             transform=val_transform,
-                             target_transform=None,
-                             target_size=416,
-                             max_det_nums=50
-                             )
+    data_type = cfg['DATA']['TYPE']
+    max_det_num = cfg['DATA']['MAX_NUM_LABELS']
+    if 'PASCAL VOC' == data_type:
+        train_dataset_name = cfg['TRAIN']['DATASET_NAME']
+        train_img_size = cfg['TRAIN']['IMGSIZE']
+        train_dataset = VOCDataset(root=args.data,
+                                   name=train_dataset_name,
+                                   transform=train_transform,
+                                   target_transform=None,
+                                   target_size=train_img_size,
+                                   max_det_nums=max_det_num
+                                   )
+        test_dataset_name = cfg['TEST']['DATASET_NAME']
+        test_img_size = cfg['TEST']['IMGSIZE']
+        val_dataset = VOCDataset(root=args.data,
+                                 name=test_dataset_name,
+                                 transform=val_transform,
+                                 target_transform=None,
+                                 target_size=test_img_size,
+                                 max_det_nums=max_det_num
+                                 )
+        val_evaluator = VOCEvaluator()
+    else:
+        raise ValueError(f"{data_type} doesn't supports")
 
     # 创建采样器
     train_sampler = None
@@ -51,4 +62,4 @@ def build_data(args: Namespace, cfg: Dict):
         val_dataset,
         batch_size=1, shuffle=False, num_workers=0, pin_memory=True, sampler=None)
 
-    return train_sampler, train_loader, val_loader
+    return train_sampler, train_loader, val_loader, val_evaluator
