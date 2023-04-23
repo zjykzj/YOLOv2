@@ -160,10 +160,8 @@ class Head(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x, last_x):
-        # last_x: [1, 512, 26, 26]
-        last_x = self.down_sample(last_x)
-        # last_x: [1, 64, 26, 26]
-        last_x = self.reorg(last_x)
+        # last_x: [1, 512, 26, 26] -> [1, 64, 26, 26]
+        last_x = self.reorg(self.down_sample(last_x))
         # last_x: [1, 256, 13, 13]
 
         # x: [1, 1024, 13, 13]
@@ -246,6 +244,7 @@ class YOLOLayer(nn.Module):
         # 分类概率压缩
         outputs = torch.softmax(outputs[..., 5:], dim=-1)
 
+        # [B, num_anchors, H, W, n_ch] -> [B, num_anchors * H * W, n_ch]
         return outputs.reshape(B, -1, n_ch)
 
 
