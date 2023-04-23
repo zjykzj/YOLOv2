@@ -193,11 +193,10 @@ class YOLOLayer(nn.Module):
         self.stride = stride
 
         self.num_anchors = len(self.anchors)
-        self.F_size = target_size // stride
+        # self.F_size = target_size // stride
 
     def forward(self, outputs: Tensor):
-        B, C, H, W = outputs.shape[:4]
-        assert H == W == self.F_size
+        B, C, F_size, _ = outputs.shape[:4]
         n_ch = 5 + self.num_classes
         assert C == (self.num_anchors * n_ch)
 

@@ -106,7 +106,7 @@ def box_transform_inv(box, deltas):
 
     Arguments:
     box -- tensor of shape (N, 4), boxes, (c_x, c_y, w, h)
-    deltas -- tensor of shape (N, 4), deltas, (σ(t_x), σ(t_y), exp(t_w), exp(t_h))
+    deltas -- tensor of sh ape (N, 4), deltas, (σ(t_x), σ(t_y), exp(t_w), exp(t_h))
 
     Returns:
     pred_box -- tensor of shape (N, 4), predicted boxes, (c_x, c_y, w, h)
@@ -227,12 +227,10 @@ def box_transform(box1, box2):
 
 class YOLOv2Loss(nn.Module):
 
-    def __init__(self, anchors, num_anchors=5, num_classes=20, ignore_thresh=0.75,
-                 noobj_scale=1.0, obj_scale=5.0, class_scale=1.0, coord_scale=1.0):
+    def __init__(self, anchors, num_classes=20, ignore_thresh=0.75,
+                 coord_scale=1.0, noobj_scale=1.0, obj_scale=5.0, class_scale=1.0):
         super(YOLOv2Loss, self).__init__()
-        self.anchors = torch.FloatTensor(anchors)
-        self.num_anchors = num_anchors
-        assert tuple(self.anchors.shape) == (num_anchors, 2)
+        self.anchors = anchors
         self.num_classes = num_classes
         self.ignore_thresh = ignore_thresh
 
@@ -240,6 +238,8 @@ class YOLOv2Loss(nn.Module):
         self.obj_scale = obj_scale
         self.class_scale = class_scale
         self.coord_scale = coord_scale
+
+        self.num_anchors = len(anchors)
 
     def build_target(self, pred_box_deltas, pred_confs, targets, F_H, F_W):
         """
