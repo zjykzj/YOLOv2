@@ -193,9 +193,8 @@ class YOLOv2Loss(nn.Module):
         # [F_size, F_size, num_anchors, 4] -> [F_size*F_size*num_anchors, 4]
         return all_anchors.reshape(F_size * F_size * self.num_anchors, -1)
 
-    def make_preds(self, outputs):
+    def make_pred_boxes(self, outputs):
         B, C, F_size, _ = outputs.shape[:4]
-        n_ch = 5 + self.num_classes
         # [B, num_anchors * (5+num_classes), H, W] ->
         # [B, num_anchors, 5+num_classes, H, W] ->
         # [B, num_anchors, H, W, 5+num_classes]
@@ -223,19 +222,19 @@ class YOLOv2Loss(nn.Module):
         # b_w = p_w * e^t_w
         # b_h = p_h * e^t_h
         #
+        # [B, num_anchors, H, W, 4]
+        pred_boxes = outputs[..., :4]
         # x/y/conf compress to [0,1]
-        outputs[..., np.r_[:2, 4:5]] = torch.sigmoid(outputs[..., np.r_[:2, 4:5]])
-        outputs[..., 0] += x_shift
-        outputs[..., 1] += y_shift
+        pred_boxes[..., :2] = torch.sigmoid(pred_boxes[..., :2])
+        pred_boxes[..., 0] += x_shift
+        pred_boxes[..., 1] += y_shift
         # exp()
-        outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
-        outputs[..., 2] *= w_anchors
-        outputs[..., 3] *= h_anchors
-        # 分类概率压缩
-        outputs = torch.softmax(outputs[..., 5:], dim=-1)
+        pred_boxes[..., 2:4] = torch.exp(pred_boxes[..., 2:4])
+        pred_boxes[..., 2] *= w_anchors
+        pred_boxes[..., 3] *= h_anchors
 
-        # [B, num_anchors, H, W, n_ch] -> [B, H, W, num_anchors, n_ch] -> [B, H*W, num_anchors, n_ch]
-        return outputs.permute(0, 2, 3, 1, 4).reshape(B, F_size * F_size, self.num_anchors, -1)
+        # [B, num_anchors, H, W, 4] -> [B, H, W, num_anchors, 4] -> [B, H*W, num_anchors, 4]
+        return pred_boxes.permute(0, 2, 3, 1, 4).reshape(B, F_size * F_size, self.num_anchors, -1)
 
     def build_targets(self, outputs: Tensor, targets: Tensor):
         B, C, F_size, _ = outputs.shape[:4]
@@ -243,9 +242,9 @@ class YOLOv2Loss(nn.Module):
 
         dtype = outputs.dtype
         device = outputs.device
-        # [B, H*W, num_anchors, n_ch]
+        # [B, H*W, num_anchors, 4]
         # pred_box: [x_c, y_c, w, h]
-        outputs = self.make_preds(outputs)
+        all_pred_boxes = self.make_pred_boxes(outputs)
 
         iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_mask(B, F_size)
         iou_target = iou_target.to(dtype=dtype, device=device)
@@ -275,9 +274,9 @@ class YOLOv2Loss(nn.Module):
             gt_boxes[..., 0::4] *= F_size
             gt_boxes_xxyy = xywh2xxyy(gt_boxes)
 
-            # [H*W, num_anchors, 4]
+            # [H*W, num_anchors, 4] -> [H*W*num_anchors, 4]
             # pred_box: [x_c, y_c, w, h]
-            pred_boxes = outputs[bi][..., :4].reshape(-1, 4)
+            pred_boxes = all_pred_boxes[bi][..., :4].reshape(-1, 4)
 
             # ious: [H*W*num_anchors, num_obj]
             ious = bboxes_iou(pred_boxes, gt_boxes, xyxy=False)
