@@ -4,200 +4,118 @@
 @date: 2023/4/15 下午4:44
 @file: yololoss.py
 @author: zj
-@description: 
+@description:
+假定输入的target标注框坐标格式为[x_c, y_c, w, h]
+预测框经过计算后，得到的也是[x_c, y_c, w, h]
 """
 
-import torch
+import numpy as np
 
-from torch import Tensor
+import torch
 from torch import nn
+from torch import Tensor
 
 import torch.nn.functional as F
 
 
-def generate_all_anchors(anchors, F_H, F_W):
-    """
-    生成锚点框列表, 每个网格5个锚点框:
-    [H, W] -> [H, W, Num_anchors, 4] -> [H*W*Num_anchors, 4]
-    Generate dense anchors given grid defined by (H,W)
+def bboxes_iou(bboxes_a, bboxes_b, xyxy=True):
+    """Calculate the Intersection of Unions (IoUs) between bounding boxes.
+    IoU is calculated as a ratio of area of the intersection
+    and area of the union.
 
-    Arguments:
-    anchors -- tensor of shape (num_anchors, 2), pre-defined anchors (pw, ph) on each cell
-    H -- int, grid height
-    W -- int, grid width
-
+    Args:
+        bbox_a (array): An array whose shape is :math:`(N, 4)`.
+            :math:`N` is the number of bounding boxes.
+            The dtype should be :obj:`numpy.float32`.
+        bbox_b (array): An array similar to :obj:`bbox_a`,
+            whose shape is :math:`(K, 4)`.
+            The dtype should be :obj:`numpy.float32`.
     Returns:
-    all_anchors -- tensor of shape (H * W * num_anchors, 4) dense grid anchors (c_x, c_y, w, h)
+        array:
+        An array whose shape is :math:`(N, K)`. \
+        An element at index :math:`(n, k)` contains IoUs between \
+        :math:`n` th bounding box in :obj:`bbox_a` and :math:`k` th bounding \
+        box in :obj:`bbox_b`.
+
+    from: https://github.com/chainer/chainercv
     """
-    # number of anchors per cell
-    # 锚点框个数, YOLOv2使用5个锚点框
-    A = anchors.size(0)
+    # bboxes_a: [N_a, 4]
+    # bboxes_b: [N_b, 4]
+    if bboxes_a.shape[1] != 4 or bboxes_b.shape[1] != 4:
+        raise IndexError
 
-    # number of cells
-    # 网格数目
-    K = F_H * F_W
-    # 网格左上角坐标
-    # shift_x: [W, H] x表示行 shift_x[0] = [0, 0, 0, ....]
-    # shift_y: [W, H] y表示列 shift_y[0] = [0, 1, 2, ...., H]
-    shift_x, shift_y = torch.meshgrid([torch.arange(0, F_W), torch.arange(0, F_H)])
+    # top left
+    if xyxy:
+        # xyxy: x_top_left, y_top_left, x_bottom_right, y_bottom_right
+        # 计算交集矩形的左上角坐标
+        # torch.max([N_a, 1, 2], [N_b, 2]) -> [N_a, N_b, 2]
+        # torch.max: 双重循环
+        #   第一重循环 for i in range(N_a)，遍历boxes_a, 获取边界框i，大小为[2]
+        #       第二重循环　for j in range(N_b)，遍历bboxes_b，获取边界框j，大小为[2]
+        #           分别比较i[0]/j[0]和i[1]/j[1]，获取得到最大的x/y
+        #   遍历完成后，获取得到[N_a, N_b, 2]
+        tl = torch.max(bboxes_a[:, None, :2], bboxes_b[:, :2])
+        # bottom right
+        # 计算交集矩形的右下角坐标
+        # torch.min([N_a, 1, 2], [N_b, 2]) -> [N_a, N_b, 2]
+        br = torch.min(bboxes_a[:, None, 2:], bboxes_b[:, 2:])
+        # 计算bboxes_a的面积
+        # x_bottom_right/y_bottom_right - x_top_left/y_top_left = w/h
+        # prod([N, w/h], 1) = [N], 每个item表示边界框的面积w*h
+        area_a = torch.prod(bboxes_a[:, 2:] - bboxes_a[:, :2], 1)
+        area_b = torch.prod(bboxes_b[:, 2:] - bboxes_b[:, :2], 1)
+    else:
+        # x_center/y_center -> x_top_left, y_top_left
+        tl = torch.max((bboxes_a[:, None, :2] - bboxes_a[:, None, 2:] / 2),
+                       (bboxes_b[:, :2] - bboxes_b[:, 2:] / 2))
+        # bottom right
+        # x_center/y_center -> x_bottom_right/y_bottom_right
+        br = torch.min((bboxes_a[:, None, :2] + bboxes_a[:, None, 2:] / 2),
+                       (bboxes_b[:, :2] + bboxes_b[:, 2:] / 2))
 
-    # transpose shift_x and shift_y because we want our anchors to be organized in H x W order
-    # [W, H] -> [H, W] x表示列 shift_x[0] = [0, 1, 2, ..., W]
-    shift_x = shift_x.t().contiguous()
-    # [W, H] -> [H, W] y表示行 shift_y[0] = [0, 0, 0, ...]
-    shift_y = shift_y.t().contiguous()
+        # prod([N_a, w/h], 1) = [N_a], 每个item表示边界框的面积w*h
+        area_a = torch.prod(bboxes_a[:, 2:], 1)
+        area_b = torch.prod(bboxes_b[:, 2:], 1)
+    # 判断符合条件的结果：x_top_left/y_top_left < x_bottom_right/y_bottom_right
+    # [N_a, N_b, 2] < [N_a, N_b, 2] = [N_a, N_b, 2]
+    # prod([N_a, N_b, 2], 2) = [N_a, N_b], 数值为1/0
+    en = (tl < br).type(tl.type()).prod(dim=2)
+    # 首先计算交集w/h: [N_a, N_b, 2] - [N_a, N_b, 2] = [N_a, N_b, 2]
+    # 然后计算交集面积：prod([N_a, N_b, 2], 2) = [N_a, N_b]
+    # 然后去除不符合条件的交集面积
+    # [N_a, N_b] * [N_a, N_b](数值为1/0) = [N_a, N_b]
+    # 大小为[N_a, N_b]，表示bboxes_a的每个边界框与bboxes_b的每个边界框之间的IoU
+    area_i = torch.prod(br - tl, 2) * en  # * ((tl < br).all())
 
-    # shift_x is a long tensor, c_x is a float tensor
-    c_x = shift_x.float()
-    c_y = shift_y.float()
-
-    # 每个锚点框的左上角坐标位于网格左上角
-    # c_x: [H, W] -> [H*W, 1]
-    # c_y: [H, W] -> [H*W, 1]
-    # cells: [H*W, 2]
-    cells = torch.cat([c_x.view(-1, 1), c_y.view(-1, 1)], dim=-1)  # tensor of shape (h * w, 2), (cx, cy)
-
-    # add anchors width and height to centers
-    # grid_top_lefts: [H*W, 2] -> [H*W, 1, 2] -> [H*W, A, 2]
-    # anchors: [A, 2] -> [1, A, 2] -> [H*W, A, 2]
-    # all_anchors: [H*W, A, 4]
-    all_anchors = torch.cat([cells.view(K, 1, 2).expand(K, A, 2),
-                             anchors.view(1, A, 2).expand(K, A, 2)], dim=-1)
-
-    # [H*W, A, 4] -> [H*W*A, 4]
-    all_anchors = all_anchors.view(-1, 4)
-
-    return all_anchors
+    # 计算IoU
+    # 首先计算所有面积
+    # area_a[:, None] + area_b - area_i =
+    # [N_a, 1] + [N_b] - [N_a, N_b] = [N_a, N_b]
+    # 然后交集面积除以所有面积，计算IoU
+    # [N_a, N_b] / [N_a, N_b] = [N_a, N_b]
+    return area_i / (area_a[:, None] + area_b - area_i)
 
 
-def xywh2xxyy(box):
+def xywh2xxyy(boxes):
     """
-    Convert the box encoding format form (c_x, c_y, w, h) to (x1, y1, x2, y2)
-
-    Arguments:
-    box -- tensor of shape (N, 4), box of (c_x, c_y, w, h) format
-
-    Returns:
-    xxyy_box -- tensor of shape (N, 4), box of (x1, y1, x2, y2) format
+    [x_c, y_c, w, h] -> [x1, y1, x2, y2]
     """
-
-    x1 = box[:, 0] - (box[:, 2]) / 2
-    y1 = box[:, 1] - (box[:, 3]) / 2
-    x2 = box[:, 0] + (box[:, 2]) / 2
-    y2 = box[:, 1] + (box[:, 3]) / 2
+    assert len(boxes.shape) == 2 and boxes.shape[1] == 4
+    x1 = boxes[:, 0] - (boxes[:, 2]) / 2
+    y1 = boxes[:, 1] - (boxes[:, 3]) / 2
+    x2 = boxes[:, 0] + (boxes[:, 2]) / 2
+    y2 = boxes[:, 1] + (boxes[:, 3]) / 2
 
     x1 = x1.view(-1, 1)
     y1 = y1.view(-1, 1)
     x2 = x2.view(-1, 1)
     y2 = y2.view(-1, 1)
 
-    xxyy_box = torch.cat([x1, y1, x2, y2], dim=1)
-    return xxyy_box
+    boxes_xxyy = torch.cat([x1, y1, x2, y2], dim=1)
+    return boxes_xxyy
 
 
-def box_transform_inv(box, deltas):
-    """
-    apply deltas to box to generate predicted boxes
-
-    b_x = σ(t_x) + c_x
-    b_y = σ(t_y) + c_y
-    b_w = p_w * e^t_w
-    b_H = p_h * e^t_h
-
-    Arguments:
-    box -- tensor of shape (N, 4), boxes, (c_x, c_y, w, h)
-    deltas -- tensor of sh ape (N, 4), deltas, (σ(t_x), σ(t_y), exp(t_w), exp(t_h))
-
-    Returns:
-    pred_box -- tensor of shape (N, 4), predicted boxes, (c_x, c_y, w, h)
-    """
-    # [H*W*Num_anchors] + [H*W*Num_anchors]
-    c_x = box[:, 0] + deltas[:, 0]
-    c_y = box[:, 1] + deltas[:, 1]
-    w = box[:, 2] * deltas[:, 2]
-    h = box[:, 3] * deltas[:, 3]
-
-    # [H*W*Num_anchors] -> [H*W*Num_anchors, 1]
-    c_x = c_x.view(-1, 1)
-    c_y = c_y.view(-1, 1)
-    w = w.view(-1, 1)
-    h = h.view(-1, 1)
-
-    pred_box = torch.cat([c_x, c_y, w, h], dim=-1)
-    return pred_box
-
-
-def box_ious(box1, box2):
-    """
-    Implement the intersection over union (IoU) between box1 and box2 (x1, y1, x2, y2)
-
-    Arguments:
-    box1 -- tensor of shape (N, 4), first set of boxes
-    box2 -- tensor of shape (K, 4), second set of boxes
-
-    Returns:
-    ious -- tensor of shape (N, K), ious between boxes
-    """
-
-    N = box1.size(0)
-    K = box2.size(0)
-
-    # when torch.max() takes tensor of different shape as arguments, it will broadcasting them.
-    xi1 = torch.max(box1[:, 0].view(N, 1), box2[:, 0].view(1, K))
-    yi1 = torch.max(box1[:, 1].view(N, 1), box2[:, 1].view(1, K))
-    xi2 = torch.min(box1[:, 2].view(N, 1), box2[:, 2].view(1, K))
-    yi2 = torch.min(box1[:, 3].view(N, 1), box2[:, 3].view(1, K))
-
-    # we want to compare the compare the value with 0 elementwise. However, we can't
-    # simply feed int 0, because it will invoke the function torch(max, dim=int) which is not
-    # what we want.
-    # To feed a tensor 0 of same type and device with box1 and box2
-    # we use tensor.new().fill_(0)
-
-    iw = torch.max(xi2 - xi1, box1.new(1).fill_(0))
-    ih = torch.max(yi2 - yi1, box1.new(1).fill_(0))
-
-    inter = iw * ih
-
-    box1_area = (box1[:, 2] - box1[:, 0]) * (box1[:, 3] - box1[:, 1])
-    box2_area = (box2[:, 2] - box2[:, 0]) * (box2[:, 3] - box2[:, 1])
-
-    box1_area = box1_area.view(N, 1)
-    box2_area = box2_area.view(1, K)
-
-    union_area = box1_area + box2_area - inter
-
-    ious = inter / union_area
-
-    return ious
-
-
-def xxyy2xywh(box):
-    """
-    Convert the box (x1, y1, x2, y2) encoding format to (c_x, c_y, w, h) format
-
-    Arguments:
-    box: tensor of shape (N, 4), boxes of (x1, y1, x2, y2) format
-
-    Returns:
-    xywh_box: tensor of shape (N, 4), boxes of (c_x, c_y, w, h) format
-    """
-
-    c_x = (box[:, 2] + box[:, 0]) / 2
-    c_y = (box[:, 3] + box[:, 1]) / 2
-    w = box[:, 2] - box[:, 0]
-    h = box[:, 3] - box[:, 1]
-
-    c_x = c_x.view(-1, 1)
-    c_y = c_y.view(-1, 1)
-    w = w.view(-1, 1)
-    h = h.view(-1, 1)
-
-    xywh_box = torch.cat([c_x, c_y, w, h], dim=1)
-    return xywh_box
-
-
-def box_transform(box1, box2):
+def make_deltas(box1, box2):
     """
     Calculate the delta values σ(t_x), σ(t_y), exp(t_w), exp(t_h) used for transforming box1 to  box2
 
@@ -209,7 +127,7 @@ def box_transform(box1, box2):
     deltas -- tensor of shape (N, 4) delta values (t_x, t_y, t_w, t_h)
                    used for transforming boxes to reference boxes
     """
-
+    assert len(box1.shape) == len(box2.shape) == 2
     t_x = box2[:, 0] - box1[:, 0]
     t_y = box2[:, 1] - box1[:, 1]
     t_w = box2[:, 2] / box1[:, 2]
@@ -241,92 +159,130 @@ class YOLOv2Loss(nn.Module):
 
         self.num_anchors = len(anchors)
 
-    def build_target(self, pred_box_deltas, pred_confs, targets, F_H, F_W):
-        """
-        delta_pred: [B, F_H*F_W*num_anchors, 4]
-        targets: [B, num_max_det, 5]
-        """
-        # [B] 批量大小
-        B = pred_box_deltas.shape[0]
+    def build_mask(self, B, F_size):
+        # [B, H*W, num_anchors, 1]
+        iou_target = torch.zeros((B, F_size * F_size, self.num_anchors, 1))
+        iou_mask = torch.ones((B, F_size * F_size, self.num_anchors, 1)) * self.noobj_scale
 
-        # [B, num_max_det,  4]
-        gt_boxes_batch = targets[..., :4]
-        # [B, num_max_det]
-        gt_classes_batch = targets[..., 4]
-        # [B, num_max_det, 5] -> [B, num_max_det, 4] -> [B, num_max_det] -> [B]
-        gt_num_objs = (gt_boxes_batch.sum(dim=2) > 0).sum(dim=1)
+        # [B, H*W, num_anchors, 1]
+        box_target = torch.zeros((B, F_size * F_size, self.num_anchors, 1))
+        box_mask = torch.zeros((B, F_size * F_size, self.num_anchors, 1))
 
-        # 接下来就是创建各种target和mask
+        # [B, H*W, num_anchors, 1]
+        class_target = torch.zeros((B, F_size * F_size, self.num_anchors, 1))
+        class_mask = torch.zeros((B, F_size * F_size, self.num_anchors, 1))
+
+        return iou_target, iou_mask, box_target, box_mask, class_target, class_mask
+
+    def build_anchors(self, F_size):
+        # grid coordinate
+        x_shift = torch.broadcast_to(torch.arange(F_size), (self.num_anchors, F_size, F_size)) \
+            # [F_size] -> [F_size, 1] -> [num_anchors, F_size, F_size]
+        y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1), (self.num_anchors, F_size, F_size))
+
+        # broadcast anchors to all grids
+        # [num_anchors] -> [num_anchors, 1, 1] -> [num_anchors, F_size, F_size]
+        w_anchors = torch.broadcast_to(self.anchors[:, 0].reshape(self.num_anchors, 1, 1),
+                                       [self.num_anchors, F_size, F_size])
+        h_anchors = torch.broadcast_to(self.anchors[:, 1].reshape(self.num_anchors, 1, 1),
+                                       [self.num_anchors, F_size, F_size])
+
+        # [F_size, F_size, num_anchors, 4]
+        # [x_c, y_c, w, h]
+        all_anchors = torch.stack([x_shift + 0.5, y_shift + 0.5, w_anchors, h_anchors]).permute(1, 3, 4, 2, 0)
+        # [F_size, F_size, num_anchors, 4] -> [F_size*F_size*num_anchors, 4]
+        return all_anchors.reshape(F_size * F_size * self.num_anchors, -1)
+
+    def make_preds(self, outputs):
+        B, C, F_size, _ = outputs.shape[:4]
+        n_ch = 5 + self.num_classes
+        # [B, num_anchors * (5+num_classes), H, W] ->
+        # [B, num_anchors, 5+num_classes, H, W] ->
+        # [B, num_anchors, H, W, 5+num_classes]
+        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, F_size, F_size) \
+            .permute(0, 1, 3, 4, 2)
+
+        # grid coordinate
+        # [F_size] -> [B, num_anchors, H, W]
+        x_shift = torch.broadcast_to(torch.arange(F_size), (B, self.num_anchors, F_size, F_size))
+        # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
+        y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1),
+                                     (B, self.num_anchors, F_size, F_size))
+
+        # broadcast anchors to all grids
+        # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
+        w_anchors = torch.broadcast_to(
+            self.anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
+            [B, self.num_anchors, F_size, F_size])
+        h_anchors = torch.broadcast_to(
+            self.anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
+            [B, self.num_anchors, F_size, F_size])
+
+        # b_x = sigmoid(t_x) + c_x
+        # b_y = sigmoid(t_y) + c_y
+        # b_w = p_w * e^t_w
+        # b_h = p_h * e^t_h
         #
-        # iou_target: [N, H*W*Num_anchors, 1]
-        iou_target = pred_box_deltas.new_zeros((B, F_H * F_W, self.num_anchors, 1))
-        # iou_mask: [N, H*W, Num_anchors, 1]
-        # 置信度掩码, 包含了负责标注框的置信度预测(趋近于1)以及不包含目标的网格以及锚点框的置信度预测(趋近于0)
-        # 默认情况下, 所以预测框对应的预测置信度都参与计算. 所以mask = 1
-        # 又因为大部分都是不负责标注框的预测, 所以乘以noobj_scale系数
-        iou_mask = pred_box_deltas.new_ones((B, F_H * F_W, self.num_anchors, 1)) * self.noobj_scale
+        # x/y/conf compress to [0,1]
+        outputs[..., np.r_[:2, 4:5]] = torch.sigmoid(outputs[..., np.r_[:2, 4:5]])
+        outputs[..., 0] += x_shift
+        outputs[..., 1] += y_shift
+        # exp()
+        outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
+        outputs[..., 2] *= w_anchors
+        outputs[..., 3] *= h_anchors
+        # 分类概率压缩
+        outputs = torch.softmax(outputs[..., 5:], dim=-1)
 
-        # target和mask, 看起来target用于损失计算的真值, mask用于判断哪些预测框用于损失计算
-        # [N, H*W, Num_anchors, 4]
-        box_target = pred_box_deltas.new_zeros((B, F_H * F_W, self.num_anchors, 4))
-        # [N, H*W, Num_anchors, 1]
-        box_mask = pred_box_deltas.new_zeros((B, F_H * F_W, self.num_anchors, 1))
+        # [B, num_anchors, H, W, n_ch] -> [B, H, W, num_anchors, n_ch] -> [B, H*W, num_anchors, n_ch]
+        return outputs.permute(0, 2, 3, 1, 4).reshape(B, F_size * F_size, self.num_anchors, -1)
 
-        # [N, H*W, Num_anchors, 1]
-        class_target = pred_confs.new_zeros((B, F_H * F_W, self.num_anchors, 1))
-        # [N, H*W, Num_anchors, 1]
-        class_mask = pred_confs.new_zeros((B, F_H * F_W, self.num_anchors, 1))
+    def build_targets(self, outputs: Tensor, targets: Tensor):
+        B, C, F_size, _ = outputs.shape[:4]
+        assert C == self.num_anchors * (5 + self.num_classes)
 
-        # get all the anchors
-        # 生成网格锚点框
-        # [H*W*Num_anchors, 4] [x1, y1, box_w, box_h]
-        all_anchors_x1y1wh = generate_all_anchors(self.anchors, F_H, F_W)
-        # [H*W*Num_anchors, 4] -> [N, H*W*Num_anchors, 4]
-        # 这一步的目的是为了保持相同的数据类型torch.dtype以及所处设备torch.device
-        all_anchors_x1y1wh = pred_box_deltas.new(*all_anchors_x1y1wh.size()).copy_(all_anchors_x1y1wh)
+        dtype = outputs.dtype
+        device = outputs.device
+        # [B, H*W, num_anchors, n_ch]
+        # pred_box: [x_c, y_c, w, h]
+        outputs = self.make_preds(outputs)
 
-        all_anchors_xcycwh = all_anchors_x1y1wh.clone()
-        # [x1, y1, w, h] -> [xc, yc, w, h]
-        all_anchors_xcycwh[:, 0:2] += 0.5
-        # [xc, yc, w, h] -> [x1, y1, x2, y2]
-        all_anchors_xxyy = xywh2xxyy(all_anchors_xcycwh)
+        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_mask(B, F_size)
+        iou_target = iou_target.to(dtype=dtype, device=device)
+        iou_mask = iou_mask.to(dtype=dtype, device=device)
+        box_target = box_target.to(dtype=dtype, device=device)
+        box_mask = box_mask.to(dtype=dtype, device=device)
+        class_target = class_target.to(dtype=dtype, device=device)
+        class_mask = class_mask.to(dtype=dtype, device=device)
 
-        # process over batches
-        # 逐个图像进行操作
+        # [H*W*num_anchors, 4]
+        # [4] = [x_c, y_c, w, h]
+        all_anchors = self.build_anchors(F_size)
+        all_anchors = all_anchors.to(dtype=dtype, device=device)
+
+        # [B, num_max_det, 5] -> [B, num_max_det, 4] -> [B, num_max_det] -> [B]
+        gt_num_objs = (targets.sum(dim=2) > 0).sum(dim=1)
+        # 逐图像操作
         for bi in range(B):
-            # 确认每个图像有效的标注框数目
-            num_obj = gt_num_objs[bi].item()
-            # 获取YOLOv2预测结果
-            # [H*W*Num_anchors, 4]
-            box_deltas = pred_box_deltas[bi]
-            # 获取标注框数据
-            # gt_box: [x1, y1, x2, y2]
-            # gt_boxes: [num_obj, 4]
-            gt_boxes = gt_boxes_batch[bi][:num_obj, :]
-            # 获取标注框对应类别下标
-            gt_classes = gt_classes_batch[bi][:num_obj]
+            num_obj = gt_num_objs[bi]
+            # [num_obj, 4]
+            # [x_c, y_c, w, h]
+            gt_boxes = targets[bi][:num_obj][:4]
+            # [num_obj]
+            gt_cls_ids = targets[bi][:num_obj][5]
 
-            # rescale ground truth boxes
-            # 缩放到特征图大小
-            gt_boxes[:, 0::2] *= F_W
-            gt_boxes[:, 1::2] *= F_H
+            gt_boxes[..., 0::2] *= F_size
+            gt_boxes[..., 0::4] *= F_size
+            gt_boxes_xxyy = xywh2xxyy(gt_boxes)
 
-            # step 1: process IoU target
-            # apply box_deltas to pre-defined anchors
-            #
-            # 结合预测结果和锚点框得到预测框
-            # [H*W*Num_anchors, 4]
-            pred_boxes = box_transform_inv(all_anchors_x1y1wh, box_deltas)
-            # [xc, yc, w, h] -> [x1, y1, x2, y2]
-            pred_boxes = xywh2xxyy(pred_boxes)
+            # [H*W, num_anchors, 4]
+            # pred_box: [x_c, y_c, w, h]
+            pred_boxes = outputs[bi][..., :4].reshape(-1, 4)
 
-            # for each anchor, its iou target is corresponded to the max iou with any gt boxes
-            # 计算预测框和标注框之间的iou, 最大的预测框(并且IoU超过了阈值)负责该标注框的训练
-            #
-            # [H*W*Num_anchors, 4], [num_obj, 4] -> [H*W*Num_anchors, num_obj]
-            ious = box_ious(pred_boxes, gt_boxes)
-            # [H*W*Num_anchors, num_obj] -> [H*W, Num_anchors, num_obj]
-            ious = ious.view(-1, self.num_anchors, num_obj)
+            # ious: [H*W*num_anchors, num_obj]
+            ious = bboxes_iou(pred_boxes, gt_boxes, xyxy=False)
+            # [H*W*num_anchors, num_obj] -> [H*W, num_anchors, num_obj]
+            ious = ious.reshape(-1, self.num_anchors, num_obj)
             # 计算每个网格中和标注框最大的iou
             # shape: (H * W, num_anchors, 1)
             max_iou, _ = torch.max(ious, dim=-1, keepdim=True)
@@ -336,122 +292,103 @@ class YOLOv2Loss(nn.Module):
             # [H*W, Num_anchors, 1] -> [H*W*Num_anchors]
             iou_thresh_filter = max_iou.view(-1) > self.ignore_thresh
             n_pos = torch.nonzero(iou_thresh_filter).numel()
-
             if n_pos > 0:
                 # 如果存在, 那么不参与损失计算
                 iou_mask[bi][max_iou >= self.ignore_thresh] = 0
 
-            # step 2: process box target and class target
-            # calculate overlaps between anchors and gt boxes
-            #
-            # 如何确定正样本和负样本???
-            # 应该是锚点框和真值框进行匹配, 哪个锚点框负责真值框预测, 预测框的目的是为了让锚点框更好的拟合标注框!!!
-            # [H*W*Num_anchors, 4], [num_obj, 4] -> [H*W*Num_anchors, num_obj] -> [H*W, Num_anchors, num_obj]
-            overlaps = box_ious(all_anchors_xxyy, gt_boxes).view(-1, self.num_anchors, num_obj)
-            # [x1, y1, x2, y2] -> [xc, yc, w, h]
-            gt_boxes_xcycwh = xxyy2xywh(gt_boxes)
+            # overlaps: [H*W*num_anchors, num_obj]
+            overlaps = bboxes_iou(all_anchors, gt_boxes, xyxy=False)
+            overlaps = overlaps.reshape(-1, self.num_anchors, num_obj)
 
             # iterate over all objects
             # 每个标注框选择一个锚点框进行训练
-            for t in range(len(gt_boxes)):
+            for ni in range(num_obj):
                 # compute the center of each gt box to determine which cell it falls on
                 # assign it to a specific anchor by choosing max IoU
                 # 首先计算锚点框的中心点位于哪个网格, 然后选择其中IoU最大的锚点框参与训练
 
-                # 第t个锚点框
-                gt_box_xcycwh = gt_boxes_xcycwh[t]
+                # 第t个锚点框 [4]
+                # [xc, yc, w, h]
+                gt_box = gt_boxes[ni]
+                # [x1, y1, x2, y2]
+                gt_box_xxyy = gt_boxes_xxyy[ni]
                 # 对应的类别下标
-                gt_class = gt_classes[t]
+                gt_class = gt_cls_ids[ni]
                 # 对应网格下标
-                cell_idx_x, cell_idx_y = torch.floor(gt_box_xcycwh[:2])
+                cell_idx_x, cell_idx_y = torch.floor(gt_box_xxyy[:2])
                 # 网格列表下标
-                cell_idx = cell_idx_y * F_W + cell_idx_x
+                cell_idx = cell_idx_y * F_size + cell_idx_x
                 cell_idx = cell_idx.long()
 
                 # update box_target, box_mask
                 # 获取该标注框在对应网格上与所有锚点框的IoU
-                # [H*W, Num_anchors, num_obj] -> [Num_anchors]
-                overlaps_in_cell = overlaps[cell_idx, :, t]
+                # [H*W, num_anchors, num_obj] -> [num_anchors]
+                overlaps_in_cell = overlaps[cell_idx, :, ni]
                 # 选择IoU最大的锚点框下标
                 argmax_anchor_idx = torch.argmax(overlaps_in_cell)
 
-                # [H*W*Num_anchors, 4] -> [H*W, Num_anchors, 4] -> [4] -> [1, 4]
+                # [H*W*Num_anchors, 4] -> [H*W, Num_anchors, 4] -> [4]
                 # 获取对应网格中指定锚点框的坐标 [x1, y1, w, h]
-                assigned_grid = \
-                    all_anchors_x1y1wh.view(-1, self.num_anchors, 4)[cell_idx, argmax_anchor_idx, :].unsqueeze(0)
-                # [4] -> [1, 4]
-                gt_box = gt_box_xcycwh.unsqueeze(0)
-                # 锚点框和标注框之间的差距就是YOLOv2需要学习的偏移
-                target_t = box_transform(assigned_grid, gt_box)
-                # 赋值, 对应掩码下标设置为1
-                box_target[bi, cell_idx, argmax_anchor_idx, :] = target_t.unsqueeze(0)
+                response_anchor = all_anchors.view(-1, self.num_anchors, 4)[cell_idx, argmax_anchor_idx, :]
+                target_delta = make_deltas(response_anchor.unsqueeze(0), gt_box.unsqueeze(0))
+
+                box_target[bi, cell_idx, argmax_anchor_idx, :] = target_delta.squeeze(0)
                 box_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
 
                 # update cls_target, cls_mask
-                # 同步赋值对应类别下标, 对应掩码设置为1
+                # 赋值对应类别下标, 对应掩码设置为1
                 class_target[bi, cell_idx, argmax_anchor_idx, :] = gt_class
                 class_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
 
                 # update iou target and iou mask
-                iou_target[bi, cell_idx, argmax_anchor_idx, :] = max_iou[cell_idx, argmax_anchor_idx, :]
-                iou_mask[bi, cell_idx, argmax_anchor_idx, :] = self.obj_scale
+                iou_target[ni, cell_idx, argmax_anchor_idx, :] = max_iou[cell_idx, argmax_anchor_idx, :]
+                iou_mask[ni, cell_idx, argmax_anchor_idx, :] = self.obj_scale
 
-        return iou_target.view(B, -1, 1), iou_mask.view(B, -1, 1), \
-            box_target.view(B, -1, 4), box_mask.view(B, -1, 1), \
-            class_target.view(B, -1, 1).long(), class_mask.view(B, -1, 1)
+        return iou_target.reshape(B, -1, 1), iou_mask.reshape(B, -1, 1), \
+            box_target.reshape(B, -1, 4), box_mask[B, -1, 1], \
+            class_target.reshape(B, -1, 1).long(), class_mask.reshape(B, -1, 1)
 
     def forward(self, outputs, targets):
-        """
-        先仿照yolov2一比一复制, 然后再进行优化
+        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_targets(outputs, targets)
 
-        结合预测框输出 / 锚点框坐标 和 网格坐标, 计算最终的预测框坐标
-        b_x = sigmoid(t_x) + c_x
-        b_y = sigmoid(t_y) + c_y
-        b_w = p_w * e^t_w
-        b_h = p_h * e^t_h
-        """
-        # out -- tensor of shape (B, num_anchors * (5 + num_classes), H, W)
-        B, _, F_H, F_W = outputs.shape[:4]
-        # [B, C, H, W] -> [B, H, W, C] -> [B, H*W*Num_anchors, 5+Num_classes]
-        outputs = outputs.permute(0, 2, 3, 1).contiguous().view(B, F_H * F_W * self.num_anchors, 5 + self.num_classes)
+        B, _, F_size, _ = outputs.shape[:4]
+        # [B, C, H, W] -> [B, num_anchors, 5+num_classes, H, W] -> [B, num_anchors, H, W, 5+num_classes]
+        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, F_size, F_size) \
+            .permute(0, 1, 3, 4, 2)
+        # [B, num_anchors, H, W, 5+num_classes] -> [B, num_anchors*H*W, 5+num_classes]
+        outputs = outputs.reshape(B, -1, 5 + self.num_classes)
+        # x/y/conf compress to [0,1]
+        outputs[..., np.r_[:2, 4:5]] = torch.sigmoid(outputs[..., np.r_[:2, 4:5]])
+        # exp()
+        outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
+        # 分类概率压缩
+        outputs = torch.softmax(outputs[..., 5:], dim=-1)
 
-        # activate the output tensor
-        # `sigmoid` for t_x, t_y, t_c; `exp` for t_h, t_w;
-        # `softmax` for (class1_score, class2_score, ...)
-        #
-        # [N, H*W*Num_anchors, 2]
-        xy_pred = torch.sigmoid(outputs[:, :, 0:2])
-        # [N, H*W*Num_anchors, 2]
-        hw_pred = torch.exp(outputs[:, :, 2:4])
-        # [N, H*W*Num_anchors, 1]
-        conf_pred = torch.sigmoid(outputs[:, :, 4:5])
+        # [B, num_anchors*H*W, 5+num_classes] -> [B, num_anchors*H*W, 4]
+        pred_deltas = outputs[..., :4]
+        # [B, num_anchors*H*W, 5+num_classes] -> [B, num_anchors*H*W, 1]
+        pred_confs = outputs[..., 4:5]
+        # [B, num_anchors*H*W, 5+num_classes] -> [B, num_anchors*H*W, num_classes]
+        pred_probs = outputs[..., 5:]
 
-        # [N, H*W*Num_anchors, Num_classes]
-        class_score = outputs[:, :, 5:]
-
-        # [N, H*W*Num_anchors, 4]
-        box_delta = torch.cat([xy_pred, hw_pred], dim=-1)
-
-        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = \
-            self.build_target(box_delta, conf_pred, targets, F_H, F_W)
-
-        b, _, num_classes = class_score.size()
-        # [B, H * W * num_anchors, num_classes] -> [B * H * W * num_anchors, num_classes]
-        class_score_batch = class_score.view(-1, num_classes)
-        # [B, H * W * num_anchors, 1] -> [B * H * W * num_anchors]
+        # [B, num_anchors*H*W, num_classes] -> [B*num_anchors*H*W, num_classes]
+        pred_probs = pred_probs.view(-1, self.num_classes)
+        # [B, num_anchors*H*W, 1] -> [B * H * W * num_anchors]
         class_target = class_target.view(-1)
         # [B, H * W * num_anchors, 1] -> [B * H * W * num_anchors]
         class_mask = class_mask.view(-1)
 
         # ignore the gradient of noobject's target
         class_keep = class_mask.nonzero().squeeze(1)
-        class_score_batch_keep = class_score_batch[class_keep, :]
-        class_target_keep = class_target[class_keep]
+        # [B*num_anchors*H*W, num_classes] -> [class_keep, num_classes]
+        pred_probs = pred_probs[class_keep, :]
+        # [B * H * W * num_anchors] -> [class_keep]
+        class_target = class_target[class_keep]
 
         # calculate the loss, normalized by batch size.
-        box_loss = self.coord_scale * F.mse_loss(box_delta * box_mask, box_target * box_mask, reduction='sum') / 2.0
-        iou_loss = F.mse_loss(conf_pred * iou_mask, iou_target * iou_mask, reduction='sum') / 2.0
-        class_loss = self.class_scale * F.cross_entropy(class_score_batch_keep, class_target_keep, reduction='sum')
+        box_loss = F.mse_loss(pred_deltas * box_mask, box_target * box_mask, reduction='sum')
+        iou_loss = F.mse_loss(pred_confs * iou_mask, iou_target * iou_mask, reduction='sum')
+        class_loss = F.cross_entropy(pred_probs, class_target, reduction='sum')
 
-        total_loss = box_loss + iou_loss + class_loss
-        return total_loss / B
+        loss = (box_loss * self.coord_scale + iou_loss + class_loss * self.class_scale) / B
+        return loss
