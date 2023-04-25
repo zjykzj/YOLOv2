@@ -85,6 +85,7 @@ class VOCDataset(Dataset):
                 y_min = (yc - 0.5 * box_h) * img_h
                 box_w = box_w * img_w
                 box_h = box_h * img_h
+                # 转换成原始大小，方便后续图像预处理阶段进行转换和调试
                 sub_box_list.append([x_min, y_min, box_w, box_h])
                 sub_label_list.append(int(label))
             box_list.append(np.array(sub_box_list))
@@ -122,9 +123,12 @@ class VOCDataset(Dataset):
         # 数据预处理
         image = torch.from_numpy(image).permute(2, 0, 1).contiguous() / 255
 
+        # 标注框已经在图像预处理阶段进行转换，匹配输入图像大小
+        # 将数值缩放到[0, 1]区间
         boxes = boxes / self.target_size
-        # boxes = coco2yolobox(boxes)
-        boxes = xywh2xyxy(boxes)
+        # [x1, y1, w, h] -> [xc, yc, w, h]
+        boxes = coco2yolobox(boxes)
+        # boxes = xywh2xyxy(boxes)
         target = self.build_target(boxes, labels)
         if self.train:
             return image, target
