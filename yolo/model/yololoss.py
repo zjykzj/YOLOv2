@@ -255,21 +255,23 @@ class YOLOv2Loss(nn.Module):
         class_mask = class_mask.to(dtype=dtype, device=device)
 
         # [H*W*num_anchors, 4]
-        # [4] = [x_c, y_c, w, h]
+        # [4] = [x_c, y_c, w, h] 坐标相对于网格大小
         all_anchors = self.build_anchors(F_size)
         all_anchors = all_anchors.to(dtype=dtype, device=device)
 
-        # [B, num_max_det, 5] -> [B, num_max_det, 4] -> [B, num_max_det] -> [B]
+        # [B, num_max_det, 5] -> [B, num_max_det] -> [B]
         gt_num_objs = (targets.sum(dim=2) > 0).sum(dim=1)
         # 逐图像操作
         for bi in range(B):
             num_obj = gt_num_objs[bi]
             # [num_obj, 4]
             # [x_c, y_c, w, h]
+            # Scale relative to image width/height
             gt_boxes = targets[bi][:num_obj][:4]
             # [num_obj]
             gt_cls_ids = targets[bi][:num_obj][5]
 
+            # 放大到网格大小
             gt_boxes[..., 0::2] *= F_size
             gt_boxes[..., 0::4] *= F_size
             gt_boxes_xxyy = xywh2xxyy(gt_boxes)
