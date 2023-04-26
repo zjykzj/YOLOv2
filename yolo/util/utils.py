@@ -96,7 +96,7 @@ def nms(bbox, thresh, score=None, limit=None):
     return selec.astype(np.int32)
 
 
-def postprocess(prediction, num_classes, conf_thre=0.7, nms_thre=0.45):
+def postprocess(prediction, num_classes, conf_thre=0.005, nms_thre=0.45):
     """
     Postprocess for the output of YOLO model
     perform box transformation, specify the class for each detection,
