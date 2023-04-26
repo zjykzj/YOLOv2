@@ -8,12 +8,9 @@
 """
 
 import time
-import json
 import random
-import tempfile
 
 from tqdm import tqdm
-from pycocotools.cocoeval import COCOeval
 
 import torch.optim
 import torch.utils.data
@@ -29,10 +26,10 @@ try:
 except ImportError:
     raise ImportError("Please install apex from https://www.github.com/nvidia/apex to run this example.")
 
+from yolo.data.evaluate.evaluator import Evaluator
 from yolo.optim.lr_schedulers.build import adjust_learning_rate
 from yolo.util.metric import AverageMeter
-from yolo.util.utils import postprocess, yolobox2label, to_python_float
-
+from yolo.util.utils import postprocess, to_python_float
 from yolo.util import logging
 
 logger = logging.get_logger(__name__)
@@ -111,25 +108,36 @@ def train(args, cfg, train_loader, model, criterion, optimizer, device=None, epo
 
 
 @torch.no_grad()
-def validate(val_loader, val_evaluator, model, conf_threshold, nms_threshold, device=None):
+def validate(val_loader, val_evaluator: Evaluator, model, conf_threshold, nms_threshold, device=None):
+    """
+    测试基本操作：
+    1. 批量加载数据
+    2. 批量推理数据
+    3. 批量数据后处理
+    4. 逐图像处理
+        1. 将预测坐标转换回原始大小
+        2. 保存预测框坐标、标注框坐标和对应ID
+    5. 完成所有数据后进行评估，计算mAP
+
+    评估器可以做的：
+    1. 批量保存处理后数据？
+    2. 数据评估
+
+    预测阶段操作前的：
+    1. 模型推理
+    2. 数据后处理
+    3. 坐标转换
+    """
     batch_time = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
 
-    ids = list()
-    data_list = list()
-
     end = time.time()
     for i, (img, target) in enumerate(tqdm(val_loader)):
         assert isinstance(target, dict)
         img_info = [x.cpu().item() for x in target['img_info']]
-        id_ = img_info[-2]
 
-        # 从这里也判断出是单个推理
-        id_ = int(id_)
-        # 将原始图像下标挨个保存
-        ids.append(id_)
         with torch.no_grad():
             # 模型推理，返回预测结果
             # img: [B, 3, 416, 416]
@@ -146,23 +154,7 @@ def validate(val_loader, val_evaluator, model, conf_threshold, nms_threshold, de
         # outputs: [N_ind, 7]
         outputs = outputs[0].cpu().data
 
-        for output in outputs:
-            x1 = float(output[0])
-            y1 = float(output[1])
-            x2 = float(output[2])
-            y2 = float(output[3])
-            # 分类标签
-            label = val_loader.dataset.class_ids[int(output[6])]
-            # 转换到原始图像边界框坐标
-            box = yolobox2label((y1, x1, y2, x2), img_info[:6])
-            # [y1, x1, y2, x2] -> [x1, y1, w, h]
-            bbox = [box[1], box[0], box[3] - box[1], box[2] - box[0]]
-            # 置信度 = 目标置信度 * 分类置信度
-            score = float(output[4].data.item() * output[5].data.item())  # object score * class score
-            # 保存计算结果
-            A = {"image_id": id_, "category_id": label, "bbox": bbox,
-                 "score": score, "segmentation": []}  # COCO json format
-            data_list.append(A)
+        val_evaluator.put(outputs, img_info)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -170,25 +162,8 @@ def validate(val_loader, val_evaluator, model, conf_threshold, nms_threshold, de
 
     logger.info('Time {batch_time.val:.3f} ({batch_time.avg:.3f})'.format(batch_time=batch_time))
 
-    annType = ['segm', 'bbox', 'keypoints']
-
-    # 计算完成所有测试图像的预测结果后
-    # Evaluate the Dt (detection) json comparing with the ground truth
-    if len(data_list) > 0:
-        cocoGt = val_loader.dataset.coco
-        # workaround: temporarily write data to json file because pycocotools can't process dict in py36.
-        _, tmp = tempfile.mkstemp()
-        json.dump(data_list, open(tmp, 'w'))
-        cocoDt = cocoGt.loadRes(tmp)
-        cocoEval = COCOeval(cocoGt, cocoDt, annType[1])
-        cocoEval.params.imgIds = ids
-        cocoEval.evaluate()
-        cocoEval.accumulate()
-        cocoEval.summarize()
-        # AP50_95, AP50
-        return cocoEval.stats[0], cocoEval.stats[1]
-    else:
-        return 0, 0
+    AP50_95, AP50 = val_evaluator.result()
+    return AP50_95, AP50
 
 
 def reduce_tensor(args, tensor):
