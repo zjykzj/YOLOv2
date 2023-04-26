@@ -102,7 +102,6 @@ class Backbone(nn.Module):
         x = self.darknet.backbone.layer2(x)
         x = self.darknet.backbone.layer3(x)
         x = self.darknet.backbone.layer4(x)
-
         return x
 
     def conv2(self, x):
