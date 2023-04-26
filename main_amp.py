@@ -168,12 +168,15 @@ def main():
     # Data loading code
     train_sampler, train_loader, val_loader, val_evaluator = build_data(args, cfg)
 
+    num_classes = cfg['MODEL']['N_CLASSES']
     conf_thresh = cfg['TEST']['CONFTHRE']
     nms_thresh = float(cfg['TEST']['NMSTHRE'])
     if args.evaluate and args.local_rank == 0:
         logger.info("Begin evaluating ...")
         # ap50_95, ap50 = evaluator.evaluate(model)
-        validate(val_loader, model, conf_thresh, nms_thresh, device=device)
+        validate(val_loader, val_evaluator, model,
+                 num_classes=num_classes, conf_thresh=conf_thresh, nms_thresh=nms_thresh,
+                 device=device)
         return
 
     logger.info("\nargs: {}".format(args))
@@ -206,7 +209,9 @@ def main():
             # evaluate on validation set
             logger.info("Begin evaluating ...")
             start = time.time()
-            ap50_95, ap50 = validate(val_loader, val_evaluator, model, conf_thresh, nms_thresh, device=device)
+            ap50_95, ap50 = validate(val_loader, val_evaluator, model,
+                                     num_classes=num_classes, conf_thresh=conf_thresh, nms_thresh=nms_thresh,
+                                     device=device)
             logger.info("One epoch validate need: {:.3f}".format((time.time() - start)))
 
             # save checkpoint

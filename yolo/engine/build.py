@@ -124,6 +124,7 @@ def train(args: Namespace,
 def validate(val_loader: DataLoader,
              val_evaluator: Evaluator,
              model: Module,
+             num_classes: int = 20,
              conf_threshold: float = 0.005,
              nms_threshold: float = 0.45,
              device: torch.device = None):
@@ -143,8 +144,8 @@ def validate(val_loader: DataLoader,
             outputs = model(img.to(device))
         # 后处理，进行置信度阈值过滤 + NMS阈值过滤
         # 输入outputs: [B, 预测框数目, 85(xywh + obj_confg + num_classes)]
-        # 输出outputs: [B, 过滤后的预测框数目, 7(xyxy + obj_conf + cls_conf + cls_id)]
-        outputs = postprocess(outputs, 80, conf_threshold, nms_threshold)
+        # 输出outputs: [B, 过滤后的预测框数目, 7(xyxy + obj_conf + cls_prob + cls_id)]
+        outputs = postprocess(outputs, num_classes, conf_threshold, nms_threshold)
         # 从这里也可以看出是单张推理
         # 如果结果为空，那么不执行后续运算
         if outputs[0] is None:
