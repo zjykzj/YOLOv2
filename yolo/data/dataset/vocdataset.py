@@ -40,6 +40,12 @@ def xywh2xyxy(boxes):
 
 class VOCDataset(Dataset):
 
+    classes = ('aeroplane', 'bicycle', 'bird', 'boat',
+               'bottle', 'bus', 'car', 'cat', 'chair',
+               'cow', 'diningtable', 'dog', 'horse',
+               'motorbike', 'person', 'pottedplant',
+               'sheep', 'sofa', 'train', 'tvmonitor')
+
     def __init__(self,
                  root: str,
                  name: str,
@@ -130,6 +136,9 @@ class VOCDataset(Dataset):
         boxes = coco2yolobox(boxes)
         # boxes = xywh2xyxy(boxes)
         target = self.build_target(boxes, labels)
+
+        image_name = os.path.splitext(os.path.basename(image_path))[0]
+        img_info.append(image_name)
         if self.train:
             return image, target
         else:
