@@ -135,8 +135,8 @@ def validate(val_loader: DataLoader,
 
     end = time.time()
     for i, (img, target) in enumerate(tqdm(val_loader)):
-        assert isinstance(target, dict)
-        img_info = [x.cpu().item() for x in target['img_info']]
+        assert len(img) == 1, "Only supports single image inference."
+        assert isinstance(target, list) and isinstance(target[0], dict)
 
         with torch.no_grad():
             # 模型推理，返回预测结果
@@ -154,6 +154,7 @@ def validate(val_loader: DataLoader,
         # outputs: [N_ind, 7]
         outputs = outputs[0].cpu().data
 
+        img_info = target[0]['img_info']
         val_evaluator.put(outputs, img_info)
 
         # measure elapsed time
