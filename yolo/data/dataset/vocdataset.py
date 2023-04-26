@@ -6,12 +6,12 @@
 @author: zj
 @description: 
 """
-import glob
 import os
-import random
-
 import cv2
+import glob
+
 import numpy as np
+
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import T_co
@@ -39,7 +39,6 @@ def xywh2xyxy(boxes):
 
 
 class VOCDataset(Dataset):
-
     classes = ('aeroplane', 'bicycle', 'bird', 'boat',
                'bottle', 'bus', 'car', 'cat', 'chair',
                'cow', 'diningtable', 'dog', 'horse',
@@ -167,19 +166,3 @@ class VOCDataset(Dataset):
 
     def __len__(self):
         return len(self.image_path_list)
-
-
-if __name__ == '__main__':
-    random.seed(10)
-    root = '/home/zj/data/voc'
-    name = 'voc2yolov5-val'
-
-    # test_dataset = VOCDataset(root, name, S=7, B=2, train=False, transform=Transform(is_train=False))
-    # image, target = test_dataset.__getitem__(300)
-    # print(image.shape, target.shape)
-
-    train_dataset = VOCDataset(root, name, train=True, transform=Transform(is_train=True))
-
-    for i in [31, 62, 100, 633]:
-        image, target = train_dataset.__getitem__(i)
-        print(i, image.shape, target.shape)
