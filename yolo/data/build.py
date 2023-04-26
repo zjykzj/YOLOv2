@@ -44,7 +44,11 @@ def build_data(args: Namespace, cfg: Dict):
                                  target_size=test_img_size,
                                  max_det_nums=max_det_num
                                  )
-        val_evaluator = VOCEvaluator()
+
+        VOCdevkit_dir = cfg['TEST']['VOC_DIR']
+        year = cfg['TEST']['YEAR']
+        split = cfg['TEST']['SPLIT']
+        val_evaluator = VOCEvaluator(val_dataset.classes, VOCdevkit_dir, year=year, split=split)
     else:
         raise ValueError(f"{data_type} doesn't supports")
 
