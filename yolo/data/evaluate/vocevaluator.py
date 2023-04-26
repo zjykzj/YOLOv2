@@ -6,6 +6,10 @@
 @author: zj
 @description:
 """
+
+import os
+import numpy as np
+
 from .evaluator import Evaluator
 from .voc_eval import voc_eval
 
@@ -15,7 +19,7 @@ def do_python_eval(all_boxes_dict, classes, VOCdevkit_dir, year=2012, split='val
     imageset_file = os.path.join(VOCdevkit_dir, f'VOC{year}', 'ImageSets', 'Main', f'{split}.txt')
 
     # The PASCAL VOC metric changed in 2010
-    use_07_metric = True if int(self._year) < 2010 else False
+    use_07_metric = True if int(year) < 2010 else False
     print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
 
     aps = []
