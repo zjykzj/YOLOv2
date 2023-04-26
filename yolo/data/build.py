@@ -7,6 +7,7 @@
 @description: 
 """
 
+import os
 from typing import Dict
 from argparse import Namespace
 
@@ -45,7 +46,7 @@ def build_data(args: Namespace, cfg: Dict):
                                  max_det_nums=max_det_num
                                  )
 
-        VOCdevkit_dir = cfg['TEST']['VOC_DIR']
+        VOCdevkit_dir = os.path.join(args.data, cfg['TEST']['VOC'])
         year = cfg['TEST']['YEAR']
         split = cfg['TEST']['SPLIT']
         val_evaluator = VOCEvaluator(val_dataset.classes, VOCdevkit_dir, year=year, split=split)
