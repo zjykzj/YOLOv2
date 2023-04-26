@@ -6,11 +6,17 @@
 @author: zj
 @description: 
 """
+from typing import Dict
 
 import time
 import random
 
+from argparse import Namespace
 from tqdm import tqdm
+
+from torch.nn import Module
+from torch.optim import Optimizer
+from torch.utils.data import DataLoader
 
 import torch.optim
 import torch.utils.data
@@ -35,7 +41,14 @@ from yolo.util import logging
 logger = logging.get_logger(__name__)
 
 
-def train(args, cfg, train_loader, model, criterion, optimizer, device=None, epoch=0):
+def train(args: Namespace,
+          cfg: Dict,
+          train_loader: DataLoader,
+          model: Module,
+          criterion: Module,
+          optimizer: Optimizer,
+          device: torch.device = None,
+          epoch: int = 0):
     batch_time = AverageMeter()
     losses = AverageMeter()
 
@@ -108,26 +121,12 @@ def train(args, cfg, train_loader, model, criterion, optimizer, device=None, epo
 
 
 @torch.no_grad()
-def validate(val_loader, val_evaluator: Evaluator, model, conf_threshold, nms_threshold, device=None):
-    """
-    测试基本操作：
-    1. 批量加载数据
-    2. 批量推理数据
-    3. 批量数据后处理
-    4. 逐图像处理
-        1. 将预测坐标转换回原始大小
-        2. 保存预测框坐标、标注框坐标和对应ID
-    5. 完成所有数据后进行评估，计算mAP
-
-    评估器可以做的：
-    1. 批量保存处理后数据？
-    2. 数据评估
-
-    预测阶段操作前的：
-    1. 模型推理
-    2. 数据后处理
-    3. 坐标转换
-    """
+def validate(val_loader: DataLoader,
+             val_evaluator: Evaluator,
+             model: Module,
+             conf_threshold: float = 0.005,
+             nms_threshold: float = 0.45,
+             device: torch.device = None):
     batch_time = AverageMeter()
 
     # switch to evaluate mode
