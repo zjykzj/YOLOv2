@@ -103,8 +103,8 @@ def voc_eval(detections,
     recs = {}
     for i, imagename in enumerate(imagenames):
         recs[imagename] = parse_rec(annopath.format(imagename))
-        if i % 100 == 0:
-            print('Reading annotation for {:d}/{:d}'.format(i + 1, len(imagenames)))
+        # if i % 100 == 0:
+        #     print('Reading annotation for {:d}/{:d}'.format(i + 1, len(imagenames)))
 
     # extract gt objects for this class
     class_recs = {}
