@@ -211,22 +211,19 @@ class YOLOLayer(nn.Module):
 
         # grid coordinate
         # [F_size] -> [B, num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(F_size), (B, self.num_anchors, F_size, F_size)) \
-            .to(dtype=dtype, device=device)
+        x_shift = torch.broadcast_to(torch.arange(F_size),
+                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
         # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
         y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1),
-                                     (B, self.num_anchors, F_size, F_size)) \
-            .to(dtype=dtype, device=device)
+                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
 
         anchors = self.anchors * F_size
         # broadcast anchors to all grids
         # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
-        w_anchors = torch.broadcast_to(
-            anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
-        h_anchors = torch.broadcast_to(
-            anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
+        w_anchors = torch.broadcast_to(anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
+                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
+        h_anchors = torch.broadcast_to(anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
+                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
 
         # b_x = sigmoid(t_x) + c_x
         # b_y = sigmoid(t_y) + c_y
