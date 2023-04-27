@@ -31,6 +31,7 @@ def build_data(args: Namespace, cfg: Dict):
         train_img_size = cfg['TRAIN']['IMGSIZE']
         train_dataset = VOCDataset(root=args.data,
                                    name=train_dataset_name,
+                                   train=True,
                                    transform=train_transform,
                                    target_transform=None,
                                    target_size=train_img_size,
@@ -40,6 +41,7 @@ def build_data(args: Namespace, cfg: Dict):
         test_img_size = cfg['TEST']['IMGSIZE']
         val_dataset = VOCDataset(root=args.data,
                                  name=test_dataset_name,
+                                 train=False,
                                  transform=val_transform,
                                  target_transform=None,
                                  target_size=test_img_size,
