@@ -23,12 +23,13 @@ from torch import Tensor
 from torch.nn import Module
 
 from yolo.model.yolov2 import YOLOv2
+from yolo.data.dataset.vocdataset import VOCDataset
 from yolo.data.transform import Transform
-from yolo.util.utils import postprocess
+from yolo.util.utils import postprocess, yolobox2label
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='YOLOv2 Demo.')
     parser.add_argument('cfg', type=str, default='configs/yolov2_default.cfg', help='Model configuration file.')
     parser.add_argument('ckpt', type=str, default=None, help='Path to the checkpoint file.')
     parser.add_argument('image', type=str, default=None, help='Path to image file')
@@ -85,7 +86,7 @@ def model_init(args: Namespace, cfg: Dict):
 
 
 def parse_info(outputs: List, info_img: List or Tuple):
-    coco_class_names, coco_class_ids, coco_class_colors = get_coco_label_names()
+    import random
 
     bboxes = list()
     confs = list()
@@ -97,18 +98,19 @@ def parse_info(outputs: List, info_img: List or Tuple):
     # conf: 置信度
     # cls_conf: 分类置信度
     # cls_pred: 分类下标
-    for x1, y1, x2, y2, conf, cls_conf, cls_pred in outputs[0]:
-        cls_id = coco_class_ids[int(cls_pred)]
+    for x1, y1, x2, y2, conf, cls_conf, cls_pred in outputs:
+        cls_id = int(cls_pred)
+        random.seed(cls_id)
+
         print(int(x1), int(y1), int(x2), int(y2), float(conf), int(cls_pred))
-        print('\t+ Label: %s, Conf: %.5f' %
-              (coco_class_names[cls_id], cls_conf.item()))
-        box = yolobox2label([y1, x1, y2, x2], info_img)
-        bboxes.append(box)
+        print('\t+ Label: %s, Conf: %.5f' % (VOCDataset.classes[cls_id], cls_conf.item()))
+        y1, x1, y2, x2 = yolobox2label([y1, x1, y2, x2], info_img)
+        bboxes.append([x1, y1, x2, y2])
         classes.append(cls_id)
-        colors.append(coco_class_colors[int(cls_pred)])
+        colors.append([random.randint(100, 255), random.randint(100, 255), random.randint(100, 255)])
         confs.append(conf * cls_conf)
 
-    return bboxes, confs, classes, colors, coco_class_names
+    return bboxes, confs, classes, colors
 
 
 @torch.no_grad()
@@ -121,6 +123,7 @@ def process(input_data: Tensor, model: Module, device: torch.device,
     # 图像后处理，执行预测边界框的坐标转换以及置信度阈值过滤+NMS IoU阈值过滤
     outputs = postprocess(outputs, num_classes, conf_thre=conf_thre, nms_thre=nms_thre)
 
+    # [B, num_det, 7]
     return outputs
 
 
@@ -202,7 +205,7 @@ def main():
         return
 
     print("=> Parse INFO")
-    bboxes, confs, classes, colors, coco_class_names = parse_info(outputs, img_info[:6])
+    bboxes, confs, pred_name_list, colors = parse_info(outputs[0], img_info[:6])
 
     img_raw_list = [img_raw]
     image_name = os.path.basename(args.image)
@@ -210,11 +213,6 @@ def main():
     bboxes_list = [bboxes]
     confs_list = [confs]
     colors_list = [colors]
-
-    pred_name_list = list()
-    for cls_id in classes:
-        pred_name_list.append(coco_class_names[cls_id])
-    pred_name_list = [pred_name_list]
 
     save_dir = './results'
     show_bbox(save_dir, img_raw_list, img_name_list, bboxes_list, confs_list, pred_name_list, colors_list)
