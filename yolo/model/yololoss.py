@@ -345,9 +345,15 @@ class YOLOv2Loss(nn.Module):
                 iou_mask[ni, cell_idx, argmax_anchor_idx, :] = self.obj_scale
 
         # [B, H*W, num_anchors, 1] -> [B, H*W*num_anchors, 1]
-        return iou_target.reshape(B, -1, 1), iou_mask.reshape(B, -1, 1), \
-            box_target.reshape(B, -1, 4), box_mask[B, -1, 1], \
-            class_target.reshape(B, -1, 1).long(), class_mask.reshape(B, -1, 1)
+        iou_target = iou_target.reshape(B, -1, 1)
+        iou_mask = iou_mask.reshape(B, -1, 1)
+        # [B, H*W, num_anchors, 4] -> [B, H*W*num_anchors, 4]
+        box_target = box_target.reshape(B, -1, 4)
+        box_mask = box_mask.reshape(B, -1, 1)
+        class_target = class_target.reshape(B, -1, 1).long()
+        class_mask = class_mask.reshape(B, -1, 1)
+
+        return iou_target, iou_mask, box_target, box_mask, class_target, class_mask
 
     def forward(self, outputs, targets):
         iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_targets(outputs, targets)
