@@ -209,9 +209,9 @@ def main():
             # evaluate on validation set
             logger.info("Begin evaluating ...")
             start = time.time()
-            ap50_95, ap50 = validate(val_loader, val_evaluator, model,
-                                     num_classes=num_classes, conf_thresh=conf_thresh, nms_thresh=nms_thresh,
-                                     device=device)
+            ap50_95, ap50 = validate(
+                val_loader, val_evaluator, model,
+                num_classes=num_classes, conf_thresh=conf_thresh, nms_thresh=nms_thresh, device=device)
             logger.info("One epoch validate need: {:.3f}".format((time.time() - start)))
 
             # save checkpoint
