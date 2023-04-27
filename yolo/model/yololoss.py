@@ -359,35 +359,35 @@ class YOLOv2Loss(nn.Module):
         iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_targets(outputs, targets)
 
         B, _, F_size, _ = outputs.shape[:4]
-        # [B, C, H, W] -> [B, num_anchors, 5+num_classes, H, W] -> [B, num_anchors, H, W, 5+num_classes]
+        # [B, C, H, W] -> [B, num_anchors, 5+num_classes, H, W] -> [B, H, W, num_anchors, 5+num_classes]
         outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, F_size, F_size) \
-            .permute(0, 1, 3, 4, 2)
-        # [B, num_anchors, H, W, 5+num_classes] -> [B, num_anchors*H*W, 5+num_classes]
+            .permute(0, 3, 4, 1, 2)
+        # [B, H, W, num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 5+num_classes]
         outputs = outputs.reshape(B, -1, 5 + self.num_classes)
         # x/y/conf compress to [0,1]
         outputs[..., np.r_[:2, 4:5]] = torch.sigmoid(outputs[..., np.r_[:2, 4:5]])
         # exp()
         outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
         # 分类概率压缩
-        outputs = torch.softmax(outputs[..., 5:], dim=-1)
+        outputs[..., 5:] = torch.softmax(outputs[..., 5:], dim=-1)
 
-        # [B, num_anchors*H*W, 5+num_classes] -> [B, num_anchors*H*W, 4]
+        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 4]
         pred_deltas = outputs[..., :4]
-        # [B, num_anchors*H*W, 5+num_classes] -> [B, num_anchors*H*W, 1]
+        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 1]
         pred_confs = outputs[..., 4:5]
-        # [B, num_anchors*H*W, 5+num_classes] -> [B, num_anchors*H*W, num_classes]
+        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, num_classes]
         pred_probs = outputs[..., 5:]
 
-        # [B, num_anchors*H*W, num_classes] -> [B*num_anchors*H*W, num_classes]
+        # [B, H*W*num_anchors, num_classes] -> [B*H*W*num_anchors, num_classes]
         pred_probs = pred_probs.view(-1, self.num_classes)
-        # [B, num_anchors*H*W, 1] -> [B * H * W * num_anchors]
+        # [B, H*W*num_anchors, 1] -> [B * H * W * num_anchors]
         class_target = class_target.view(-1)
         # [B, H * W * num_anchors, 1] -> [B * H * W * num_anchors]
         class_mask = class_mask.view(-1)
 
         # ignore the gradient of noobject's target
         class_keep = class_mask.nonzero().squeeze(1)
-        # [B*num_anchors*H*W, num_classes] -> [class_keep, num_classes]
+        # [B*H*W*num_anchors, num_classes] -> [class_keep, num_classes]
         pred_probs = pred_probs[class_keep, :]
         # [B * H * W * num_anchors] -> [class_keep]
         class_target = class_target[class_keep]
