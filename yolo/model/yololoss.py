@@ -189,9 +189,9 @@ class YOLOv2Loss(nn.Module):
         h_anchors = torch.broadcast_to(anchors[:, 1].reshape(self.num_anchors, 1, 1),
                                        [self.num_anchors, F_size, F_size])
 
-        # [F_size, F_size, num_anchors, 4]
+        # [4, num_anchors, F_size, F_size] -> [F_size, F_size, num_anchors, 4]
         # [x_c, y_c, w, h]
-        all_anchors = torch.stack([x_shift + 0.5, y_shift + 0.5, w_anchors, h_anchors]).permute(1, 3, 4, 2, 0)
+        all_anchors = torch.stack([x_shift + 0.5, y_shift + 0.5, w_anchors, h_anchors]).permute(2, 3, 1, 0)
         # [F_size, F_size, num_anchors, 4] -> [F_size*F_size*num_anchors, 4]
         return all_anchors.reshape(F_size * F_size * self.num_anchors, -1)
 
