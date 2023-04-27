@@ -245,7 +245,7 @@ class YOLOLayer(nn.Module):
         # 分类概率压缩
         outputs = torch.softmax(outputs[..., 5:], dim=-1)
 
-        # Enlarge the predicted box coordinates to the input image
+        # Scale relative to image width/height
         outputs[..., :4] *= self.stride
         # [B, num_anchors, H, W, n_ch] -> [B, num_anchors * H * W, n_ch]
         # n_ch: [x_c, y_c, w, h, conf, class_probs]
