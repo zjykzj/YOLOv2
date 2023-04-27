@@ -71,7 +71,7 @@ def train(args: Namespace,
 
         # compute output
         output = model(input.to(device))
-        loss = criterion(output, target) / accumulation_steps
+        loss = criterion(output, target.to(device)) / accumulation_steps
 
         # compute gradient and do SGD step
         with amp.scale_loss(loss, optimizer) as scaled_loss:
