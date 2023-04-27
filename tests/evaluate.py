@@ -4,7 +4,7 @@
 @date: 2023/4/27 上午9:35
 @file: vocevaluate.py
 @author: zj
-@description: 
+@description:
 """
 import os
 import glob
@@ -48,7 +48,9 @@ def test_voc_evaluate():
         all_boxes_dict[class_name] = box_list
 
     val_evaluator.all_boxes_dict = all_boxes_dict
-    val_evaluator.result()
+    ap50, ap50_95 = val_evaluator.result()
+    print('ap50:', ap50)
+    print('ap50_95:', ap50_95)
 
 
 if __name__ == '__main__':
