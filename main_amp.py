@@ -223,7 +223,6 @@ def main():
                 'epoch': epoch + 1,
                 'ap50': ap50,
                 'ap50_95': ap50_95,
-                'best_ap50': best_ap50,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict()
