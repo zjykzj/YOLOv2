@@ -63,6 +63,7 @@ def train(args: Namespace,
     random_resize = cfg['AUGMENTATION']['RANDOM_RESIZE']
     if random_resize:
         assert hasattr(train_loader.dataset, 'set_img_size')
+        assert hasattr(train_loader.dataset, 'get_img_size')
     optimizer.zero_grad()
     for i, (input, target) in enumerate(train_loader):
         if is_warmup and epoch < warmup_epoch:

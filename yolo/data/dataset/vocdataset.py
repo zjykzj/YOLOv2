@@ -166,3 +166,9 @@ class VOCDataset(Dataset):
 
     def __len__(self):
         return len(self.image_path_list)
+
+    def set_img_size(self, img_size):
+        self.target_size = img_size
+
+    def get_img_size(self):
+        return self.target_size
