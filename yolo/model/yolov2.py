@@ -206,7 +206,7 @@ class YOLOLayer(nn.Module):
         # [B, num_anchors * (5+num_classes), H, W] ->
         # [B, num_anchors, 5+num_classes, H, W] ->
         # [B, num_anchors, H, W, 5+num_classes]
-        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, F_size, F_size) \
+        outputs = outputs.reshape(B, self.num_anchors, n_ch, F_size, F_size) \
             .permute(0, 1, 3, 4, 2)
 
         # grid coordinate
@@ -248,6 +248,7 @@ class YOLOLayer(nn.Module):
         # Enlarge the predicted box coordinates to the input image
         outputs[..., :4] *= self.stride
         # [B, num_anchors, H, W, n_ch] -> [B, num_anchors * H * W, n_ch]
+        # n_ch: [x_c, y_c, w, h, conf, class_probs]
         return outputs.reshape(B, -1, n_ch)
 
 
