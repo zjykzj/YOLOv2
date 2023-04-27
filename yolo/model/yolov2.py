@@ -183,19 +183,20 @@ class YOLOLayer(nn.Module):
     2. 结合锚点框数据进行预测框坐标转换
     """
 
-    def __init__(self, anchors, num_classes=20, target_size=416, stride=32):
+    stride = 32
+
+    def __init__(self, anchors, num_classes=20):
         super(YOLOLayer, self).__init__()
         assert isinstance(anchors, Tensor)
         self.anchors = anchors
         self.num_classes = num_classes
-        self.target_size = target_size
-        self.stride = stride
 
         self.num_anchors = len(self.anchors)
-        # self.F_size = target_size // stride
 
     def forward(self, outputs: Tensor):
-        B, C, F_size, _ = outputs.shape[:4]
+        B, C, H, W = outputs.shape[:4]
+        assert H == W
+        F_size = H
         n_ch = 5 + self.num_classes
         assert C == (self.num_anchors * n_ch)
 
@@ -205,26 +206,27 @@ class YOLOLayer(nn.Module):
         # [B, num_anchors * (5+num_classes), H, W] ->
         # [B, num_anchors, 5+num_classes, H, W] ->
         # [B, num_anchors, H, W, 5+num_classes]
-        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, self.F_size, self.F_size) \
+        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, F_size, F_size) \
             .permute(0, 1, 3, 4, 2)
 
         # grid coordinate
         # [F_size] -> [B, num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(self.F_size), (B, self.num_anchors, self.F_size, self.F_size)) \
+        x_shift = torch.broadcast_to(torch.arange(F_size), (B, self.num_anchors, F_size, F_size)) \
             .to(dtype=dtype, device=device)
         # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
-        y_shift = torch.broadcast_to(torch.arange(self.F_size).reshape(self.F_size, 1),
-                                     (B, self.num_anchors, self.F_size, self.F_size)) \
+        y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1),
+                                     (B, self.num_anchors, F_size, F_size)) \
             .to(dtype=dtype, device=device)
 
+        anchors = self.anchors * F_size
         # broadcast anchors to all grids
         # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
         w_anchors = torch.broadcast_to(
-            self.anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, self.F_size, self.F_size]).to(dtype=dtype, device=device)
+            anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
+            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
         h_anchors = torch.broadcast_to(
-            self.anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, self.F_size, self.F_size]).to(dtype=dtype, device=device)
+            anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
+            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
 
         # b_x = sigmoid(t_x) + c_x
         # b_y = sigmoid(t_y) + c_y
@@ -236,24 +238,27 @@ class YOLOLayer(nn.Module):
         outputs[..., 0] += x_shift
         outputs[..., 1] += y_shift
         # exp()
-        outputs[..., 2:4] = torch.exp(outputs[..., 2:3])
+        outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
         outputs[..., 2] *= w_anchors
         outputs[..., 3] *= h_anchors
+
         # 分类概率压缩
         outputs = torch.softmax(outputs[..., 5:], dim=-1)
 
+        # Enlarge the predicted box coordinates to the input image
+        outputs[..., :4] *= self.stride
         # [B, num_anchors, H, W, n_ch] -> [B, num_anchors * H * W, n_ch]
         return outputs.reshape(B, -1, n_ch)
 
 
 class YOLOv2(nn.Module):
 
-    def __init__(self, anchors, target_size=416, num_classes=20, arch='Darknet19', pretrained=None):
+    def __init__(self, anchors, num_classes=20, arch='Darknet19', pretrained=None):
         super(YOLOv2, self).__init__()
 
         self.backbone = Backbone(arch=arch, pretrained=pretrained)
         self.head = Head(num_classes=num_classes, num_anchors=len(anchors))
-        self.yolo_layer = YOLOLayer(anchors, target_size=target_size, num_classes=num_classes)
+        self.yolo_layer = YOLOLayer(anchors, num_classes=num_classes)
 
     def forward(self, x):
         x, last_x = self.backbone(x)

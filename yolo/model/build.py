@@ -24,7 +24,6 @@ def build_model(args: Namespace, cfg: Dict, device=None):
 
     anchors = torch.tensor(cfg['MODEL']['ANCHORS'])
     model = YOLOv2(anchors,
-                   target_size=cfg['TEST']['IMGSIZE'],
                    num_classes=cfg['MODEL']['N_CLASSES'],
                    arch=cfg['MODEL']['BACKBONE'],
                    pretrained=cfg['MODEL']['BACKBONE_PRETRAINED']
