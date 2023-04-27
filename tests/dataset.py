@@ -17,6 +17,7 @@ def test_train(root, cfg):
     print("=> Train")
     name = 'voc2yolov5-train'
     train_dataset = VOCDataset(root, name, train=True, transform=Transform(cfg, is_train=True))
+    print("Total len:", len(train_dataset))
     for i in [31, 62, 100, 633]:
         image, target = train_dataset.__getitem__(i)
         print(i, image.shape, target.shape)
@@ -25,10 +26,14 @@ def test_train(root, cfg):
 def test_val(root, cfg):
     print("=> Val")
     name = 'voc2yolov5-val'
-    train_dataset = VOCDataset(root, name, train=False, transform=Transform(cfg, is_train=False))
-    for i in [31, 62, 100, 633]:
-        image, target = train_dataset.__getitem__(i)
+    val_dataset = VOCDataset(root, name, train=False, transform=Transform(cfg, is_train=False))
+    print("Total len:", len(val_dataset))
+    for i in [31, 62, 100, 166, 169, 170, 633]:
+        image, target = val_dataset.__getitem__(i)
         print(i, image.shape, target['target'].shape, len(target['img_info']))
+    # for i in range(len(val_dataset)):
+    #     image, target = val_dataset.__getitem__(i)
+    #     print(i, image.shape, target['target'].shape, len(target['img_info']))
 
 
 if __name__ == '__main__':
@@ -45,5 +50,5 @@ if __name__ == '__main__':
     # image, target = test_dataset.__getitem__(300)
     # print(image.shape, target.shape)
 
-    test_train(root, cfg)
+    # test_train(root, cfg)
     test_val(root, cfg)
