@@ -341,8 +341,8 @@ class YOLOv2Loss(nn.Module):
                 class_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
 
                 # update iou target and iou mask
-                iou_target[ni, cell_idx, argmax_anchor_idx, :] = max_iou[cell_idx, argmax_anchor_idx, :]
-                iou_mask[ni, cell_idx, argmax_anchor_idx, :] = self.obj_scale
+                iou_target[bi, cell_idx, argmax_anchor_idx, :] = max_iou[cell_idx, argmax_anchor_idx, :]
+                iou_mask[bi, cell_idx, argmax_anchor_idx, :] = self.obj_scale
 
         # [B, H*W, num_anchors, 1] -> [B, H*W*num_anchors, 1]
         iou_target = iou_target.reshape(B, -1, 1)
