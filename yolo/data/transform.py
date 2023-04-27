@@ -125,6 +125,20 @@ def color_dithering(src_img, hue, saturation, exposure):
     return img
 
 
+def xywh2xyxy(boxes, is_center=False):
+    if is_center:
+        # [x_c, y_c, w, h] -> [x1, y1, x2, y2]
+        boxes[:, 0] = (boxes[:, 0] - boxes[:, 2]) / 2
+        boxes[:, 1] = (boxes[:, 1] - boxes[:, 3]) / 2
+        boxes[:, 2] = (boxes[:, 0] + boxes[:, 2])
+        boxes[:, 3] = (boxes[:, 1] + boxes[:, 3])
+    else:
+        # [x1, y1, w, h] -> [x1, y1, x2, y2]
+        boxes[:, 2] = (boxes[:, 0] + boxes[:, 2])
+        boxes[:, 3] = (boxes[:, 1] + boxes[:, 3])
+    return boxes
+
+
 class Transform(object):
 
     def __init__(self, cfg: Dict, is_train: bool = True):
@@ -150,13 +164,15 @@ class Transform(object):
         # self.saturation = 1.5
         # self.exposure = 1.5
 
-    def __call__(self, img: ndarray, bboxes: List, img_size: int):
+    def __call__(self, index: int, img: ndarray, bboxes: List, img_size: int):
         # BGR -> RGB
         img = img[:, :, ::-1]
         if self.is_train:
             # 首先进行缩放+填充+空间抖动
             img, bboxes, img_info = resize_and_pad(img, bboxes, img_size, self.jitter_ratio, self.random_placing)
-            assert np.all(bboxes <= img_size), print(img_info, '\n', bboxes)
+            bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
+            assert np.all(bboxes_xxyy <= img_size), print(
+                f"index: {index}\nimg shape: {img.shape}\nbboxes: {bboxes}\nimg_size: {img_size}\nimg_info: {img_info}\n")
             # 然后进行左右翻转
             # img_info = []
             if self.is_flip and np.random.randn() > 0.5:
@@ -167,7 +183,9 @@ class Transform(object):
         else:
             # 进行缩放+填充，不执行空间抖动
             img, bboxes, img_info = resize_and_pad(img, bboxes, img_size, jitter_ratio=0., random_replacing=False)
-            assert np.all(bboxes <= img_size), print(f"img_info: {img_info}\nbboxes: {bboxes}\nimg_size: {img_size}")
+            bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
+            assert np.all(bboxes_xxyy <= img_size), print(
+                f"index: {index}\nimg shape: {img.shape}\nbboxes: {bboxes}\nimg_size: {img_size}\nimg_info: {img_info}\n")
 
         return img, bboxes, img_info
 
