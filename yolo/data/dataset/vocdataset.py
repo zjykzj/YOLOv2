@@ -141,11 +141,7 @@ class VOCDataset(Dataset):
         if self.train:
             return image, target
         else:
-            target = {
-                'target': target,
-                'img_info': img_info
-            }
-            return image, target
+            return image, target, img_info
 
     def build_target(self, boxes, labels):
         """
