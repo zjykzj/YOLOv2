@@ -51,11 +51,7 @@ ln -s /path/to/voc /path/to/YOLOv2/../datasets/voc
 
 ### Requirements
 
-Refer to [requirements.txt](./requirements.txt) for installing the training environment
-
-```shell
-pip install -r requirements.txt
-```
+See [NVIDIA/apex](https://github.com/NVIDIA/apex)
 
 ### Container
 
