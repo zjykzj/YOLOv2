@@ -15,7 +15,7 @@ from .voc_eval import voc_eval
 
 
 def do_python_eval(all_boxes_dict, classes, VOCdevkit_dir, year=2012, split='val'):
-    annotation_path = os.path.join(VOCdevkit_dir, 'VOC' + year, 'Annotations', '{:s}.xml')
+    annotation_path = os.path.join(VOCdevkit_dir, f'VOC{year}', 'Annotations', '{:s}.xml')
     imageset_file = os.path.join(VOCdevkit_dir, f'VOC{year}', 'ImageSets', 'Main', f'{split}.txt')
 
     # The PASCAL VOC metric changed in 2010
@@ -60,7 +60,7 @@ class VOCEvaluator(Evaluator):
         self.year = year
         self.split = split
 
-        self.all_boxes = dict()
+        self.all_boxes_dict = dict()
 
     def put(self, outputs, img_info):
         assert isinstance(img_info, list)
