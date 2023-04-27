@@ -12,6 +12,7 @@ import numpy as np
 
 from .evaluator import Evaluator
 from .voc_eval import voc_eval
+from yolo.util.utils import yolobox2label
 
 
 def do_python_eval(all_boxes_dict, classes, VOCdevkit_dir, year=2012, split='val'):
@@ -71,11 +72,11 @@ class VOCEvaluator(Evaluator):
         self.ids.append(image_name)
 
         for output in outputs:
-            # [x1, y1, x2, y2]
             x1 = float(output[0])
             y1 = float(output[1])
             x2 = float(output[2])
             y2 = float(output[3])
+            y1, x1, y2, x2 = yolobox2label([y1, x1, y2, x2], img_info)
             # 置信度 = 目标置信度 * 分类置信度
             # object score * class score
             score = float(output[4].data.item() * output[5].data.item())
