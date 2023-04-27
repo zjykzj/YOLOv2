@@ -136,12 +136,16 @@ class VOCDataset(Dataset):
         # boxes = xywh2xyxy(boxes)
         target = self.build_target(boxes, labels)
 
-        image_name = os.path.splitext(os.path.basename(image_path))[0]
-        img_info.append(image_name)
         if self.train:
             return image, target
         else:
-            return image, target, img_info
+            image_name = os.path.splitext(os.path.basename(image_path))[0]
+            target = {
+                'target': target,
+                'img_info': img_info,
+                'image_name': image_name
+            }
+            return image, target
 
     def build_target(self, boxes, labels):
         """

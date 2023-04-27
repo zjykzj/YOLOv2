@@ -65,18 +65,17 @@ class VOCEvaluator(Evaluator):
 
     def put(self, outputs, img_info):
         assert isinstance(img_info, list)
-        assert len(img_info) == 7
+        assert len(img_info) == 8, len(img_info)
         # super().put(outputs, img_info)
 
         image_name = int(img_info[-1])
-        self.ids.append(image_name)
 
         for output in outputs:
             x1 = float(output[0])
             y1 = float(output[1])
             x2 = float(output[2])
             y2 = float(output[3])
-            y1, x1, y2, x2 = yolobox2label([y1, x1, y2, x2], img_info)
+            y1, x1, y2, x2 = yolobox2label([y1, x1, y2, x2], img_info[:6])
             # 置信度 = 目标置信度 * 分类置信度
             # object score * class score
             score = float(output[4].data.item() * output[5].data.item())

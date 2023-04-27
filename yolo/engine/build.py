@@ -14,6 +14,7 @@ import random
 from argparse import Namespace
 from tqdm import tqdm
 
+from torch import Tensor
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -135,8 +136,11 @@ def validate(val_loader: DataLoader,
     model.eval()
 
     end = time.time()
-    for i, (imgs, targets, img_infos) in enumerate(tqdm(val_loader)):
+    for i, (imgs, targets) in enumerate(tqdm(val_loader)):
         assert len(imgs) == 1, "Only supports single image inference."
+        img_info = targets['img_info']
+        img_info = [x.item() if isinstance(x, Tensor) else x for x in img_info]
+        img_info.append(targets['image_name'][0])
 
         # 模型推理，返回预测结果
         # img: [B, 3, 416, 416]
@@ -151,8 +155,7 @@ def validate(val_loader: DataLoader,
             continue
         # 提取单张图片的运行结果
         # [B, N_ind, 7] -> [N_ind, 7]
-        output = outputs[0].cpu().data
-        val_evaluator.put(output, img_infos[0])
+        val_evaluator.put(outputs[0].cpu().data, img_info)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
