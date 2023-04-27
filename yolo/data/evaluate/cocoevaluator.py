@@ -6,7 +6,7 @@
 @author: zj
 @description: 
 """
-
+from typing import List
 import json
 import tempfile
 
@@ -28,7 +28,7 @@ class COCOEvaluator(Evaluator):
         self.ids = list()
         self.data_list = list()
 
-    def put(self, outputs, img_info):
+    def put(self, outputs: List[List], img_info: List):
         # 从这里也判断出是单个推理
         id_ = int(img_info[-2])
         # 将原始图像下标挨个保存

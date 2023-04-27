@@ -6,6 +6,7 @@
 @author: zj
 @description:
 """
+from typing import List
 
 import os
 import numpy as np
@@ -65,7 +66,7 @@ class VOCEvaluator(Evaluator):
         for cls_name in self.classes:
             self.all_boxes_dict[cls_name] = list()
 
-    def put(self, outputs, img_info):
+    def put(self, outputs: List[List], img_info: List):
         assert isinstance(img_info, list)
         assert len(img_info) == 8, len(img_info)
         # super().put(outputs, img_info)

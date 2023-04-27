@@ -6,13 +6,13 @@
 @author: zj
 @description: 
 """
-
+from typing import List
 from abc import ABC
 
 
 class Evaluator(ABC):
 
-    def put(self, outputs, img_info):
+    def put(self, outputs: List[List], img_info: List):
         pass
 
     def result(self):
