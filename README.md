@@ -19,8 +19,13 @@
 
 - [Table of Contents](#table-of-contents)
 - [Background](#background)
+- [Prepare Data](#prepare-data)
+  - [Pascal VOC](#pascal-voc)
 - [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Container](#container)
 - [Usage](#usage)
+  - [Train](#train)
 - [Maintainers](#maintainers)
 - [Thanks](#thanks)
 - [Contributing](#contributing)
@@ -32,13 +37,43 @@ YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has
 
 This repository references many repositories implementations, including [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch) and [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch), as well as [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3).
 
+## Prepare Data
+
+### Pascal VOC
+
+Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py) to obtain Pascal VOC datasets. Softlink the folder where the dataset is located to the specified location:
+
+```shell
+ln -s /path/to/voc /path/to/YOLOv2/../datasets/voc
+```
+
 ## Installation
 
-...
+### Requirements
+
+Refer to [requirements.txt](./requirements.txt) for installing the training environment
+
+```shell
+pip install -r requirements.txt
+```
+
+### Container
+
+Development environment (Use nvidia docker container)
+
+```shell
+docker run --gpus all -it --rm -v </path/to/YOLOv2>:/app/YOLOv2 -v </path/to/voc>:/app/datasets/voc nvcr.io/nvidia/pytorch:22.08-py3
+```
 
 ## Usage
 
-...
+### Train
+
+* One GPU
+
+```shell
+CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_default.cfg --opt-level=O1 ../datasets/voc
+```
 
 ## Maintainers
 
