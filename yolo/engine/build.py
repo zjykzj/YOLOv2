@@ -126,8 +126,8 @@ def validate(val_loader: DataLoader,
              val_evaluator: Evaluator,
              model: Module,
              num_classes: int = 20,
-             conf_threshold: float = 0.005,
-             nms_threshold: float = 0.45,
+             conf_thresh: float = 0.005,
+             nms_thresh: float = 0.45,
              device: torch.device = None):
     batch_time = AverageMeter()
 
@@ -135,28 +135,24 @@ def validate(val_loader: DataLoader,
     model.eval()
 
     end = time.time()
-    for i, (img, target) in enumerate(tqdm(val_loader)):
-        assert len(img) == 1, "Only supports single image inference."
-        assert isinstance(target, list) and isinstance(target[0], dict)
+    for i, (imgs, targets, img_infos) in enumerate(tqdm(val_loader)):
+        assert len(imgs) == 1, "Only supports single image inference."
 
-        with torch.no_grad():
-            # 模型推理，返回预测结果
-            # img: [B, 3, 416, 416]
-            outputs = model(img.to(device))
+        # 模型推理，返回预测结果
+        # img: [B, 3, 416, 416]
+        outputs = model(imgs.to(device))
         # 后处理，进行置信度阈值过滤 + NMS阈值过滤
         # 输入outputs: [B, 预测框数目, 85(xywh + obj_confg + num_classes)]
         # 输出outputs: [B, 过滤后的预测框数目, 7(xyxy + obj_conf + cls_prob + cls_id)]
-        outputs = postprocess(outputs, num_classes, conf_threshold, nms_threshold)
+        outputs = postprocess(outputs, num_classes, conf_thresh, nms_thresh)
         # 从这里也可以看出是单张推理
         # 如果结果为空，那么不执行后续运算
         if outputs[0] is None:
             continue
         # 提取单张图片的运行结果
-        # outputs: [N_ind, 7]
-        outputs = outputs[0].cpu().data
-
-        img_info = target[0]['img_info']
-        val_evaluator.put(outputs, img_info)
+        # [B, N_ind, 7] -> [N_ind, 7]
+        output = outputs[0].cpu().data
+        val_evaluator.put(output, img_infos[0])
 
         # measure elapsed time
         batch_time.update(time.time() - end)
