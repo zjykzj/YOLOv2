@@ -66,12 +66,12 @@ def train(args: Namespace,
         assert hasattr(train_loader.dataset, 'set_img_size')
         assert hasattr(train_loader.dataset, 'get_img_size')
     optimizer.zero_grad()
-    for i, (input, target) in enumerate(train_loader):
+    for i, (input_data, target) in enumerate(train_loader):
         if is_warmup and epoch < warmup_epoch:
             adjust_learning_rate(cfg, optimizer, epoch, i, len(train_loader))
 
         # compute output
-        output = model(input.to(device))
+        output = model(input_data.to(device))
         loss = criterion(output, target.to(device)) / accumulation_steps
 
         # compute gradient and do SGD step
@@ -94,7 +94,7 @@ def train(args: Namespace,
                 reduced_loss = loss.data
 
             # to_python_float incurs a host<->device sync
-            losses.update(to_python_float(reduced_loss), input.size(0))
+            losses.update(to_python_float(reduced_loss), input_data.size(0))
 
             torch.cuda.synchronize()
             batch_time.update((time.time() - end) / args.print_freq)
@@ -136,15 +136,15 @@ def validate(val_loader: DataLoader,
     model.eval()
 
     end = time.time()
-    for i, (imgs, targets) in enumerate(tqdm(val_loader)):
-        assert len(imgs) == 1, "Only supports single image inference."
+    for i, (input_data, targets) in enumerate(tqdm(val_loader)):
+        assert len(input_data) == 1, "Only supports single image inference."
         img_info = targets['img_info']
         img_info = [x.item() if isinstance(x, Tensor) else x for x in img_info]
         img_info.append(targets['image_name'][0])
 
         # 模型推理，返回预测结果
         # img: [B, 3, 416, 416]
-        outputs = model(imgs.to(device))
+        outputs = model(input_data.to(device))
         # 后处理，进行置信度阈值过滤 + NMS阈值过滤
         # 输入outputs: [B, 预测框数目, 85(xywh + obj_confg + num_classes)]
         # 输出outputs: [B, 过滤后的预测框数目, 7(xyxy + obj_conf + cls_prob + cls_id)]

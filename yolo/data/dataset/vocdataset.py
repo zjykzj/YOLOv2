@@ -107,6 +107,7 @@ class VOCDataset(Dataset):
 
         image = cv2.imread(image_path)
 
+        # import copy
         # src_img = copy.deepcopy(image)
         # for box in boxes:
         #     x_min, y_min, box_w, box_h = box

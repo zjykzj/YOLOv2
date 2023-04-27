@@ -167,7 +167,7 @@ class Transform(object):
         else:
             # 进行缩放+填充，不执行空间抖动
             img, bboxes, img_info = resize_and_pad(img, bboxes, img_size, jitter_ratio=0., random_replacing=False)
-            assert np.all(bboxes <= img_size), print(img_info, '\n', bboxes)
+            assert np.all(bboxes <= img_size), print(f"img_info: {img_info}\nbboxes: {bboxes}\nimg_size: {img_size}")
 
         return img, bboxes, img_info
 
