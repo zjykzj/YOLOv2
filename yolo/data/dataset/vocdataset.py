@@ -9,6 +9,7 @@
 import os
 import cv2
 import glob
+import copy
 
 import numpy as np
 
@@ -30,12 +31,6 @@ def coco2yolobox(labels):
     labels[:, 0] = ((x1 + x2) / 2)
     labels[:, 1] = ((y1 + y2) / 2)
     return labels
-
-
-def xywh2xyxy(boxes):
-    boxes[:, 2] = (boxes[:, 0] + boxes[:, 2])
-    boxes[:, 3] = (boxes[:, 1] + boxes[:, 3])
-    return boxes
 
 
 class VOCDataset(Dataset):
@@ -98,12 +93,12 @@ class VOCDataset(Dataset):
 
         self.box_list = np.array(box_list, dtype=object)
         self.label_list = label_list
-        self.num_classes = 20
+        self.num_classes = len(self.classes)
 
     def __getitem__(self, index) -> T_co:
         image_path = self.image_path_list[index]
-        boxes = self.box_list[index]
-        labels = self.label_list[index]
+        boxes = copy.deepcopy(self.box_list[index])
+        labels = copy.deepcopy(self.label_list[index])
 
         image = cv2.imread(image_path)
 
@@ -115,7 +110,7 @@ class VOCDataset(Dataset):
         #                   (255, 255, 255), 1)
         # cv2.imshow('src_img', src_img)
 
-        image, boxes, img_info = self.transform(image, boxes, self.target_size)
+        image, boxes, img_info = self.transform(index, image, boxes, self.target_size)
 
         # dst_img = copy.deepcopy(image).astype(np.uint8)
         # dst_img = cv2.cvtColor(dst_img, cv2.COLOR_RGB2BGR)
