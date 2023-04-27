@@ -240,7 +240,7 @@ class YOLOLayer(nn.Module):
         outputs[..., 3] *= h_anchors
 
         # 分类概率压缩
-        outputs = torch.softmax(outputs[..., 5:], dim=-1)
+        outputs[..., 5:] = torch.softmax(outputs[..., 5:], dim=-1)
 
         # Scale relative to image width/height
         outputs[..., :4] *= self.stride
