@@ -165,8 +165,8 @@ class YOLOv2Loss(nn.Module):
         iou_mask = torch.ones((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
         iou_mask *= self.noobj_scale
 
-        # [B, H*W, num_anchors, 1]
-        box_target = torch.zeros((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
+        # [B, H*W, num_anchors, 4]
+        box_target = torch.zeros((B, F_size * F_size, self.num_anchors, 4)).to(dtype=dtype, device=device)
         box_mask = torch.zeros((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
 
         # [B, H*W, num_anchors, 1]
@@ -271,7 +271,7 @@ class YOLOv2Loss(nn.Module):
 
             # 放大到网格大小
             gt_boxes[..., 0::2] *= F_size
-            gt_boxes[..., 0::4] *= F_size
+            gt_boxes[..., 1::2] *= F_size
             # [xc, yc, w, h] -> [x1, y1, x2, y2]
             gt_boxes_xxyy = xywh2xxyy(gt_boxes)
 
