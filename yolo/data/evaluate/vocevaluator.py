@@ -62,6 +62,8 @@ class VOCEvaluator(Evaluator):
         self.split = split
 
         self.all_boxes_dict = dict()
+        for cls_name in self.classes:
+            self.all_boxes_dict[cls_name] = list()
 
     def put(self, outputs, img_info):
         assert isinstance(img_info, list)
@@ -71,6 +73,7 @@ class VOCEvaluator(Evaluator):
         image_name = int(img_info[-1])
 
         for output in outputs:
+            assert len(output) == 7, output
             x1 = float(output[0])
             y1 = float(output[1])
             x2 = float(output[2])
@@ -82,8 +85,6 @@ class VOCEvaluator(Evaluator):
             # 分类标签
             label_name = self.classes[int(output[6])]
 
-            if label_name not in self.all_boxes_dict.keys():
-                self.all_boxes_dict[label_name] = list()
             self.all_boxes_dict[label_name].append([
                 image_name, score, x1, y1, x2, y2
             ])
