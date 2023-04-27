@@ -196,6 +196,9 @@ class YOLOv2Loss(nn.Module):
         return all_anchors.reshape(F_size * F_size * self.num_anchors, -1)
 
     def make_pred_boxes(self, outputs):
+        dtype = outputs.dtype
+        device = outputs.device
+
         B, C, F_size, _ = outputs.shape[:4]
         # [B, num_anchors * (5+num_classes), H, W] ->
         # [B, num_anchors, 5+num_classes, H, W] ->
@@ -205,19 +208,20 @@ class YOLOv2Loss(nn.Module):
 
         # grid coordinate
         # [F_size] -> [B, num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(F_size), (B, self.num_anchors, F_size, F_size))
+        x_shift = torch.broadcast_to(torch.arange(F_size),
+                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
         # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
         y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1),
-                                     (B, self.num_anchors, F_size, F_size))
+                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
 
         # broadcast anchors to all grids
         # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
         w_anchors = torch.broadcast_to(
             self.anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, F_size, F_size])
+            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
         h_anchors = torch.broadcast_to(
             self.anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, F_size, F_size])
+            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
 
         # b_x = sigmoid(t_x) + c_x
         # b_y = sigmoid(t_y) + c_y
