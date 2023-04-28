@@ -166,7 +166,8 @@ def main():
         resume()
 
     # Data loading code
-    train_sampler, train_loader, val_loader, val_evaluator = build_data(args, cfg)
+    train_loader, train_sampler = build_data(cfg, args.data, is_train=True, is_distributed=args.distributed)
+    val_loader, _, val_evaluator = build_data(cfg, args.data, is_train=False, is_distributed=False)
 
     num_classes = cfg['MODEL']['N_CLASSES']
     conf_thresh = cfg['TEST']['CONFTHRE']
