@@ -29,16 +29,16 @@ def test_val(root, cfg):
     val_dataset = VOCDataset(root, name, train=False, transform=Transform(cfg, is_train=False))
     print("Total len:", len(val_dataset))
 
-    i = 170
-    image, target = val_dataset.__getitem__(i)
-    print(i, image.shape, target['target'].shape, len(target['img_info']))
+    # i = 170
+    # image, target = val_dataset.__getitem__(i)
+    # print(i, image.shape, target['target'].shape, len(target['img_info']), target['image_name'])
 
     # for i in [31, 62, 100, 166, 169, 170, 633]:
     #     image, target = val_dataset.__getitem__(i)
     #     print(i, image.shape, target['target'].shape, len(target['img_info']))
-    # for i in range(len(val_dataset)):
-    #     image, target = val_dataset.__getitem__(i)
-    #     print(i, image.shape, target['target'].shape, len(target['img_info']))
+    for i in range(len(val_dataset)):
+        image, target = val_dataset.__getitem__(i)
+        print(i, image.shape, target['target'].shape, len(target['img_info']), target['image_name'])
 
 
 if __name__ == '__main__':
