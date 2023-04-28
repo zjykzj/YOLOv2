@@ -17,102 +17,7 @@ from torch import Tensor
 
 import torch.nn.functional as F
 
-
-def bboxes_iou(bboxes_a: Tensor, bboxes_b: Tensor, xyxy=True) -> Tensor:
-    """Calculate the Intersection of Unions (IoUs) between bounding boxes.
-    IoU is calculated as a ratio of area of the intersection
-    and area of the union.
-
-    Args:
-        bbox_a (array): An array whose shape is :math:`(N, 4)`.
-            :math:`N` is the number of bounding boxes.
-            The dtype should be :obj:`numpy.float32`.
-        bbox_b (array): An array similar to :obj:`bbox_a`,
-            whose shape is :math:`(K, 4)`.
-            The dtype should be :obj:`numpy.float32`.
-    Returns:
-        array:
-        An array whose shape is :math:`(N, K)`. \
-        An element at index :math:`(n, k)` contains IoUs between \
-        :math:`n` th bounding box in :obj:`bbox_a` and :math:`k` th bounding \
-        box in :obj:`bbox_b`.
-
-    from: https://github.com/chainer/chainercv
-    """
-    # bboxes_a: [N_a, 4]
-    # bboxes_b: [N_b, 4]
-    if bboxes_a.shape[1] != 4 or bboxes_b.shape[1] != 4:
-        raise IndexError
-
-    # top left
-    if xyxy:
-        # xyxy: x_top_left, y_top_left, x_bottom_right, y_bottom_right
-        # 计算交集矩形的左上角坐标
-        # torch.max([N_a, 1, 2], [N_b, 2]) -> [N_a, N_b, 2]
-        # torch.max: 双重循环
-        #   第一重循环 for i in range(N_a)，遍历boxes_a, 获取边界框i，大小为[2]
-        #       第二重循环　for j in range(N_b)，遍历bboxes_b，获取边界框j，大小为[2]
-        #           分别比较i[0]/j[0]和i[1]/j[1]，获取得到最大的x/y
-        #   遍历完成后，获取得到[N_a, N_b, 2]
-        tl = torch.max(bboxes_a[:, None, :2], bboxes_b[:, :2])
-        # bottom right
-        # 计算交集矩形的右下角坐标
-        # torch.min([N_a, 1, 2], [N_b, 2]) -> [N_a, N_b, 2]
-        br = torch.min(bboxes_a[:, None, 2:], bboxes_b[:, 2:])
-        # 计算bboxes_a的面积
-        # x_bottom_right/y_bottom_right - x_top_left/y_top_left = w/h
-        # prod([N, w/h], 1) = [N], 每个item表示边界框的面积w*h
-        area_a = torch.prod(bboxes_a[:, 2:] - bboxes_a[:, :2], 1)
-        area_b = torch.prod(bboxes_b[:, 2:] - bboxes_b[:, :2], 1)
-    else:
-        # x_center/y_center -> x_top_left, y_top_left
-        tl = torch.max((bboxes_a[:, None, :2] - bboxes_a[:, None, 2:] / 2),
-                       (bboxes_b[:, :2] - bboxes_b[:, 2:] / 2))
-        # bottom right
-        # x_center/y_center -> x_bottom_right/y_bottom_right
-        br = torch.min((bboxes_a[:, None, :2] + bboxes_a[:, None, 2:] / 2),
-                       (bboxes_b[:, :2] + bboxes_b[:, 2:] / 2))
-
-        # prod([N_a, w/h], 1) = [N_a], 每个item表示边界框的面积w*h
-        area_a = torch.prod(bboxes_a[:, 2:], 1)
-        area_b = torch.prod(bboxes_b[:, 2:], 1)
-    # 判断符合条件的结果：x_top_left/y_top_left < x_bottom_right/y_bottom_right
-    # [N_a, N_b, 2] < [N_a, N_b, 2] = [N_a, N_b, 2]
-    # prod([N_a, N_b, 2], 2) = [N_a, N_b], 数值为1/0
-    en = (tl < br).type(tl.type()).prod(dim=2)
-    # 首先计算交集w/h: [N_a, N_b, 2] - [N_a, N_b, 2] = [N_a, N_b, 2]
-    # 然后计算交集面积：prod([N_a, N_b, 2], 2) = [N_a, N_b]
-    # 然后去除不符合条件的交集面积
-    # [N_a, N_b] * [N_a, N_b](数值为1/0) = [N_a, N_b]
-    # 大小为[N_a, N_b]，表示bboxes_a的每个边界框与bboxes_b的每个边界框之间的IoU
-    area_i = torch.prod(br - tl, 2) * en  # * ((tl < br).all())
-
-    # 计算IoU
-    # 首先计算所有面积
-    # area_a[:, None] + area_b - area_i =
-    # [N_a, 1] + [N_b] - [N_a, N_b] = [N_a, N_b]
-    # 然后交集面积除以所有面积，计算IoU
-    # [N_a, N_b] / [N_a, N_b] = [N_a, N_b]
-    return area_i / (area_a[:, None] + area_b - area_i)
-
-
-def xywh2xxyy(boxes):
-    """
-    [x_c, y_c, w, h] -> [x1, y1, x2, y2]
-    """
-    assert len(boxes.shape) == 2 and boxes.shape[1] == 4
-    x1 = boxes[:, 0] - (boxes[:, 2]) / 2
-    y1 = boxes[:, 1] - (boxes[:, 3]) / 2
-    x2 = boxes[:, 0] + (boxes[:, 2]) / 2
-    y2 = boxes[:, 1] + (boxes[:, 3]) / 2
-
-    x1 = x1.view(-1, 1)
-    y1 = y1.view(-1, 1)
-    x2 = x2.view(-1, 1)
-    y2 = y2.view(-1, 1)
-
-    boxes_xxyy = torch.cat([x1, y1, x2, y2], dim=1)
-    return boxes_xxyy
+from yolo.util.box_utils import xywh2xyxy, bboxes_iou
 
 
 def make_deltas(box1, box2):
@@ -214,14 +119,13 @@ class YOLOv2Loss(nn.Module):
         y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1),
                                      (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
 
+        anchors = self.anchors * F_size
         # broadcast anchors to all grids
         # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
-        w_anchors = torch.broadcast_to(
-            self.anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
-        h_anchors = torch.broadcast_to(
-            self.anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
-            [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
+        w_anchors = torch.broadcast_to(anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
+                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
+        h_anchors = torch.broadcast_to(anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
+                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
 
         # b_x = sigmoid(t_x) + c_x
         # b_y = sigmoid(t_y) + c_y
@@ -243,16 +147,17 @@ class YOLOv2Loss(nn.Module):
         return pred_boxes.permute(0, 2, 3, 1, 4).reshape(B, F_size * F_size, self.num_anchors, -1)
 
     def build_targets(self, outputs: Tensor, targets: Tensor):
-        B, C, F_size, _ = outputs.shape[:4]
+        B, C, H, W = outputs.shape[:4]
         assert C == self.num_anchors * (5 + self.num_classes)
+        assert H == W
+        F_size = H
 
         dtype = outputs.dtype
         device = outputs.device
+
         # [B, H*W, num_anchors, 4]
         # pred_box: [x_c, y_c, w, h]
         all_pred_boxes = self.make_pred_boxes(outputs)
-
-        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_mask(B, F_size, dtype, device)
 
         # [H*W*num_anchors, 4]
         # [4] = [x_c, y_c, w, h] 坐标相对于网格大小
@@ -260,6 +165,8 @@ class YOLOv2Loss(nn.Module):
 
         # [B, num_max_det, 5] -> [B, num_max_det] -> [B]
         gt_num_objs = (targets.sum(dim=2) > 0).sum(dim=1)
+
+        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_mask(B, F_size, dtype, device)
         # 逐图像操作
         for bi in range(B):
             num_obj = gt_num_objs[bi]
@@ -273,7 +180,7 @@ class YOLOv2Loss(nn.Module):
             gt_boxes[..., 0::2] *= F_size
             gt_boxes[..., 1::2] *= F_size
             # [xc, yc, w, h] -> [x1, y1, x2, y2]
-            gt_boxes_xxyy = xywh2xxyy(gt_boxes)
+            gt_boxes_xxyy = xywh2xyxy(gt_boxes, is_center=True)
 
             # [H*W, num_anchors, 4] -> [H*W*num_anchors, 4]
             # pred_box: [x_c, y_c, w, h]
