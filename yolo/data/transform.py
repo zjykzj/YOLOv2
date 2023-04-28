@@ -6,6 +6,7 @@
 @author: zj
 @description: 
 """
+import copy
 from typing import Dict, List
 
 import cv2
@@ -126,17 +127,43 @@ def color_dithering(src_img, hue, saturation, exposure):
 
 
 def xywh2xyxy(boxes, is_center=False):
+    boxes_xxyy = copy.deepcopy(boxes)
     if is_center:
         # [x_c, y_c, w, h] -> [x1, y1, x2, y2]
-        boxes[:, 0] = (boxes[:, 0] - boxes[:, 2]) / 2
-        boxes[:, 1] = (boxes[:, 1] - boxes[:, 3]) / 2
-        boxes[:, 2] = (boxes[:, 0] + boxes[:, 2])
-        boxes[:, 3] = (boxes[:, 1] + boxes[:, 3])
+        boxes_xxyy[:, 0] = (boxes[:, 0] - boxes[:, 2] / 2)
+        boxes_xxyy[:, 1] = (boxes[:, 1] - boxes[:, 3] / 2)
+        boxes_xxyy[:, 2] = (boxes[:, 0] + boxes[:, 2] / 2)
+        boxes_xxyy[:, 3] = (boxes[:, 1] + boxes[:, 3] / 2)
     else:
         # [x1, y1, w, h] -> [x1, y1, x2, y2]
-        boxes[:, 2] = (boxes[:, 0] + boxes[:, 2])
-        boxes[:, 3] = (boxes[:, 1] + boxes[:, 3])
-    return boxes
+        boxes_xxyy[:, 2] = (boxes[:, 0] + boxes[:, 2])
+        boxes_xxyy[:, 3] = (boxes[:, 1] + boxes[:, 3])
+    return boxes_xxyy
+
+
+def xyxy2xywh(boxes, is_center=False):
+    boxes_xywh = copy.deepcopy(boxes)
+    if is_center:
+        # [x1, y1, x2, y2] -> [x_c, y_c, w, h]
+        boxes_xywh[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2
+        boxes_xywh[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2
+        boxes_xywh[:, 2] = (boxes[:, 2] - boxes[:, 0])
+        boxes_xywh[:, 3] = (boxes[:, 3] - boxes[:, 1])
+    else:
+        # [x1, y1, x2, y2] -> [x1, y1, w, h]
+        boxes_xywh[:, 2] = (boxes[:, 2] - boxes[:, 0])
+        boxes_xywh[:, 3] = (boxes[:, 3] + boxes[:, 1])
+    return boxes_xywh
+
+
+def print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info):
+    print(f"index: {index}")
+    print(f"img: {img.shape}")
+    print(f"bboxes:\n{bboxes}")
+    print(f"bboxes_xxyy:\n{bboxes_xxyy}")
+    print(f"img_size: {img_size}")
+    print(f"img_info: {img_info}")
+    print(f"bboxes_xxyy <= img_size:\n{bboxes_xxyy <= float(img_size)}")
 
 
 class Transform(object):
@@ -170,9 +197,12 @@ class Transform(object):
         if self.is_train:
             # 首先进行缩放+填充+空间抖动
             img, bboxes, img_info = resize_and_pad(img, bboxes, img_size, self.jitter_ratio, self.random_placing)
+
             bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
-            assert np.all(bboxes_xxyy <= img_size), print(
-                f"index: {index}\nimg shape: {img.shape}\nbboxes: {bboxes}\nimg_size: {img_size}\nimg_info: {img_info}\n")
+            bboxes_xxyy = np.clip(bboxes_xxyy, 0., img_size - 0.0001)
+            assert np.all(bboxes_xxyy < img_size), print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info)
+            bboxes = xyxy2xywh(bboxes_xxyy, is_center=False)
+
             # 然后进行左右翻转
             # img_info = []
             if self.is_flip and np.random.randn() > 0.5:
@@ -183,9 +213,11 @@ class Transform(object):
         else:
             # 进行缩放+填充，不执行空间抖动
             img, bboxes, img_info = resize_and_pad(img, bboxes, img_size, jitter_ratio=0., random_replacing=False)
+
             bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
-            assert np.all(bboxes_xxyy <= img_size), print(
-                f"index: {index}\nimg shape: {img.shape}\nbboxes: {bboxes}\nimg_size: {img_size}\nimg_info: {img_info}\n")
+            bboxes_xxyy = np.clip(bboxes_xxyy, 0., img_size - 0.0001)
+            assert np.all(bboxes_xxyy < img_size), print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info)
+            bboxes = xyxy2xywh(bboxes_xxyy, is_center=False)
 
         return img, bboxes, img_info
 
