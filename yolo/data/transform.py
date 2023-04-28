@@ -51,7 +51,7 @@ def resize_and_pad(src_img, bboxes, dst_size, jitter_ratio=0.0, random_replacing
 
     # 先进行图像缩放，然后创建目标图像，填充ROI区域
     resized_img = cv2.resize(src_img, (dst_w, dst_h))
-    padded_img = np.zeros((dst_size, dst_size, 3), dtype=np.uint8) * 127
+    padded_img = np.ones((dst_size, dst_size, 3), dtype=np.uint8) * 127
     padded_img[dy:dy + dst_h, dx:dx + dst_w, :] = resized_img
 
     if len(bboxes) > 0:
