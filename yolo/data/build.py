@@ -23,7 +23,6 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
     max_det_num = cfg['DATA']['MAX_NUM_LABELS']
 
     sampler = None
-    collate_fn = torch.utils.data.default_collate
 
     if is_train:
         transform = Transform(cfg, is_train=True)
@@ -45,6 +44,7 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
         if is_distributed:
             sampler = torch.utils.data.distributed.DistributedSampler(dataset)
 
+        collate_fn = torch.utils.data.default_collate
         dataloader = torch.utils.data.DataLoader(
             dataset, batch_size=cfg['DATA']['BATCH_SIZE'], shuffle=(sampler is None),
             num_workers=cfg['DATA']['WORKERS'], pin_memory=True, sampler=sampler, collate_fn=collate_fn)

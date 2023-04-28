@@ -14,6 +14,8 @@ import cv2
 from numpy import ndarray
 import numpy as np
 
+from yolo.util.box_utils import xyxy2xywh, xywh2xyxy
+
 
 def resize_and_pad(src_img, bboxes, dst_size, jitter_ratio=0.0, random_replacing=False):
     """
@@ -124,36 +126,6 @@ def color_dithering(src_img, hue, saturation, exposure):
     img = np.asarray(img, dtype=np.float32)
 
     return img
-
-
-def xywh2xyxy(boxes, is_center=False):
-    boxes_xxyy = copy.deepcopy(boxes)
-    if is_center:
-        # [x_c, y_c, w, h] -> [x1, y1, x2, y2]
-        boxes_xxyy[:, 0] = (boxes[:, 0] - boxes[:, 2] / 2)
-        boxes_xxyy[:, 1] = (boxes[:, 1] - boxes[:, 3] / 2)
-        boxes_xxyy[:, 2] = (boxes[:, 0] + boxes[:, 2] / 2)
-        boxes_xxyy[:, 3] = (boxes[:, 1] + boxes[:, 3] / 2)
-    else:
-        # [x1, y1, w, h] -> [x1, y1, x2, y2]
-        boxes_xxyy[:, 2] = (boxes[:, 0] + boxes[:, 2])
-        boxes_xxyy[:, 3] = (boxes[:, 1] + boxes[:, 3])
-    return boxes_xxyy
-
-
-def xyxy2xywh(boxes, is_center=False):
-    boxes_xywh = copy.deepcopy(boxes)
-    if is_center:
-        # [x1, y1, x2, y2] -> [x_c, y_c, w, h]
-        boxes_xywh[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2
-        boxes_xywh[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2
-        boxes_xywh[:, 2] = (boxes[:, 2] - boxes[:, 0])
-        boxes_xywh[:, 3] = (boxes[:, 3] - boxes[:, 1])
-    else:
-        # [x1, y1, x2, y2] -> [x1, y1, w, h]
-        boxes_xywh[:, 2] = (boxes[:, 2] - boxes[:, 0])
-        boxes_xywh[:, 3] = (boxes[:, 3] + boxes[:, 1])
-    return boxes_xywh
 
 
 def print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info):

@@ -83,8 +83,15 @@ class VOCDataset(Dataset):
             for label, xc, yc, box_w, box_h in boxes:
                 x_min = (xc - 0.5 * box_w) * img_w
                 y_min = (yc - 0.5 * box_h) * img_h
+                assert x_min >= 0 and y_min >= 0
+
                 box_w = box_w * img_w
                 box_h = box_h * img_h
+                if (x_min + box_w) >= img_w:
+                    box_w = img_w - x_min - 1
+                if (y_min + box_h) >= img_h:
+                    box_h = img_h - y_min - 1
+
                 # 转换成原始大小，方便后续图像预处理阶段进行转换和调试
                 sub_box_list.append([x_min, y_min, box_w, box_h])
                 sub_label_list.append(int(label))
@@ -102,7 +109,6 @@ class VOCDataset(Dataset):
 
         image = cv2.imread(image_path)
 
-        # import copy
         # src_img = copy.deepcopy(image)
         # for box in boxes:
         #     x_min, y_min, box_w, box_h = box
