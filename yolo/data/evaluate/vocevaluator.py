@@ -71,7 +71,7 @@ class VOCEvaluator(Evaluator):
         assert len(img_info) == 8, len(img_info)
         # super().put(outputs, img_info)
 
-        image_name = int(img_info[-1])
+        image_name = str(img_info[-1])
 
         for output in outputs:
             assert len(output) == 7, output
