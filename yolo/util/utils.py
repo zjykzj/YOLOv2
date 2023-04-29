@@ -13,6 +13,8 @@ import shutil
 
 import numpy as np
 
+from yolo.util.box_utils import xywh2xyxy
+
 
 def to_python_float(t):
     if hasattr(t, 'item'):
@@ -119,18 +121,9 @@ def postprocess(prediction, num_classes, conf_thre=0.005, nms_thre=0.45):
         output (list of torch tensor):
 
     """
-    # 输入prediction: [B, N_bbox, 4+1+80]
-    # [x_center, y_center, box_w, box_h] -> [x_topleft, y_topleft, x_rightbottom, y_rightbottom]
-    box_corner = prediction.new(prediction.shape)
-    # 计算左上角坐标x0 = x_c - w/2
-    box_corner[:, :, 0] = prediction[:, :, 0] - prediction[:, :, 2] / 2
-    # 计算左上角坐标y0 = y_c - h/2
-    box_corner[:, :, 1] = prediction[:, :, 1] - prediction[:, :, 3] / 2
-    # 计算右下角坐标x1 = x_c + w/2
-    box_corner[:, :, 2] = prediction[:, :, 0] + prediction[:, :, 2] / 2
-    # 计算右下角坐标y1 = y_c + h/2
-    box_corner[:, :, 3] = prediction[:, :, 1] + prediction[:, :, 3] / 2
-    prediction[:, :, :4] = box_corner[:, :, :4]
+    pred_boxes_xyxy = xywh2xyxy(prediction[..., :4], is_center=True)
+    pred_boxes_xyxy.clamp_(min=0.)
+    prediction[..., :4] = pred_boxes_xyxy[..., :4]
 
     # 最大的预测数目，按照置信度进行排序后过滤
     max_num_preds = 300
@@ -141,12 +134,11 @@ def postprocess(prediction, num_classes, conf_thre=0.005, nms_thre=0.45):
         # Filter out confidence scores below threshold
         # 计算每个预测框对应的最大类别概率
         # [N_bbox, num_classes] -> {分类概率，对应下标｝-> 分类概率[N_bbox]
-        class_pred = torch.max(image_pred[:, 5:5 + num_classes], 1)[0]
+        class_pred = torch.max(image_pred[:, 5:5 + num_classes], dim=1)[0]
         # 置信度掩码 [N_bbox] -> [N_bbox]
         # Pr(Class_i | Object) * Pr(Object) = Pr(Class_i)
         # 类别概率 * 置信度 = 置信度
-        conf_mask = (image_pred[:, 4] * class_pred >= conf_thre)
-        conf_mask = conf_mask.squeeze()
+        conf_mask = (image_pred[:, 4] * class_pred >= conf_thre).squeeze()
         # 过滤不符合置信度阈值的预测框
         image_pred = image_pred[conf_mask]
 
