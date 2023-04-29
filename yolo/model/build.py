@@ -24,7 +24,7 @@ def build_model(args: Namespace, cfg: Dict, device=None):
 
     model_type = cfg['MODEL']['TYPE']
     if 'YOLOv2' == model_type:
-        anchors = torch.tensor(cfg['MODEL']['ANCHORS'])
+        anchors = torch.FloatTensor(cfg['MODEL']['ANCHORS'])
         model = YOLOv2(anchors,
                        num_classes=cfg['MODEL']['N_CLASSES'],
                        arch=cfg['MODEL']['BACKBONE'],
@@ -40,7 +40,7 @@ def build_model(args: Namespace, cfg: Dict, device=None):
 def build_criterion(cfg: Dict, device=None):
     loss_type = cfg['CRITERION']['TYPE']
     if 'YOLOv2Loss' == loss_type:
-        anchors = torch.tensor(cfg['MODEL']['ANCHORS'])
+        anchors = torch.FloatTensor(cfg['MODEL']['ANCHORS'])
         criterion = YOLOv2Loss(anchors,
                                num_classes=cfg['MODEL']['N_CLASSES'],
                                ignore_thresh=cfg['CRITERION']['IGNORE_THRESH'],
