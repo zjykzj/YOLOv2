@@ -14,18 +14,18 @@ from torch import Tensor
 
 
 def xywh2xyxy(boxes, is_center=False):
-    assert len(boxes.shape) == 2 and boxes.shape[1] == 4
+    assert len(boxes.shape) >= 2 and boxes.shape[-1] == 4
     boxes_xxyy = copy.deepcopy(boxes)
     if is_center:
         # [x_c, y_c, w, h] -> [x1, y1, x2, y2]
-        boxes_xxyy[:, 0] = (boxes[:, 0] - boxes[:, 2] / 2)
-        boxes_xxyy[:, 1] = (boxes[:, 1] - boxes[:, 3] / 2)
-        boxes_xxyy[:, 2] = (boxes[:, 0] + boxes[:, 2] / 2)
-        boxes_xxyy[:, 3] = (boxes[:, 1] + boxes[:, 3] / 2)
+        boxes_xxyy[..., 0] = (boxes[..., 0] - boxes[..., 2] / 2)
+        boxes_xxyy[..., 1] = (boxes[..., 1] - boxes[..., 3] / 2)
+        boxes_xxyy[..., 2] = (boxes[..., 0] + boxes[..., 2] / 2)
+        boxes_xxyy[..., 3] = (boxes[..., 1] + boxes[..., 3] / 2)
     else:
         # [x1, y1, w, h] -> [x1, y1, x2, y2]
-        boxes_xxyy[:, 2] = (boxes[:, 0] + boxes[:, 2])
-        boxes_xxyy[:, 3] = (boxes[:, 1] + boxes[:, 3])
+        boxes_xxyy[..., 2] = (boxes[..., 0] + boxes[..., 2])
+        boxes_xxyy[..., 3] = (boxes[..., 1] + boxes[..., 3])
     return boxes_xxyy
 
 
