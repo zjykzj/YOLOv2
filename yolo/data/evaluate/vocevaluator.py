@@ -111,4 +111,4 @@ class VOCEvaluator(Evaluator):
                               self.year,
                               self.split)
 
-        return ap50, -1.
+        return -1., ap50
