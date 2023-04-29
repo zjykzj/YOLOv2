@@ -7,6 +7,10 @@
 @description:
 假定输入的target标注框坐标格式为[x_c, y_c, w, h]
 预测框经过计算后，得到的也是[x_c, y_c, w, h]
+
+锚点框的宽高是相对于整幅图像的，同样的，标注框的宽高也是相对于整幅图像的，所以可以计算锚点框与标注框之间的IoU
+
+同样的，预测框经过转换后也是相对于整幅图像的，所以可以计算预测框与标注框之间的IoU
 """
 
 import numpy as np
@@ -20,7 +24,7 @@ import torch.nn.functional as F
 from yolo.util.box_utils import xywh2xyxy, bboxes_iou
 
 
-def make_deltas(box1, box2):
+def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
     """
     Calculate the delta values σ(t_x), σ(t_y), exp(t_w), exp(t_h) used for transforming box1 to  box2
 
@@ -33,18 +37,14 @@ def make_deltas(box1, box2):
                    used for transforming boxes to reference boxes
     """
     assert len(box1.shape) == len(box2.shape) == 2
+    # [N, 4] -> [N]
     t_x = box2[:, 0] - box1[:, 0]
     t_y = box2[:, 1] - box1[:, 1]
     t_w = box2[:, 2] / box1[:, 2]
     t_h = box2[:, 3] / box1[:, 3]
 
-    t_x = t_x.view(-1, 1)
-    t_y = t_y.view(-1, 1)
-    t_w = t_w.view(-1, 1)
-    t_h = t_h.view(-1, 1)
-
     # σ(t_x), σ(t_y), exp(t_w), exp(t_h)
-    deltas = torch.cat([t_x, t_y, t_w, t_h], dim=1)
+    deltas = torch.stack([t_x, t_y, t_w, t_h])
     return deltas
 
 
@@ -64,69 +64,46 @@ class YOLOv2Loss(nn.Module):
 
         self.num_anchors = len(anchors)
 
-    def build_mask(self, B, F_size, dtype, device):
+    def build_mask(self, B, H, W, dtype, device):
         # [B, H*W, num_anchors, 1]
-        iou_target = torch.zeros((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
-        iou_mask = torch.ones((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
-        iou_mask *= self.noobj_scale
+        iou_target = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
+        iou_mask = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
 
         # [B, H*W, num_anchors, 4]
-        box_target = torch.zeros((B, F_size * F_size, self.num_anchors, 4)).to(dtype=dtype, device=device)
-        box_mask = torch.zeros((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
+        box_target = torch.zeros((B, H * W, self.num_anchors, 4)).to(dtype=dtype, device=device)
+        box_mask = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
 
         # [B, H*W, num_anchors, 1]
-        class_target = torch.zeros((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
-        class_mask = torch.zeros((B, F_size * F_size, self.num_anchors, 1)).to(dtype=dtype, device=device)
+        class_target = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
+        class_mask = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
 
         return iou_target, iou_mask, box_target, box_mask, class_target, class_mask
-
-    def build_anchors(self, F_size):
-        # grid coordinate
-        # [W] -> [num_anchors, W, W]
-        x_shift = torch.broadcast_to(torch.arange(F_size), (self.num_anchors, F_size, F_size))
-        # [H] -> [H, 1] -> [num_anchors, H, H]
-        y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1), (self.num_anchors, F_size, F_size))
-
-        anchors = self.anchors * F_size
-        # broadcast anchors to all grids
-        # [num_anchors] -> [num_anchors, 1, 1] -> [num_anchors, F_size, F_size]
-        w_anchors = torch.broadcast_to(anchors[:, 0].reshape(self.num_anchors, 1, 1),
-                                       [self.num_anchors, F_size, F_size])
-        h_anchors = torch.broadcast_to(anchors[:, 1].reshape(self.num_anchors, 1, 1),
-                                       [self.num_anchors, F_size, F_size])
-
-        # [4, num_anchors, F_size, F_size] -> [F_size, F_size, num_anchors, 4]
-        # [x_c, y_c, w, h]
-        all_anchors = torch.stack([x_shift + 0.5, y_shift + 0.5, w_anchors, h_anchors]).permute(2, 3, 1, 0)
-        # [F_size, F_size, num_anchors, 4] -> [F_size*F_size*num_anchors, 4]
-        return all_anchors.reshape(F_size * F_size * self.num_anchors, -1)
 
     def make_pred_boxes(self, outputs):
         dtype = outputs.dtype
         device = outputs.device
 
-        B, C, F_size, _ = outputs.shape[:4]
+        B, C, H, W = outputs.shape[:4]
         # [B, num_anchors * (5+num_classes), H, W] ->
         # [B, num_anchors, 5+num_classes, H, W] ->
         # [B, num_anchors, H, W, 5+num_classes]
-        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, F_size, F_size) \
+        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, H, W) \
             .permute(0, 1, 3, 4, 2)
 
         # grid coordinate
-        # [F_size] -> [B, num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(F_size),
-                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
-        # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
-        y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1),
-                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
+        # [F_size] -> [num_anchors, H, W]
+        x_shift = torch.broadcast_to(torch.arange(W),
+                                     (self.num_anchors, H, W)).to(dtype=dtype, device=device)
+        # [F_size] -> [f_size, 1] -> [num_anchors, H, W]
+        y_shift = torch.broadcast_to(torch.arange(H).reshape(H, 1),
+                                     (self.num_anchors, H, W)).to(dtype=dtype, device=device)
 
-        anchors = self.anchors * F_size
         # broadcast anchors to all grids
-        # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
-        w_anchors = torch.broadcast_to(anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
-                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
-        h_anchors = torch.broadcast_to(anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
-                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
+        # [num_anchors] -> [num_anchors, 1, 1] -> [num_anchors, H, W]
+        w_anchors = torch.broadcast_to(self.anchors[:, 0].reshape(self.num_anchors, 1, 1) * W,
+                                       [self.num_anchors, H, W]).to(dtype=dtype, device=device)
+        h_anchors = torch.broadcast_to(self.anchors[:, 1].reshape(self.num_anchors, 1, 1) * H,
+                                       [self.num_anchors, H, W]).to(dtype=dtype, device=device)
 
         # b_x = sigmoid(t_x) + c_x
         # b_y = sigmoid(t_y) + c_y
@@ -135,39 +112,42 @@ class YOLOv2Loss(nn.Module):
         #
         # [B, num_anchors, H, W, 4]
         pred_boxes = outputs[..., :4]
-        # x/y/conf compress to [0,1]
+        # x/y compress to [0,1]
         pred_boxes[..., :2] = torch.sigmoid(pred_boxes[..., :2])
-        pred_boxes[..., 0] += x_shift
-        pred_boxes[..., 1] += y_shift
+        pred_boxes[..., 0] += x_shift.expand(B, self.num_anchors, H, W)
+        pred_boxes[..., 1] += y_shift.expand(B, self.num_anchors, H, W)
         # exp()
         pred_boxes[..., 2:4] = torch.exp(pred_boxes[..., 2:4])
-        pred_boxes[..., 2] *= w_anchors
-        pred_boxes[..., 3] *= h_anchors
+        pred_boxes[..., 2] *= w_anchors.expand(B, self.num_anchors, H, W)
+        pred_boxes[..., 3] *= h_anchors.expand(B, self.num_anchors, H, W)
 
         # [B, num_anchors, H, W, 4] -> [B, H, W, num_anchors, 4] -> [B, H*W, num_anchors, 4]
-        return pred_boxes.permute(0, 2, 3, 1, 4).reshape(B, F_size * F_size, self.num_anchors, -1)
+        pred_boxes = pred_boxes.permute(0, 2, 3, 1, 4).reshape(B, H * W, self.num_anchors, 4)
+
+        # [4, num_anchors, H, W] -> [H, W, num_anchors, 4]
+        # [x_c, y_c, w, h]
+        all_anchors = torch.stack([x_shift + 0.5, y_shift + 0.5, w_anchors, h_anchors]).permute(2, 3, 1, 0)
+        # [H, W, num_anchors, 4] -> [H*W, num_anchors, 4]
+        all_anchors = all_anchors.reshape(H * W, self.num_anchors, -1)
+
+        return pred_boxes, all_anchors
 
     def build_targets(self, outputs: Tensor, targets: Tensor):
         B, C, H, W = outputs.shape[:4]
         assert C == self.num_anchors * (5 + self.num_classes)
-        assert H == W
-        F_size = H
 
         dtype = outputs.dtype
         device = outputs.device
 
-        # [B, H*W, num_anchors, 4]
-        # pred_box: [x_c, y_c, w, h] 坐标相对于网格大小
-        all_pred_boxes = self.make_pred_boxes(outputs)
-
-        # [H*W*num_anchors, 4]
+        # all_pred_boxes: [B, H*W, num_anchors, 4]
+        # all_anchors: [H*W, num_anchors, 4]
         # [4] = [x_c, y_c, w, h] 坐标相对于网格大小
-        all_anchors = self.build_anchors(F_size).to(dtype=dtype, device=device)
+        all_pred_boxes, all_anchors = self.make_pred_boxes(outputs)
 
         # [B, num_max_det, 5] -> [B, num_max_det] -> [B]
         gt_num_objs = (targets.sum(dim=2) > 0).sum(dim=1)
 
-        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_mask(B, F_size, dtype, device)
+        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_mask(B, H, W, dtype, device)
         # 逐图像操作
         for bi in range(B):
             num_obj = gt_num_objs[bi]
@@ -178,8 +158,8 @@ class YOLOv2Loss(nn.Module):
             gt_cls_ids = targets[bi][:num_obj][..., 4]
 
             # 放大到网格大小
-            gt_boxes[..., 0::2] *= F_size
-            gt_boxes[..., 1::2] *= F_size
+            gt_boxes[..., 0::2] *= W
+            gt_boxes[..., 1::2] *= H
             # [xc, yc, w, h] -> [x1, y1, x2, y2]
             gt_boxes_xxyy = xywh2xyxy(gt_boxes, is_center=True)
 
@@ -206,7 +186,8 @@ class YOLOv2Loss(nn.Module):
 
             # 然后计算锚点框与标注框的IoU，保证每个标注框拥有一个对应的正样本
             # overlaps: [H*W*num_anchors, num_obj] -> [H*W, num_anchors, num_obj]
-            overlaps = bboxes_iou(all_anchors, gt_boxes, xyxy=False).reshape(-1, self.num_anchors, num_obj)
+            overlaps = bboxes_iou(all_anchors.reshape(-1, 4),
+                                  gt_boxes, xyxy=False).reshape(-1, self.num_anchors, num_obj)
 
             # iterate over all objects
             # 每个标注框选择一个锚点框进行训练
@@ -225,7 +206,7 @@ class YOLOv2Loss(nn.Module):
                 # 对应网格下标
                 cell_idx_x, cell_idx_y = torch.floor(gt_box_xxyy[:2])
                 # 网格列表下标
-                cell_idx = cell_idx_y * F_size + cell_idx_x
+                cell_idx = cell_idx_y * W + cell_idx_x
                 cell_idx = cell_idx.long()
 
                 # update box_target, box_mask
@@ -235,9 +216,9 @@ class YOLOv2Loss(nn.Module):
                 # 选择IoU最大的锚点框下标
                 argmax_anchor_idx = torch.argmax(overlaps_in_cell)
 
-                # [H*W*Num_anchors, 4] -> [H*W, Num_anchors, 4] -> [4]
+                # [H*W, Num_anchors, 4] -> [4]
                 # 获取对应网格中指定锚点框的坐标 [xc, yc, w, h]
-                response_anchor = all_anchors.view(-1, self.num_anchors, 4)[cell_idx, argmax_anchor_idx, :]
+                response_anchor = all_anchors[cell_idx, argmax_anchor_idx, :]
                 target_delta = make_deltas(response_anchor.unsqueeze(0), gt_box.unsqueeze(0))
 
                 box_target[bi, cell_idx, argmax_anchor_idx, :] = target_delta.squeeze(0)
@@ -250,26 +231,31 @@ class YOLOv2Loss(nn.Module):
 
                 # update iou target and iou mask
                 iou_target[bi, cell_idx, argmax_anchor_idx, :] = max_iou[cell_idx, argmax_anchor_idx, :]
-                iou_mask[bi, cell_idx, argmax_anchor_idx, :] = self.obj_scale
+                iou_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
 
-        # [B, H*W, num_anchors, 1] -> [B, H*W*num_anchors, 1]
-        iou_target = iou_target.reshape(B, -1, 1)
-        iou_mask = iou_mask.reshape(B, -1, 1)
-        # [B, H*W, num_anchors, 4] -> [B, H*W*num_anchors, 4]
-        box_target = box_target.reshape(B, -1, 4)
-        box_mask = box_mask.reshape(B, -1, 1)
-        class_target = class_target.reshape(B, -1, 1).long()
-        class_mask = class_mask.reshape(B, -1, 1)
+        # [B, H*W, num_anchors, 1] -> [B*H*W*num_anchors]
+        iou_target = iou_target.reshape(-1)
+        iou_mask = iou_mask.reshape(-1)
+        # [B, H*W, num_anchors, 4] -> [B*H*W*num_anchors, 4]
+        box_target = box_target.reshape(-1, 4)
+        box_mask = box_mask.reshape(-1)
+        class_target = class_target.reshape(-1).long()
+        class_mask = class_mask.reshape(-1)
 
         return iou_target, iou_mask, box_target, box_mask, class_target, class_mask
 
     def forward(self, outputs, targets):
+        """
+        计算损失需要得到
+        1. 标注框坐标和锚点框坐标之间的delta（作为target）
+        2. 输出卷积特征生成的预测框delta（作为预测结果）
+        """
         iou_target, iou_mask, box_target, box_mask, class_target, class_mask = \
             self.build_targets(outputs.detach().clone(), targets)
 
-        B, _, F_size, _ = outputs.shape[:4]
+        B, _, H, W = outputs.shape[:4]
         # [B, C, H, W] -> [B, num_anchors, 5+num_classes, H, W] -> [B, H, W, num_anchors, 5+num_classes]
-        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, F_size, F_size) \
+        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, H, W) \
             .permute(0, 3, 4, 1, 2)
         # [B, H, W, num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 5+num_classes]
         outputs = outputs.reshape(B, -1, 5 + self.num_classes)
@@ -280,25 +266,19 @@ class YOLOv2Loss(nn.Module):
         # 分类概率压缩
         outputs[..., 5:] = torch.softmax(outputs[..., 5:], dim=-1)
 
-        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 4]
-        pred_deltas = outputs[..., :4]
+        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 4] -> [B*H*W*num_anchors, 4]
+        pred_deltas = outputs[..., :4].reshape(-1, 4)
         # print(torch.max(pred_deltas[..., :2]), torch.min(pred_deltas[..., :2]))
         # print(torch.max(pred_deltas[..., 2:4]), torch.min(pred_deltas[..., 2:4]))
-        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 1]
-        pred_confs = outputs[..., 4:5]
+        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 1] -> [B*H*W*num_anchors]
+        pred_confs = outputs[..., 4:5].reshape(-1)
         # print(torch.max(pred_confs), torch.min(pred_confs))
-        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, num_classes]
-        pred_probs = outputs[..., 5:]
+        # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, num_classes] -> [B*H*W*num_anchors, num_classes]
+        pred_probs = outputs[..., 5:].reshape(-1, self.num_classes)
         # print(torch.max(pred_probs), torch.min(pred_probs))
 
         # --------------------------------------
         # box loss
-        # [B, H*W*num_anchors, 4] -> [B*H*W*num_anchors, 4]
-        pred_deltas = pred_deltas.reshape(-1, 4)
-        box_target = box_target.reshape(-1, 4)
-        # [B, H*W*num_anchors, 1] -> [B*H*W*num_anchors]
-        box_mask = box_mask.reshape(-1)
-
         pred_deltas = pred_deltas[box_mask > 0]
         box_target = box_target[box_mask > 0]
 
@@ -306,25 +286,16 @@ class YOLOv2Loss(nn.Module):
 
         # --------------------------------------
         # iou loss
-        # [B, H*W*num_anchors, 1] -> [B*H*W*num_anchors]
-        pred_confs = pred_confs.reshape(-1)
-        iou_target = iou_target.reshape(-1)
-        iou_mask = iou_mask.reshape(-1)
+        obj_pred_confs = pred_confs[iou_mask > 0]
+        obj_iou_target = iou_target[iou_mask > 0]
+        obj_iou_loss = F.mse_loss(obj_pred_confs, obj_iou_target, reduction='sum')
 
-        pred_confs = pred_confs[iou_mask > 0]
-        iou_target = iou_target[iou_mask > 0]
-
-        iou_loss = F.mse_loss(pred_confs, iou_target, reduction='sum')
+        noobj_pred_confs = pred_confs[iou_mask == 0]
+        noobj_iou_target = iou_target[iou_mask == 0]
+        noobj_iou_loss = F.mse_loss(noobj_pred_confs, noobj_iou_target, reduction='sum')
 
         # --------------------------------------
         # class loss
-        # [B, H*W*num_anchors, num_classes] -> [B*H*W*num_anchors, num_classes]
-        pred_probs = pred_probs.view(-1, self.num_classes)
-        # [B, H*W*num_anchors, 1] -> [B * H * W * num_anchors]
-        class_target = class_target.view(-1)
-        # [B, H * W * num_anchors, 1] -> [B * H * W * num_anchors]
-        class_mask = class_mask.view(-1)
-
         # ignore the gradient of noobject's target
         pred_probs = pred_probs[class_mask > 0]
         class_target = class_target[class_mask > 0]
@@ -333,5 +304,8 @@ class YOLOv2Loss(nn.Module):
         class_loss = F.cross_entropy(pred_probs, class_target, reduction='sum')
 
         # print(f"box_loss: {box_loss} iou_loss: {iou_loss} class_loss: {class_loss}")
-        loss = (box_loss * self.coord_scale + iou_loss + class_loss * self.class_scale) / B
+        loss = (box_loss * self.coord_scale +
+                obj_iou_loss * self.obj_scale +
+                noobj_iou_loss * self.noobj_scale +
+                class_loss * self.class_scale) / B
         return loss
