@@ -140,10 +140,8 @@ def postprocess(prediction, num_classes, conf_thre=0.005, nms_thre=0.45):
         # 计算每幅图像的预测结果
         # Filter out confidence scores below threshold
         # 计算每个预测框对应的最大类别概率
-        # [N_bbox, num_classes] -> ｛分类概率，对应下标｝
-        class_pred = torch.max(image_pred[:, 5:5 + num_classes], 1)
-        # [N_bbox]
-        class_pred = class_pred[0]
+        # [N_bbox, num_classes] -> {分类概率，对应下标｝-> 分类概率[N_bbox]
+        class_pred = torch.max(image_pred[:, 5:5 + num_classes], 1)[0]
         # 置信度掩码 [N_bbox] -> [N_bbox]
         # Pr(Class_i | Object) * Pr(Object) = Pr(Class_i)
         # 类别概率 * 置信度 = 置信度
