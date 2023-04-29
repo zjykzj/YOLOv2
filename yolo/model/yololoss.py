@@ -270,8 +270,6 @@ class YOLOv2Loss(nn.Module):
         outputs[..., np.r_[:2, 4:5]] = torch.sigmoid(outputs[..., np.r_[:2, 4:5]])
         # exp()
         outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
-        # 分类概率压缩
-        outputs[..., 5:] = torch.softmax(outputs[..., 5:], dim=-1)
 
         # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 4] -> [B*H*W*num_anchors, 4]
         pred_deltas = outputs[..., :4].reshape(-1, 4)
