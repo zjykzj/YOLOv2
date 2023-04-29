@@ -55,12 +55,13 @@ def do_python_eval(all_boxes_dict, classes, VOCdevkit_dir, year=2012, split='val
 
 class VOCEvaluator(Evaluator):
 
-    def __init__(self, classes, VOCdevkit_dir, year=2012, split='val'):
+    def __init__(self, classes, VOCdevkit_dir, year=2012, split='val', save=False):
         super().__init__()
         self.classes = classes
         self.VOCdevkit_dir = VOCdevkit_dir
         self.year = year
         self.split = split
+        self.save = save
 
         self.all_boxes_dict = dict()
         for cls_name in self.classes:
@@ -92,6 +93,18 @@ class VOCEvaluator(Evaluator):
 
     def result(self):
         # super().result()
+        if self.save:
+            save_dir = os.path.join(self.VOCdevkit_dir, 'results')
+            if not os.path.isdir(save_dir):
+                os.makedirs(save_dir)
+            for cls_name, all_boxes in self.all_boxes_dict.items():
+                result_cls_path = os.path.join(save_dir, f'{cls_name}.txt')
+                with open(result_cls_path, 'w') as f:
+                    for item in all_boxes:
+                        item = [str(x) for x in item]
+                        line = ' '.join(item)
+                        f.write(line + '\n')
+                print(f"Save to {result_cls_path}")
         ap50 = do_python_eval(self.all_boxes_dict,
                               self.classes,
                               self.VOCdevkit_dir,
