@@ -43,8 +43,13 @@ def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
     t_w = box2[:, 2] / box1[:, 2]
     t_h = box2[:, 3] / box1[:, 3]
 
+    t_x = t_x.view(-1, 1)
+    t_y = t_y.view(-1, 1)
+    t_w = t_w.view(-1, 1)
+    t_h = t_h.view(-1, 1)
+
     # σ(t_x), σ(t_y), exp(t_w), exp(t_h)
-    deltas = torch.stack([t_x, t_y, t_w, t_h])
+    deltas = torch.cat([t_x, t_y, t_w, t_h], dim=1)
     return deltas
 
 
@@ -126,11 +131,11 @@ class YOLOv2Loss(nn.Module):
 
         # [4, num_anchors, H, W] -> [H, W, num_anchors, 4]
         # [x_c, y_c, w, h]
-        all_anchors = torch.stack([x_shift + 0.5, y_shift + 0.5, w_anchors, h_anchors]).permute(2, 3, 1, 0)
+        all_anchors_x1y1 = torch.stack([x_shift, y_shift, w_anchors, h_anchors]).permute(2, 3, 1, 0)
         # [H, W, num_anchors, 4] -> [H*W, num_anchors, 4]
-        all_anchors = all_anchors.reshape(H * W, self.num_anchors, -1)
+        all_anchors_x1y1 = all_anchors_x1y1.reshape(H * W, self.num_anchors, -1)
 
-        return pred_boxes, all_anchors
+        return pred_boxes, all_anchors_x1y1
 
     def build_targets(self, outputs: Tensor, targets: Tensor):
         B, C, H, W = outputs.shape[:4]
@@ -140,9 +145,11 @@ class YOLOv2Loss(nn.Module):
         device = outputs.device
 
         # all_pred_boxes: [B, H*W, num_anchors, 4]
-        # all_anchors: [H*W, num_anchors, 4]
+        # all_anchors_xcyc: [H*W, num_anchors, 4]
         # [4] = [x_c, y_c, w, h] 坐标相对于网格大小
-        all_pred_boxes, all_anchors = self.make_pred_boxes(outputs)
+        all_pred_boxes, all_anchors_x1y1 = self.make_pred_boxes(outputs)
+        all_anchors_xcyc = all_anchors_x1y1.clone()
+        all_anchors_xcyc[..., :2] += 0.5
 
         # [B, num_max_det, 5] -> [B, num_max_det] -> [B]
         gt_num_objs = (targets.sum(dim=2) > 0).sum(dim=1)
@@ -186,7 +193,7 @@ class YOLOv2Loss(nn.Module):
 
             # 然后计算锚点框与标注框的IoU，保证每个标注框拥有一个对应的正样本
             # overlaps: [H*W*num_anchors, num_obj] -> [H*W, num_anchors, num_obj]
-            overlaps = bboxes_iou(all_anchors.reshape(-1, 4),
+            overlaps = bboxes_iou(all_anchors_xcyc.reshape(-1, 4),
                                   gt_boxes, xyxy=False).reshape(-1, self.num_anchors, num_obj)
 
             # iterate over all objects
@@ -204,7 +211,7 @@ class YOLOv2Loss(nn.Module):
                 # 对应的类别下标
                 gt_class = gt_cls_ids[ni]
                 # 对应网格下标
-                cell_idx_x, cell_idx_y = torch.floor(gt_box_xxyy[:2])
+                cell_idx_x, cell_idx_y = torch.floor(gt_box[:2])
                 # 网格列表下标
                 cell_idx = cell_idx_y * W + cell_idx_x
                 cell_idx = cell_idx.long()
@@ -217,11 +224,11 @@ class YOLOv2Loss(nn.Module):
                 argmax_anchor_idx = torch.argmax(overlaps_in_cell)
 
                 # [H*W, Num_anchors, 4] -> [4]
-                # 获取对应网格中指定锚点框的坐标 [xc, yc, w, h]
-                response_anchor = all_anchors[cell_idx, argmax_anchor_idx, :]
-                target_delta = make_deltas(response_anchor.unsqueeze(0), gt_box.unsqueeze(0))
+                # 获取对应网格中指定锚点框的坐标 [x1, y1, w, h]
+                response_anchor_x1y1 = all_anchors_x1y1[cell_idx, argmax_anchor_idx, :]
+                target_delta = make_deltas(response_anchor_x1y1.unsqueeze(0), gt_box.unsqueeze(0)).squeeze(0)
 
-                box_target[bi, cell_idx, argmax_anchor_idx, :] = target_delta.squeeze(0)
+                box_target[bi, cell_idx, argmax_anchor_idx, :] = target_delta
                 box_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
 
                 # update cls_target, cls_mask
