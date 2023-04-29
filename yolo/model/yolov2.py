@@ -195,8 +195,6 @@ class YOLOLayer(nn.Module):
 
     def forward(self, outputs: Tensor):
         B, C, H, W = outputs.shape[:4]
-        assert H == W
-        F_size = H
         n_ch = 5 + self.num_classes
         assert C == (self.num_anchors * n_ch)
 
@@ -206,24 +204,23 @@ class YOLOLayer(nn.Module):
         # [B, num_anchors * (5+num_classes), H, W] ->
         # [B, num_anchors, 5+num_classes, H, W] ->
         # [B, num_anchors, H, W, 5+num_classes]
-        outputs = outputs.reshape(B, self.num_anchors, n_ch, F_size, F_size) \
+        outputs = outputs.reshape(B, self.num_anchors, n_ch, H, W) \
             .permute(0, 1, 3, 4, 2)
 
         # grid coordinate
         # [F_size] -> [B, num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(F_size),
-                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
+        x_shift = torch.broadcast_to(torch.arange(W),
+                                     (B, self.num_anchors, H, W)).to(dtype=dtype, device=device)
         # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
-        y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1),
-                                     (B, self.num_anchors, F_size, F_size)).to(dtype=dtype, device=device)
+        y_shift = torch.broadcast_to(torch.arange(H).reshape(H, 1),
+                                     (B, self.num_anchors, H, W)).to(dtype=dtype, device=device)
 
-        anchors = self.anchors * F_size
         # broadcast anchors to all grids
         # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
-        w_anchors = torch.broadcast_to(anchors[:, 0].reshape(1, self.num_anchors, 1, 1),
-                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
-        h_anchors = torch.broadcast_to(anchors[:, 1].reshape(1, self.num_anchors, 1, 1),
-                                       [B, self.num_anchors, F_size, F_size]).to(dtype=dtype, device=device)
+        w_anchors = torch.broadcast_to(self.anchors[:, 0].reshape(1, self.num_anchors, 1, 1) * W,
+                                       [B, self.num_anchors, H, W]).to(dtype=dtype, device=device)
+        h_anchors = torch.broadcast_to(self.anchors[:, 1].reshape(1, self.num_anchors, 1, 1) * H,
+                                       [B, self.num_anchors, H, W]).to(dtype=dtype, device=device)
 
         # b_x = sigmoid(t_x) + c_x
         # b_y = sigmoid(t_y) + c_y
@@ -244,9 +241,9 @@ class YOLOLayer(nn.Module):
 
         # Scale relative to image width/height
         outputs[..., :4] *= self.stride
-        # [B, num_anchors, H, W, n_ch] -> [B, num_anchors * H * W, n_ch]
+        # [B, num_anchors, H, W, n_ch] -> [B, H, W, num_anchors, n_ch] -> [B, H * W * num_anchors, n_ch]
         # n_ch: [x_c, y_c, w, h, conf, class_probs]
-        return outputs.reshape(B, -1, n_ch)
+        return outputs.permute(0, 2, 3, 1, 4).reshape(B, -1, n_ch)
 
 
 class YOLOv2(nn.Module):
