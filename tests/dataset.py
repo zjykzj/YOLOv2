@@ -18,7 +18,8 @@ def test_train(root, cfg):
     name = 'voc2yolov5-train'
     train_dataset = VOCDataset(root, name, train=True, transform=Transform(cfg, is_train=True))
     print("Total len:", len(train_dataset))
-    for i in [31, 62, 100, 633]:
+    # for i in [31, 62, 100, 633]:
+    for i in range(len(train_dataset)):
         image, target = train_dataset.__getitem__(i)
         print(i, image.shape, target.shape)
 
@@ -45,7 +46,8 @@ if __name__ == '__main__':
     random.seed(10)
     root = '../datasets/voc'
 
-    cfg_file = 'configs/yolov2_default.cfg'
+    # cfg_file = 'configs/yolov2_default.cfg'
+    cfg_file = 'configs/yolov2_best.cfg'
     with open(cfg_file, 'r') as f:
         import yaml
 
@@ -55,5 +57,5 @@ if __name__ == '__main__':
     # image, target = test_dataset.__getitem__(300)
     # print(image.shape, target.shape)
 
-    # test_train(root, cfg)
+    test_train(root, cfg)
     test_val(root, cfg)

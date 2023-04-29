@@ -47,6 +47,8 @@ def test_voc_evaluate():
         assert class_name not in all_boxes_dict.keys()
         all_boxes_dict[class_name] = box_list
 
+    print(f"all_boxes_dict.keys():\n{sorted(all_boxes_dict.keys())}")
+    print(f"VOCDataset.classes:\n{sorted(VOCDataset.classes)}")
     val_evaluator.all_boxes_dict = all_boxes_dict
     ap50, ap50_95 = val_evaluator.result()
     print('ap50:', ap50)
