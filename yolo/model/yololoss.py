@@ -82,8 +82,9 @@ class YOLOv2Loss(nn.Module):
 
     def build_anchors(self, F_size):
         # grid coordinate
-        x_shift = torch.broadcast_to(torch.arange(F_size), (self.num_anchors, F_size, F_size)) \
-            # [F_size] -> [F_size, 1] -> [num_anchors, F_size, F_size]
+        # [W] -> [num_anchors, W, W]
+        x_shift = torch.broadcast_to(torch.arange(F_size), (self.num_anchors, F_size, F_size))
+        # [H] -> [H, 1] -> [num_anchors, H, H]
         y_shift = torch.broadcast_to(torch.arange(F_size).reshape(F_size, 1), (self.num_anchors, F_size, F_size))
 
         anchors = self.anchors * F_size
@@ -156,7 +157,7 @@ class YOLOv2Loss(nn.Module):
         device = outputs.device
 
         # [B, H*W, num_anchors, 4]
-        # pred_box: [x_c, y_c, w, h]
+        # pred_box: [x_c, y_c, w, h] 坐标相对于网格大小
         all_pred_boxes = self.make_pred_boxes(outputs)
 
         # [H*W*num_anchors, 4]
@@ -214,8 +215,8 @@ class YOLOv2Loss(nn.Module):
                 # assign it to a specific anchor by choosing max IoU
                 # 首先计算锚点框的中心点位于哪个网格, 然后选择其中IoU最大的锚点框参与训练
 
-                # 第t个锚点框 [4]
-                # [xc, yc, w, h]
+                # 第t个标注框
+                # [4]: [xc, yc, w, h]
                 gt_box = gt_boxes[ni]
                 # [x1, y1, x2, y2]
                 gt_box_xxyy = gt_boxes_xxyy[ni]
@@ -263,7 +264,8 @@ class YOLOv2Loss(nn.Module):
         return iou_target, iou_mask, box_target, box_mask, class_target, class_mask
 
     def forward(self, outputs, targets):
-        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = self.build_targets(outputs, targets)
+        iou_target, iou_mask, box_target, box_mask, class_target, class_mask = \
+            self.build_targets(outputs.detach().clone(), targets)
 
         B, _, F_size, _ = outputs.shape[:4]
         # [B, C, H, W] -> [B, num_anchors, 5+num_classes, H, W] -> [B, H, W, num_anchors, 5+num_classes]
@@ -280,11 +282,42 @@ class YOLOv2Loss(nn.Module):
 
         # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 4]
         pred_deltas = outputs[..., :4]
+        # print(torch.max(pred_deltas[..., :2]), torch.min(pred_deltas[..., :2]))
+        # print(torch.max(pred_deltas[..., 2:4]), torch.min(pred_deltas[..., 2:4]))
         # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 1]
         pred_confs = outputs[..., 4:5]
+        # print(torch.max(pred_confs), torch.min(pred_confs))
         # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, num_classes]
         pred_probs = outputs[..., 5:]
+        # print(torch.max(pred_probs), torch.min(pred_probs))
 
+        # --------------------------------------
+        # box loss
+        # [B, H*W*num_anchors, 4] -> [B*H*W*num_anchors, 4]
+        pred_deltas = pred_deltas.reshape(-1, 4)
+        box_target = box_target.reshape(-1, 4)
+        # [B, H*W*num_anchors, 1] -> [B*H*W*num_anchors]
+        box_mask = box_mask.reshape(-1)
+
+        pred_deltas = pred_deltas[box_mask > 0]
+        box_target = box_target[box_mask > 0]
+
+        box_loss = F.mse_loss(pred_deltas, box_target, reduction='sum')
+
+        # --------------------------------------
+        # iou loss
+        # [B, H*W*num_anchors, 1] -> [B*H*W*num_anchors]
+        pred_confs = pred_confs.reshape(-1)
+        iou_target = iou_target.reshape(-1)
+        iou_mask = iou_mask.reshape(-1)
+
+        pred_confs = pred_confs[iou_mask > 0]
+        iou_target = iou_target[iou_mask > 0]
+
+        iou_loss = F.mse_loss(pred_confs, iou_target, reduction='sum')
+
+        # --------------------------------------
+        # class loss
         # [B, H*W*num_anchors, num_classes] -> [B*H*W*num_anchors, num_classes]
         pred_probs = pred_probs.view(-1, self.num_classes)
         # [B, H*W*num_anchors, 1] -> [B * H * W * num_anchors]
@@ -293,16 +326,12 @@ class YOLOv2Loss(nn.Module):
         class_mask = class_mask.view(-1)
 
         # ignore the gradient of noobject's target
-        class_keep = class_mask.nonzero().squeeze(1)
-        # [B*H*W*num_anchors, num_classes] -> [class_keep, num_classes]
-        pred_probs = pred_probs[class_keep, :]
-        # [B * H * W * num_anchors] -> [class_keep]
-        class_target = class_target[class_keep]
+        pred_probs = pred_probs[class_mask > 0]
+        class_target = class_target[class_mask > 0]
 
         # calculate the loss, normalized by batch size.
-        box_loss = F.mse_loss(pred_deltas * box_mask, box_target * box_mask, reduction='sum')
-        iou_loss = F.mse_loss(pred_confs * iou_mask, iou_target * iou_mask, reduction='sum')
         class_loss = F.cross_entropy(pred_probs, class_target, reduction='sum')
 
+        # print(f"box_loss: {box_loss} iou_loss: {iou_loss} class_loss: {class_loss}")
         loss = (box_loss * self.coord_scale + iou_loss + class_loss * self.class_scale) / B
         return loss
