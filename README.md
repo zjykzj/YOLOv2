@@ -26,6 +26,7 @@
   - [Container](#container)
 - [Usage](#usage)
   - [Train](#train)
+  - [Eval](#eval)
 - [Maintainers](#maintainers)
 - [Thanks](#thanks)
 - [Contributing](#contributing)
@@ -69,6 +70,12 @@ docker run --gpus all -it --rm -v </path/to/YOLOv2>:/app/YOLOv2 -v </path/to/voc
 
 ```shell
 CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_default.cfg --opt-level=O1 ../datasets/voc
+```
+
+### Eval
+
+```shell
+python eval.py -c configs/yolov2_best.cfg -ckpt outputs/yolov2_best/model_best.pth.tar ../datasets/voc
 ```
 
 ## Maintainers
