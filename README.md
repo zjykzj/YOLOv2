@@ -18,6 +18,7 @@
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
+- [Latest News](#latest-news)
 - [Background](#background)
 - [Prepare Data](#prepare-data)
   - [Pascal VOC](#pascal-voc)
@@ -31,6 +32,10 @@
 - [Thanks](#thanks)
 - [Contributing](#contributing)
 - [License](#license)
+
+## Latest News
+
+* **Initial version. Implement YOLOv2 network, YOLOv2Loss, and related training/evaluation implementations.** [32df024](https://github.com/zjykzj/YOLOv2/tree/32df02449d611e41348f5365d1c990f27f6ee4ed)
 
 ## Background
 
