@@ -6,7 +6,6 @@
 @author: zj
 @description: 
 """
-
 from __future__ import division
 
 import yaml
@@ -53,6 +52,8 @@ def main():
         model.load_state_dict(state_dict, strict=True)
 
     val_loader, _, val_evaluator = build_data(cfg, args.data, is_train=False, is_distributed=False)
+    if hasattr(val_evaluator, 'save'):
+        val_evaluator.save = True
 
     print("=> Begin evaluating ...")
     num_classes = cfg['MODEL']['N_CLASSES']
