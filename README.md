@@ -76,6 +76,28 @@ CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_default.cfg --opt-le
 
 ```shell
 python eval.py -c configs/yolov2_best.cfg -ckpt outputs/yolov2_best/model_best.pth.tar ../datasets/voc
+VOC07 metric? No
+AP for aeroplane = 0.7631
+AP for bicycle = 0.6542
+AP for bird = 0.5674
+AP for boat = 0.3874
+AP for bottle = 0.3247
+AP for bus = 0.7387
+AP for car = 0.5936
+AP for cat = 0.7925
+AP for chair = 0.3792
+AP for cow = 0.5608
+AP for diningtable = 0.4460
+AP for dog = 0.7312
+AP for horse = 0.6977
+AP for motorbike = 0.7078
+AP for person = 0.6720
+AP for pottedplant = 0.2662
+AP for sheep = 0.6202
+AP for sofa = 0.5510
+AP for train = 0.7305
+AP for tvmonitor = 0.5488
+Mean AP = 0.5867
 ```
 
 ## Maintainers
