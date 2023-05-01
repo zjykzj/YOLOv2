@@ -24,6 +24,7 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
 
     sampler = None
     transform = Transform(cfg, is_train=is_train)
+    collate_fn = torch.utils.data.default_collate
 
     if is_train:
         if 'PASCAL VOC' == data_type:
@@ -43,10 +44,14 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
         if is_distributed:
             sampler = torch.utils.data.distributed.DistributedSampler(dataset)
 
-        collate_fn = torch.utils.data.default_collate
-        dataloader = torch.utils.data.DataLoader(
-            dataset, batch_size=cfg['DATA']['BATCH_SIZE'], shuffle=(sampler is None),
-            num_workers=cfg['DATA']['WORKERS'], pin_memory=True, sampler=sampler, collate_fn=collate_fn)
+        dataloader = torch.utils.data.DataLoader(dataset,
+                                                 batch_size=cfg['DATA']['BATCH_SIZE'],
+                                                 shuffle=(sampler is None),
+                                                 num_workers=cfg['DATA']['WORKERS'],
+                                                 sampler=sampler,
+                                                 collate_fn=collate_fn,
+                                                 pin_memory=True
+                                                 )
 
         return dataloader, sampler
     else:
@@ -69,7 +74,13 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
         else:
             raise ValueError(f"{data_type} doesn't supports")
 
-        dataloader = torch.utils.data.DataLoader(
-            dataset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True, sampler=None)
+        dataloader = torch.utils.data.DataLoader(dataset,
+                                                 batch_size=cfg['DATA']['BATCH_SIZE'],
+                                                 shuffle=False,
+                                                 num_workers=cfg['DATA']['WORKERS'],
+                                                 sampler=None,
+                                                 collate_fn=collate_fn,
+                                                 pin_memory=True,
+                                                 )
 
         return dataloader, sampler, val_evaluator

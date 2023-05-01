@@ -137,11 +137,6 @@ def validate(val_loader: DataLoader,
 
     end = time.time()
     for i, (input_data, targets) in enumerate(tqdm(val_loader)):
-        assert len(input_data) == 1, "Only supports single image inference."
-        img_info = targets['img_info']
-        img_info = [x.item() if isinstance(x, Tensor) else x for x in img_info]
-        img_info.append(targets['image_name'][0])
-
         # 模型推理，返回预测结果
         # img: [B, 3, 416, 416]
         outputs = model(input_data.to(device))
@@ -149,13 +144,17 @@ def validate(val_loader: DataLoader,
         # 输入outputs: [B, 预测框数目, 85(xywh + obj_confg + num_classes)]
         # 输出outputs: [B, 过滤后的预测框数目, 7(xyxy + obj_conf + cls_prob + cls_id)]
         outputs = postprocess(outputs, num_classes, conf_thresh, nms_thresh)
-        # 从这里也可以看出是单张推理
-        # 如果结果为空，那么不执行后续运算
-        if outputs[0] is None:
-            continue
-        # 提取单张图片的运行结果
-        # [B, N_ind, 7] -> [N_ind, 7]
-        val_evaluator.put(outputs[0].cpu().data, img_info)
+
+        for i, output in enumerate(outputs):
+            if output is None:
+                continue
+
+            img_info = [x[i].item() for x in targets['img_info']]
+            img_info.append(targets['image_name'][i])
+
+            # 提取单张图片的运行结果
+            # [N_ind, 7]
+            val_evaluator.put(output.cpu().data, img_info)
 
         # measure elapsed time
         batch_time.update(time.time() - end)
