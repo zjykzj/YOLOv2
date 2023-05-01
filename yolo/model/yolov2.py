@@ -85,7 +85,7 @@ class Backbone(nn.Module):
                 # nn.init.constant_(m.weight, 0.01)
                 nn.init.constant_(m.bias, 0)
 
-        if pretrained is not None:
+        if pretrained is not None and pretrained != '':
             assert os.path.isfile(pretrained), pretrained
             logger.info(f'Loading pretrained {self.arch}: {pretrained}')
 
