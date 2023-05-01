@@ -106,7 +106,14 @@ This repository references many repositories implementations, including [tztztzt
 
 ### Pascal VOC
 
-Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py) to obtain Pascal VOC datasets. Softlink the folder where the dataset is located to the specified location:
+Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py) to obtain Pascal VOC datasets:
+
+```shell
+python voc2yolov5.py -s /home/zj/data/voc -d /home/zj/data/voc/voc2yolov5-train -l trainval-2007 trainval-2012
+python voc2yolov5.py -s /home/zj/data/voc -d /home/zj/data/voc/voc2yolov5-val -l test-2007
+```
+
+Then softlink the folder where the dataset is located to the specified location:
 
 ```shell
 ln -s /path/to/voc /path/to/YOLOv2/../datasets/voc
