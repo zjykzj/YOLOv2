@@ -79,13 +79,13 @@
 - [Latest News](#latest-news)
 - [Background](#background)
 - [Prepare Data](#prepare-data)
-  - [Pascal VOC](#pascal-voc)
+    - [Pascal VOC](#pascal-voc)
 - [Installation](#installation)
-  - [Requirements](#requirements)
-  - [Container](#container)
+    - [Requirements](#requirements)
+    - [Container](#container)
 - [Usage](#usage)
-  - [Train](#train)
-  - [Eval](#eval)
+    - [Train](#train)
+    - [Eval](#eval)
 - [Maintainers](#maintainers)
 - [Thanks](#thanks)
 - [Contributing](#contributing)
@@ -93,20 +93,28 @@
 
 ## Latest News
 
-* **01/05/2023: Update. Train using VOC2007+2012 train dataset and evaluate using VOC2007 test dataset.** [3146100](https://github.com/zjykzj/YOLOv2/tree/314610053a741280e0c2e205c264ce4637f3bdd8)
-* **30/04/2023: Initial version. Implement YOLOv2 network, YOLOv2Loss, and related training/evaluation implementations.** [32df024](https://github.com/zjykzj/YOLOv2/tree/32df02449d611e41348f5365d1c990f27f6ee4ed)
+* **01/05/2023: Update. Train using VOC2007+2012 train dataset and evaluate using VOC2007 test dataset.
+  ** [3146100](https://github.com/zjykzj/YOLOv2/tree/314610053a741280e0c2e205c264ce4637f3bdd8)
+* **30/04/2023: Initial version. Implement YOLOv2 network, YOLOv2Loss, and related training/evaluation implementations.
+  ** [32df024](https://github.com/zjykzj/YOLOv2/tree/32df02449d611e41348f5365d1c990f27f6ee4ed)
 
 ## Background
 
-YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has created Darknet-19 and added YOLO-layer implementation; For the loss function, it adds anchor box settings to help network training with more fine-grained features. Compared with YOLOv1, YOLOv2 is more modern and high-performance.
+YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has created Darknet-19 and added YOLO-layer
+implementation; For the loss function, it adds anchor box settings to help network training with more fine-grained
+features. Compared with YOLOv1, YOLOv2 is more modern and high-performance.
 
-This repository references many repositories implementations, including [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch) and [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch), as well as [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3).
+This repository references many repositories implementations,
+including [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch)
+and [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch), as well
+as [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3).
 
 ## Prepare Data
 
 ### Pascal VOC
 
-Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py) to obtain Pascal VOC datasets:
+Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py) to obtain Pascal VOC
+datasets:
 
 ```shell
 python voc2yolov5.py -s /home/zj/data/voc -d /home/zj/data/voc/voc2yolov5-train -l trainval-2007 trainval-2012
@@ -177,7 +185,7 @@ Mean AP = 0.5182
 python demo.py -c 0.5 configs/yolov2_voc07+12.cfg outputs/yolov2_voc07+12/model_best.pth.tar assets/voc2007-test/
 ```
 
-<p align="left"><img src="assets/bus.jpg" height="240"\>  <img src="assets/zidane.jpg" height="240"\></p>
+<p align="left"><img src="results/voc/000237.jpg" height="240"\>  <img src="results/voc/000386.jpg" height="240"\></p>
 
 ## Maintainers
 
