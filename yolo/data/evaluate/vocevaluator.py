@@ -64,6 +64,10 @@ class VOCEvaluator(Evaluator):
         self.save = save
 
         self.all_boxes_dict = dict()
+        self._init_dict()
+
+    def _init_dict(self):
+        self.all_boxes_dict.clear()
         for cls_name in self.classes:
             self.all_boxes_dict[cls_name] = list()
 
@@ -110,5 +114,6 @@ class VOCEvaluator(Evaluator):
                               self.VOCdevkit_dir,
                               self.year,
                               self.split)
+        self._init_dict()
 
         return -1., ap50
