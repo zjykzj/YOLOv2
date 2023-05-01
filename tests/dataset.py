@@ -47,7 +47,7 @@ if __name__ == '__main__':
     root = '../datasets/voc'
 
     # cfg_file = 'configs/yolov2_default.cfg'
-    cfg_file = 'configs/yolov2_best.cfg'
+    cfg_file = 'configs/yolov2_voc2007+2012.cfg'
     with open(cfg_file, 'r') as f:
         import yaml
 
