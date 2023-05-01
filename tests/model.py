@@ -46,7 +46,7 @@ def test_yolov2():
 
 
 def test_yolov2_fast():
-    cfg_file = 'configs/fastyolov2_voc2007+2012.cfg'
+    cfg_file = 'configs/fastyolov2_voc07+12.cfg'
     print(f"=> Test {cfg_file}")
     with open(cfg_file, 'r') as f:
         import yaml
