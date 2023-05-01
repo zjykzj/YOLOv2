@@ -133,13 +133,13 @@ docker run --gpus all -it --rm -v </path/to/YOLOv2>:/app/YOLOv2 -v </path/to/voc
 * One GPU
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_default.cfg --opt-level=O1 ../datasets/voc
+CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_voc07+12.cfg --opt-level=O1 ../datasets/voc
 ```
 
 ### Eval
 
 ```shell
-python eval.py -c configs/yolov2_voc2007+2012.cfg -ckpt outputs/yolov2_best/model_best.pth.tar ../datasets/voc
+python eval.py -c configs/yolov2_voc07+12.cfg -ckpt outputs/yolov2_voc07+12/model_best.pth.tar ../datasets/voc
 VOC07 metric? Yes
 AP for aeroplane = 0.5190
 AP for bicycle = 0.5965
