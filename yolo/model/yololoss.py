@@ -105,9 +105,9 @@ class YOLOv2Loss(nn.Module):
 
         # broadcast anchors to all grids
         # [num_anchors] -> [num_anchors, 1, 1] -> [num_anchors, H, W]
-        w_anchors = torch.broadcast_to(self.anchors[:, 0].reshape(self.num_anchors, 1, 1) * W,
+        w_anchors = torch.broadcast_to(self.anchors[:, 0].reshape(self.num_anchors, 1, 1),
                                        [self.num_anchors, H, W]).to(dtype=dtype, device=device)
-        h_anchors = torch.broadcast_to(self.anchors[:, 1].reshape(self.num_anchors, 1, 1) * H,
+        h_anchors = torch.broadcast_to(self.anchors[:, 1].reshape(self.num_anchors, 1, 1),
                                        [self.num_anchors, H, W]).to(dtype=dtype, device=device)
 
         # b_x = sigmoid(t_x) + c_x
