@@ -93,6 +93,7 @@
 
 ## Latest News
 
+* **Update. Train using VOC2007+2012 train dataset and evaluate using VOC2007 test dataset.** [3146100](https://github.com/zjykzj/YOLOv2/tree/314610053a741280e0c2e205c264ce4637f3bdd8)
 * **Initial version. Implement YOLOv2 network, YOLOv2Loss, and related training/evaluation implementations.** [32df024](https://github.com/zjykzj/YOLOv2/tree/32df02449d611e41348f5365d1c990f27f6ee4ed)
 
 ## Background
