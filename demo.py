@@ -6,6 +6,8 @@
 @author: zj
 @description: 
 """
+import copy
+import glob
 from typing import List, Tuple, Dict
 
 import cv2
@@ -33,6 +35,10 @@ def parse_args():
     parser.add_argument('cfg', type=str, default='configs/yolov2_default.cfg', help='Model configuration file.')
     parser.add_argument('ckpt', type=str, default=None, help='Path to the checkpoint file.')
     parser.add_argument('image', type=str, default=None, help='Path to image file')
+
+    parser.add_argument('--outputs', type=str, default='results', help='Path to save image')
+    parser.add_argument('--exp', type=str, default='voc', help='Sub folder name')
+
     parser.add_argument('-c', '--conf-thresh', type=float, default=None, help='Confidence Threshold')
     parser.add_argument('-n', '--nms-thresh', type=float, default=None, help='NMS Threshold')
     args = parser.parse_args()
@@ -44,19 +50,48 @@ def parse_args():
 
 def image_preprocess(args: Namespace, cfg: Dict):
     transform = Transform(cfg, is_train=False)
-
-    # BGR
-    img = cv2.imread(args.image)
-    img_raw = img.copy()
-
     imgsize = cfg['TEST']['IMGSIZE']
-    img, _, img_info = transform(img, np.array([]), imgsize)
-    # [H, W, C] -> [C, H, W]
-    img = torch.from_numpy(img).permute(2, 0, 1).contiguous() / 255
-    print("img:", img.shape)
+
+    img_path_list = list()
+    img_list = list()
+    img_raw_list = list()
+    img_info_list = list()
 
     # 返回输入图像数据、原始图像数据、图像缩放前后信息
-    return img, img_raw, img_info
+    if os.path.isfile(args.image):
+        # BGR
+        img_path = os.path.abspath(args.image)
+        img_path_list.append(img_path)
+
+        img = cv2.imread(args.image)
+        img_raw = img.copy()
+
+        img, _, img_info = transform(0, img, np.array([]), imgsize)
+        # [H, W, C] -> [C, H, W]
+        img = torch.from_numpy(img).permute(2, 0, 1).contiguous() / 255
+        print("img:", img.shape)
+
+        img_list.append(img)
+        img_raw_list.append(img_raw)
+        img_info_list.append(img_info)
+    else:
+        assert os.path.isdir(args.image), args.image
+        img_path_list = glob.glob(os.path.join(args.image, "*.jpg"))
+        for i, img_path in enumerate(img_path_list):
+            # BGR
+            img = cv2.imread(img_path)
+            img_raw = img.copy()
+
+            img, _, img_info = transform(i, img, np.array([]), imgsize)
+            # [H, W, C] -> [C, H, W]
+            img = torch.from_numpy(img).permute(2, 0, 1).contiguous() / 255
+            print("img:", img.shape)
+
+            img_list.append(img)
+            img_raw_list.append(img_raw)
+            img_info_list.append(img_info)
+
+    return img_list, img_raw_list, img_info_list, img_path_list
 
 
 def model_init(args: Namespace, cfg: Dict):
@@ -65,9 +100,8 @@ def model_init(args: Namespace, cfg: Dict):
     """
     device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
 
-    anchors = torch.tensor(cfg['MODEL']['ANCHORS'])
+    anchors = torch.FloatTensor(cfg['MODEL']['ANCHORS'])
     model = YOLOv2(anchors,
-                   target_size=cfg['TEST']['IMGSIZE'],
                    num_classes=cfg['MODEL']['N_CLASSES'],
                    arch=cfg['MODEL']['BACKBONE'],
                    pretrained=cfg['MODEL']['BACKBONE_PRETRAINED']
@@ -90,7 +124,7 @@ def parse_info(outputs: List, info_img: List or Tuple):
 
     bboxes = list()
     confs = list()
-    classes = list()
+    labels = list()
     colors = list()
 
     # x1/y1: 左上角坐标
@@ -100,17 +134,19 @@ def parse_info(outputs: List, info_img: List or Tuple):
     # cls_pred: 分类下标
     for x1, y1, x2, y2, conf, cls_conf, cls_pred in outputs:
         cls_id = int(cls_pred)
+        label = VOCDataset.classes[cls_id]
+
         random.seed(cls_id)
 
         print(int(x1), int(y1), int(x2), int(y2), float(conf), int(cls_pred))
-        print('\t+ Label: %s, Conf: %.5f' % (VOCDataset.classes[cls_id], cls_conf.item()))
+        print('\t+ Label: %s, Conf: %.5f' % (label, cls_conf.item()))
         y1, x1, y2, x2 = yolobox2label([y1, x1, y2, x2], info_img)
         bboxes.append([x1, y1, x2, y2])
-        classes.append(cls_id)
+        labels.append(label)
         colors.append([random.randint(100, 255), random.randint(100, 255), random.randint(100, 255)])
         confs.append(conf * cls_conf)
 
-    return bboxes, confs, classes, colors
+    return bboxes, confs, labels, colors
 
 
 @torch.no_grad()
@@ -127,47 +163,29 @@ def process(input_data: Tensor, model: Module, device: torch.device,
     return outputs
 
 
-def show_bbox(save_dir: str,  # 保存路径
-              img_raw_list: List[ndarray],  # 原始图像数据列表, BGR ndarray
-              img_name_list: List[str],  # 图像名列表
-              bboxes_list: List,  # 预测边界框
-              confs_list: List,  # 预测边界框置信度
-              names_list: List,  # 预测边界框对象名
-              colors_list: List):  # 预测边界框绘制颜色
-    """
-    对于绘图，输入如下数据：
-    1. 原始图像
-    2. 预测框坐标
-    3. 数据集名 + 分类概率
-    """
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+def draw_bbox(img_raw: ndarray,  # 原始图像数据, BGR ndarray
+              bboxes: List,  # 预测边界框
+              confs: List,  # 预测边界框置信度
+              labels: List,  # 预测边界框对象名
+              colors: List):  # 预测边界框绘制颜色
+    im = copy.deepcopy(img_raw)
 
-    for img_raw, img_name, bboxes, confs, names, colors in zip(
-            img_raw_list, img_name_list, bboxes_list, confs_list, names_list, colors_list):
-        im = img_raw
+    for box, conf, label, color in zip(bboxes, confs, labels, colors):
+        assert len(box) == 4, box
+        color = tuple([int(x) for x in color])
 
-        for box, conf, pred_name, color in zip(bboxes, confs, names, colors):
-            # box: [y1, x1, y2, x2]
-            # print(box, name, color)
-            assert len(box) == 4, box
-            color = tuple([int(x) for x in color])
+        # [x1, y1, x2, y2] -> [x1, y1] [x2, y2]
+        p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
+        cv2.rectangle(im, p1, p2, color, 2)
 
-            # [y1, x1, y2, x2] -> [x1, y1] [x2, y2]
-            p1, p2 = (int(box[1]), int(box[0])), (int(box[3]), int(box[2]))
-            cv2.rectangle(im, p1, p2, color, 2)
+        text_str = f'{label} {conf:.3f}'
+        w, h = cv2.getTextSize(text_str, 0, fontScale=0.5, thickness=1)[0]
+        p1, p2 = (int(box[0]) + w, int(box[1])), (int(box[0]), int(box[1]) - h)
+        cv2.rectangle(im, p1, p2, color, thickness=-1)
+        org = (int(box[0]), int(box[1]))
+        cv2.putText(im, text_str, org, cv2.FONT_HERSHEY_SIMPLEX, fontScale=.5, color=(0, 0, 0), thickness=1)
 
-            text_str = f'{pred_name} {conf:.3f}'
-            w, h = cv2.getTextSize(text_str, 0, fontScale=0.5, thickness=1)[0]
-            p1, p2 = (int(box[1]), int(box[0] - h)), (int(box[1] + w), int(box[0]))
-            cv2.rectangle(im, p1, p2, color, thickness=-1)
-            org = (int(box[1]), int(box[0]))
-            cv2.putText(im, text_str, org, cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=.5, color=(0, 0, 0), thickness=1)
-
-        im_path = os.path.join(save_dir, img_name)
-        print(f"\t+ img path: {im_path}")
-        cv2.imwrite(im_path, im)
+    return im
 
 
 def main():
@@ -186,7 +204,7 @@ def main():
     print("args:", args)
 
     print("=> Image Prerocess")
-    input_data, img_raw, img_info = image_preprocess(args, cfg)
+    img_list, img_raw_list, img_info_list, img_path_list = image_preprocess(args, cfg)
     print("=> Model Init")
     model, device = model_init(args, cfg)
 
@@ -199,23 +217,25 @@ def main():
         nms_thre = args.nms_thresh
     num_classes = cfg['MODEL']['N_CLASSES']
 
-    outputs = process(input_data, model, device, confthre=conf_thre, nms_thre=nms_thre, num_classes=num_classes)
-    if outputs[0] is None:
-        print("No Objects Deteted!!")
-        return
+    save_dir = os.path.join(args.outputs, args.exp)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
 
-    print("=> Parse INFO")
-    bboxes, confs, pred_name_list, colors = parse_info(outputs[0], img_info[:6])
+    for input_data, img_raw, img_info, img_path in zip(img_list, img_raw_list, img_info_list, img_path_list):
+        print(f"Process {img_path}")
+        outputs = process(input_data, model, device, conf_thre=conf_thre, nms_thre=nms_thre, num_classes=num_classes)
+        if outputs[0] is None:
+            print("No Objects Deteted!!")
+            continue
 
-    img_raw_list = [img_raw]
-    image_name = os.path.basename(args.image)
-    img_name_list = [image_name]
-    bboxes_list = [bboxes]
-    confs_list = [confs]
-    colors_list = [colors]
+        print("Parse INFO")
+        bboxes, confs, labels, colors = parse_info(outputs[0], img_info[:6])
+        draw_image = draw_bbox(img_raw, bboxes, confs, labels, colors)
 
-    save_dir = './results'
-    show_bbox(save_dir, img_raw_list, img_name_list, bboxes_list, confs_list, pred_name_list, colors_list)
+        img_name = os.path.basename(img_path)
+        draw_image_path = os.path.join(save_dir, img_name)
+        print(f"\t+ img path: {draw_image_path}")
+        cv2.imwrite(draw_image_path, draw_image)
 
 
 if __name__ == '__main__':
