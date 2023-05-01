@@ -23,10 +23,9 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
     max_det_num = cfg['DATA']['MAX_NUM_LABELS']
 
     sampler = None
+    transform = Transform(cfg, is_train=is_train)
 
     if is_train:
-        transform = Transform(cfg, is_train=True)
-
         if 'PASCAL VOC' == data_type:
             train_dataset_name = cfg['TRAIN']['DATASET_NAME']
             train_img_size = cfg['TRAIN']['IMGSIZE']
@@ -51,8 +50,6 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
 
         return dataloader, sampler
     else:
-        transform = Transform(cfg, is_train=False)
-
         if 'PASCAL VOC' == data_type:
             test_dataset_name = cfg['TEST']['DATASET_NAME']
             test_img_size = cfg['TEST']['IMGSIZE']
