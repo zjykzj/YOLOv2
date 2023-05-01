@@ -171,6 +171,14 @@ AP for tvmonitor = 0.5733
 Mean AP = 0.5182
 ```
 
+### Demo
+
+```shell
+python demo.py -c 0.5 configs/yolov2_voc07+12.cfg outputs/yolov2_voc07+12/model_best.pth.tar assets/voc2007-test/
+```
+
+<p align="left"><img src="assets/bus.jpg" height="240"\>  <img src="assets/zidane.jpg" height="240"\></p>
+
 ## Maintainers
 
 * zhujian - *Initial work* - [zjykzj](https://github.com/zjykzj)
