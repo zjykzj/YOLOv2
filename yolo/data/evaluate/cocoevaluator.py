@@ -29,8 +29,10 @@ class COCOEvaluator(Evaluator):
         self.data_list = list()
 
     def put(self, outputs: List[List], img_info: List):
+        assert isinstance(img_info, list)
+        assert len(img_info) == 8, len(img_info)
         # 从这里也判断出是单个推理
-        id_ = int(img_info[-2])
+        id_ = int(img_info[-1])
         # 将原始图像下标挨个保存
         self.ids.append(id_)
 
@@ -42,7 +44,7 @@ class COCOEvaluator(Evaluator):
             # 分类标签
             label = self.class_ids[int(output[6])]
             # 转换到原始图像边界框坐标
-            box = yolobox2label((y1, x1, y2, x2), img_info[:6])
+            box = yolobox2label([y1, x1, y2, x2], img_info[:6])
             # [y1, x1, y2, x2] -> [x1, y1, w, h]
             bbox = [box[1], box[0], box[3] - box[1], box[2] - box[0]]
             # 置信度 = 目标置信度 * 分类置信度
