@@ -121,3 +121,49 @@ def bboxes_iou(bboxes_a: Tensor, bboxes_b: Tensor, xyxy=True) -> Tensor:
     # 然后交集面积除以所有面积，计算IoU
     # [N_a, N_b] / [N_a, N_b] = [N_a, N_b]
     return area_i / (area_a[:, None] + area_b - area_i)
+
+
+def label2yolobox(labels):
+    """
+    Transform coco labels to yolo box labels
+    """
+    # x1/y1/w/h -> x1/y1/x2/y2
+    x1 = labels[..., 0]
+    y1 = labels[..., 1]
+    x2 = (labels[..., 0] + labels[..., 2])
+    y2 = (labels[..., 1] + labels[..., 3])
+
+    # x1/y1/x2/y2 -> xc/yc/w/h
+    labels[..., 1] = ((x1 + x2) / 2)
+    labels[..., 2] = ((y1 + y2) / 2)
+    return labels
+
+
+def yolobox2label(box, info_img):
+    """
+    Transform yolo box labels to yxyx box labels.
+    Args:
+        box (list): box data with the format of [yc, xc, w, h]
+            in the coordinate system after pre-processing.
+        info_img : tuple of h, w, nh, nw, dx, dy.
+            h, w (int): original shape of the image
+            nh, nw (int): shape of the resized image without padding
+            dx, dy (int): pad size
+    Returns:
+        label (list): box data with the format of [y1, x1, y2, x2]
+            in the coordinate system of the input image.
+    """
+    # (原始高，原始宽，缩放后高，缩放后宽，ROI区域左上角x0，ROI区域左上角y0)
+    h, w, nh, nw, dx, dy = info_img
+    # 预测框左上角和右下角坐标
+    y1, x1, y2, x2 = box
+    # 计算预测框高，缩放到原始图像
+    box_h = ((y2 - y1) / nh) * h
+    # 计算预测框宽，缩放到原始图像
+    box_w = ((x2 - x1) / nw) * w
+    # 预测框左上角坐标，先将坐标系恢复到缩放后图像，然后缩放到原始图像
+    y1 = ((y1 - dy) / nh) * h
+    x1 = ((x1 - dx) / nw) * w
+    # [左上角y1，左上角x1，右下角y2，右下角x2]
+    label = [y1, x1, y1 + box_h, x1 + box_w]
+    return label
