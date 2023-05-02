@@ -33,6 +33,7 @@ try:
 except ImportError:
     raise ImportError("Please install apex from https://www.github.com/nvidia/apex to run this example.")
 
+from yolo.data.dataset import KEY_IMAGE_INFO, KEY_IMAGE_ID
 from yolo.data.evaluate.evaluator import Evaluator
 from yolo.optim.lr_schedulers.build import adjust_learning_rate
 from yolo.util.metric import AverageMeter
@@ -149,8 +150,8 @@ def validate(val_loader: DataLoader,
             if output is None:
                 continue
 
-            img_info = [x[i].item() for x in targets['img_info']]
-            img_info.append(targets['image_name'][i])
+            img_info = [x[i].item() for x in targets[KEY_IMAGE_INFO]]
+            img_info.append(targets[KEY_IMAGE_ID][i])
 
             # 提取单张图片的运行结果
             # [N_ind, 7]

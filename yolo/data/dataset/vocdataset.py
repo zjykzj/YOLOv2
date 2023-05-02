@@ -17,20 +17,9 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import T_co
 
+from . import KEY_IMAGE_ID, KEY_TARGET, KEY_IMAGE_INFO
 from ..transform import Transform
-
-
-def coco2yolobox(labels):
-    # x1/y1/w/h -> x1/y1/x2/y2
-    x1 = labels[:, 0]
-    y1 = labels[:, 1]
-    x2 = (labels[:, 0] + labels[:, 2])
-    y2 = (labels[:, 1] + labels[:, 3])
-
-    # x1/y1/x2/y2 -> xc/yc/w/h
-    labels[:, 0] = ((x1 + x2) / 2)
-    labels[:, 1] = ((y1 + y2) / 2)
-    return labels
+from yolo.util.box_utils import label2yolobox
 
 
 class VOCDataset(Dataset):
@@ -116,7 +105,9 @@ class VOCDataset(Dataset):
         #                   (255, 255, 255), 1)
         # cv2.imshow('src_img', src_img)
 
-        image, boxes, img_info = self.transform(index, image, boxes, self.target_size)
+        img_info = None
+        if self.transform is not None:
+            image, boxes, img_info = self.transform(index, image, boxes, self.target_size)
 
         # dst_img = copy.deepcopy(image).astype(np.uint8)
         # dst_img = cv2.cvtColor(dst_img, cv2.COLOR_RGB2BGR)
@@ -127,15 +118,8 @@ class VOCDataset(Dataset):
         # cv2.imshow('dst_img', dst_img)
         # cv2.waitKey(0)
 
-        # 数据预处理
         image = torch.from_numpy(image).permute(2, 0, 1).contiguous() / 255
 
-        # 标注框已经在图像预处理阶段进行转换，匹配输入图像大小
-        # 将数值缩放到[0, 1]区间
-        boxes = boxes / self.target_size
-        # [x1, y1, w, h] -> [xc, yc, w, h]
-        boxes = coco2yolobox(boxes)
-        # boxes = xywh2xyxy(boxes)
         target = self.build_target(boxes, labels)
 
         if self.train:
@@ -143,20 +127,24 @@ class VOCDataset(Dataset):
         else:
             image_name = os.path.splitext(os.path.basename(image_path))[0]
             target = {
-                'target': target,
-                'img_info': img_info,
-                'image_name': image_name
+                KEY_TARGET: target,
+                KEY_IMAGE_INFO: img_info,
+                KEY_IMAGE_ID: image_name
             }
             return image, target
 
     def build_target(self, boxes, labels):
         """
-        :param boxes: [[xc, yc, box_w, box_h], ...]
+        :param boxes: [[x1, y1, box_w, box_h], ...]
         :param labels: [box1_cls_idx, ...]
         :return:
         """
-        target = torch.zeros((self.max_det_nums, 5))
+        # 将数值缩放到[0, 1]区间
+        boxes = boxes / self.target_size
+        # [x1, y1, w, h] -> [xc, yc, w, h]
+        boxes = label2yolobox(boxes)
 
+        target = torch.zeros((self.max_det_nums, 5))
         for i, (box, label) in enumerate(zip(boxes[:self.max_det_nums], labels[:self.max_det_nums])):
             target[i, :4] = torch.from_numpy(box)
             target[i, 4] = label

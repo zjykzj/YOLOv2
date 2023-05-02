@@ -6,3 +6,7 @@
 @author: zj
 @description: 
 """
+
+KEY_TARGET = 'target'
+KEY_IMAGE_INFO = 'img_info'
+KEY_IMAGE_ID = 'image_id'
