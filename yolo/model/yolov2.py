@@ -16,6 +16,7 @@ from torch import nn
 
 from darknet.darknet import conv_bn_act, Darknet19, FastDarknet19
 
+from yolo.util.box_utils import xywh2xyxy
 from yolo.util import logging
 
 logger = logging.get_logger(__name__)
@@ -241,6 +242,8 @@ class YOLOLayer(nn.Module):
 
         # Scale relative to image width/height
         outputs[..., :4] *= self.stride
+        # [xc, yc, w, h] -> [x1, y1, x2, y2]
+        outputs[..., :4] = xywh2xyxy(outputs[..., :4], is_center=True)
         # [B, num_anchors, H, W, n_ch] -> [B, H, W, num_anchors, n_ch] -> [B, H * W * num_anchors, n_ch]
         # n_ch: [x_c, y_c, w, h, conf, class_probs]
         return outputs.permute(0, 2, 3, 1, 4).reshape(B, -1, n_ch)

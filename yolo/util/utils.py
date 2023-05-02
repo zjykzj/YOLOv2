@@ -13,8 +13,6 @@ import shutil
 
 import numpy as np
 
-from yolo.util.box_utils import xywh2xyxy
-
 
 def to_python_float(t):
     if hasattr(t, 'item'):
@@ -28,9 +26,12 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar', output_dir='.
         os.makedirs(output_dir)
 
     ckpt_path = os.path.join(output_dir, filename)
+    print(f"=> Save to {ckpt_path}")
     torch.save(state, ckpt_path)
     if is_best:
-        shutil.copyfile(ckpt_path, os.path.join(output_dir, 'model_best.pth.tar'))
+        best_path = os.path.join(output_dir, 'model_best.pth.tar')
+        print(f"=> Save to {best_path}")
+        shutil.copyfile(ckpt_path, best_path)
 
 
 def synchronize():
@@ -101,14 +102,12 @@ def nms(bbox, thresh, score=None, limit=None):
 def postprocess(prediction, num_classes, conf_thre=0.005, nms_thre=0.45):
     """
     Postprocess for the output of YOLO model
-    perform box transformation, specify the class for each detection,
-    and perform class-wise non-maximum suppression.
+    specify the class for each detection and perform class-wise non-maximum suppression.
     Args:
-        prediction (torch tensor): The shape is :math:`(N, B, 4)`.
+        prediction (torch tensor): The shape is :math:`(N, B, 5+num_classes)`.
             :math:`N` is the number of predictions,
             :math:`B` the number of boxes. The last axis consists of
-            :math:`xc, yc, w, h` where `xc` and `yc` represent a center
-            of a bounding box.
+            :math:`x1, y1, x2, y2, conf, classes_probs`.
         num_classes (int):
             number of dataset classes.
         conf_thre (float):
@@ -121,10 +120,6 @@ def postprocess(prediction, num_classes, conf_thre=0.005, nms_thre=0.45):
         output (list of torch tensor):
 
     """
-    pred_boxes_xyxy = xywh2xyxy(prediction[..., :4], is_center=True)
-    pred_boxes_xyxy.clamp_(min=0.)
-    prediction[..., :4] = pred_boxes_xyxy[..., :4]
-
     # 最大的预测数目，按照置信度进行排序后过滤
     max_num_preds = 300
 
