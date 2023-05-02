@@ -76,6 +76,7 @@
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
+- [Latest News](#latest-news)
 - [Background](#background)
 - [Prepare Data](#prepare-data)
   - [Pascal VOC](#pascal-voc)
@@ -90,6 +91,10 @@
 - [Thanks](#thanks)
 - [Contributing](#contributing)
 - [License](#license)
+
+## Latest News
+
+***02/05/2023: Init Version ([v0.1.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.0)). Complete YOLOv2 training/evaluation/prediction, while providing the evaluation results of VOC2007 Test***
 
 ## Background
 
