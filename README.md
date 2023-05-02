@@ -36,15 +36,15 @@
 <tbody>
   <tr>
     <td class="tg-7btt">train</td>
-    <td class="tg-c3ow">VOC2007+2012 Train</td>
-    <td class="tg-c3ow">VOC2007+2012 Train</td>
-    <td class="tg-c3ow">VOC2007+2012 Train</td>
+    <td class="tg-c3ow">VOC2007+2012 trainval</td>
+    <td class="tg-c3ow">VOC2007+2012 trainval</td>
+    <td class="tg-c3ow">VOC2007+2012 trainval</td>
   </tr>
   <tr>
     <td class="tg-7btt">val</td>
-    <td class="tg-c3ow">VOC2007 Test </td>
-    <td class="tg-c3ow">VOC2007 Test </td>
-    <td class="tg-c3ow">VOC2007 Test </td>
+    <td class="tg-c3ow">VOC2007 test </td>
+    <td class="tg-c3ow">VOC2007 test </td>
+    <td class="tg-c3ow">VOC2007 test </td>
   </tr>
   <tr>
     <td class="tg-7btt">VOC AP[IoU=0.50], inference</td>
@@ -76,27 +76,20 @@
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
-- [Latest News](#latest-news)
 - [Background](#background)
 - [Prepare Data](#prepare-data)
-    - [Pascal VOC](#pascal-voc)
+  - [Pascal VOC](#pascal-voc)
 - [Installation](#installation)
-    - [Requirements](#requirements)
-    - [Container](#container)
+  - [Requirements](#requirements)
+  - [Container](#container)
 - [Usage](#usage)
-    - [Train](#train)
-    - [Eval](#eval)
+  - [Train](#train)
+  - [Eval](#eval)
+  - [Demo](#demo)
 - [Maintainers](#maintainers)
 - [Thanks](#thanks)
 - [Contributing](#contributing)
 - [License](#license)
-
-## Latest News
-
-* **01/05/2023: Update. Train using VOC2007+2012 train dataset and evaluate using VOC2007 test dataset.
-  ** [3146100](https://github.com/zjykzj/YOLOv2/tree/314610053a741280e0c2e205c264ce4637f3bdd8)
-* **30/04/2023: Initial version. Implement YOLOv2 network, YOLOv2Loss, and related training/evaluation implementations.
-  ** [32df024](https://github.com/zjykzj/YOLOv2/tree/32df02449d611e41348f5365d1c990f27f6ee4ed)
 
 ## Background
 
