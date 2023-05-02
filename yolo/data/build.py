@@ -11,8 +11,10 @@ from typing import Dict
 import os
 import torch
 
+from .dataset.cocodataset import COCODataset
 from .dataset.vocdataset import VOCDataset
 from .transform import Transform
+from .evaluate.cocoevaluator import COCOEvaluator
 from .evaluate.vocevaluator import VOCEvaluator
 
 
@@ -40,6 +42,17 @@ def build_data(cfg: Dict, data_root: str, is_train: bool = True, is_distributed:
             year = cfg['TEST']['YEAR']
             split = cfg['TEST']['SPLIT']
             evaluator = VOCEvaluator(dataset.classes, VOCdevkit_dir, year=year, split=split)
+    elif 'COCO' == data_type:
+        dataset = COCODataset(root=data_root,
+                              name=dataset_name,
+                              train=is_train,
+                              transform=transform,
+                              target_transform=None,
+                              target_size=img_size,
+                              max_det_nums=max_det_num
+                              )
+        if not is_train:
+            evaluator = COCOEvaluator(dataset.coco)
     else:
         raise ValueError(f"{data_type} doesn't supports")
 
