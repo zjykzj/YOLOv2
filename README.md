@@ -50,7 +50,7 @@
     <td class="tg-7btt">VOC AP[IoU=0.50], inference</td>
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">76.8</span></td>
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">72.7</span></td>
-    <td class="tg-c3ow">51.82</td>
+    <td class="tg-c3ow">69.69</td>
   </tr>
   <tr>
     <td class="tg-7btt">conf_thre</td>
@@ -148,41 +148,41 @@ docker run --gpus all -it --rm -v </path/to/YOLOv2>:/app/YOLOv2 -v </path/to/voc
 * One GPU
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_voc07+12.cfg --opt-level=O1 ../datasets/voc
+CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_voc.cfg --opt-level=O1 ../datasets/voc
 ```
 
 ### Eval
 
 ```shell
-python eval.py -c configs/yolov2_voc07+12.cfg -ckpt outputs/yolov2_voc07+12/model_best.pth.tar ../datasets/voc
+python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar ../datasets/voc
 VOC07 metric? Yes
-AP for aeroplane = 0.5190
-AP for bicycle = 0.5965
-AP for bird = 0.5381
-AP for boat = 0.3863
-AP for bottle = 0.2475
-AP for bus = 0.6076
-AP for car = 0.6225
-AP for cat = 0.6972
-AP for chair = 0.3463
-AP for cow = 0.4604
-AP for diningtable = 0.4382
-AP for dog = 0.6924
-AP for horse = 0.6076
-AP for motorbike = 0.6319
-AP for person = 0.5853
-AP for pottedplant = 0.1913
-AP for sheep = 0.5036
-AP for sofa = 0.5741
-AP for train = 0.5450
-AP for tvmonitor = 0.5733
-Mean AP = 0.5182
+AP for aeroplane = 0.7318
+AP for bicycle = 0.7880
+AP for bird = 0.6608
+AP for boat = 0.5399
+AP for bottle = 0.4175
+AP for bus = 0.7553
+AP for car = 0.7742
+AP for cat = 0.8207
+AP for chair = 0.5147
+AP for cow = 0.7341
+AP for diningtable = 0.7119
+AP for dog = 0.7991
+AP for horse = 0.8170
+AP for motorbike = 0.7938
+AP for person = 0.7281
+AP for pottedplant = 0.4169
+AP for sheep = 0.6964
+AP for sofa = 0.7519
+AP for train = 0.7930
+AP for tvmonitor = 0.6937
+Mean AP = 0.6969
 ```
 
 ### Demo
 
 ```shell
-python demo.py -c 0.5 configs/yolov2_voc07+12.cfg outputs/yolov2_voc07+12/model_best.pth.tar assets/voc2007-test/
+python demo.py -c 0.5 configs/yolov2_voc.cfg outputs/yolov2_voc/model_best.pth.tar assets/voc2007-test/
 ```
 
 <p align="left"><img src="results/voc/000237.jpg" height="240"\>  <img src="results/voc/000386.jpg" height="240"\></p>
