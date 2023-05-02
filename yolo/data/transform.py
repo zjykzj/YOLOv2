@@ -170,11 +170,11 @@ class Transform(object):
             # 首先进行缩放+填充+空间抖动
             img, bboxes, img_info = resize_and_pad(img, bboxes, img_size, self.jitter_ratio, self.random_placing)
 
-            if len(bboxes) > 0:
-                bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
-                bboxes_xxyy = np.clip(bboxes_xxyy, 0., img_size - 0.0001)
-                assert np.all(bboxes_xxyy < img_size), print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info)
-                bboxes = xyxy2xywh(bboxes_xxyy, is_center=False)
+            # if len(bboxes) > 0:
+            #     bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
+            #     bboxes_xxyy = np.clip(bboxes_xxyy, 0., img_size - 0.0001)
+            #     assert np.all(bboxes_xxyy < img_size), print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info)
+            #     bboxes = xyxy2xywh(bboxes_xxyy, is_center=False)
 
             # 然后进行左右翻转
             # img_info = []
@@ -187,19 +187,10 @@ class Transform(object):
             # 进行缩放+填充，不执行空间抖动
             img, bboxes, img_info = resize_and_pad(img, bboxes, img_size, jitter_ratio=0., random_replacing=False)
 
-            if len(bboxes) > 0:
-                bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
-                bboxes_xxyy = np.clip(bboxes_xxyy, 0., img_size - 0.0001)
-                assert np.all(bboxes_xxyy < img_size), print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info)
-                bboxes = xyxy2xywh(bboxes_xxyy, is_center=False)
+            # if len(bboxes) > 0:
+            #     bboxes_xxyy = xywh2xyxy(bboxes, is_center=False)
+            #     bboxes_xxyy = np.clip(bboxes_xxyy, 0., img_size - 0.0001)
+            #     assert np.all(bboxes_xxyy < img_size), print_info(index, img, bboxes, bboxes_xxyy, img_size, img_info)
+            #     bboxes = xyxy2xywh(bboxes_xxyy, is_center=False)
 
         return img, bboxes, img_info
-
-
-if __name__ == '__main__':
-    src_img = cv2.imread("../../assets/dog.jpg")
-    dst_img, bboxes = left_right_flip(src_img, [])
-
-    cv2.imshow("src", src_img)
-    cv2.imshow("dst", dst_img)
-    cv2.waitKey(0)
