@@ -92,7 +92,8 @@ class VOCEvaluator(Evaluator):
             label_name = self.classes[int(output[6])]
 
             self.all_boxes_dict[label_name].append([
-                image_name, score, x1, y1, x2, y2
+                image_name, score, max(0., x1), max(0., y1), max(0., x2), max(0., y2)
+                # image_name, score, x1, y1, x2, y2
             ])
 
     def result(self):
