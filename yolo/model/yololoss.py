@@ -27,6 +27,10 @@ from yolo.util.box_utils import xywh2xyxy, bboxes_iou
 def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
     """
     Calculate the delta values σ(t_x), σ(t_y), exp(t_w), exp(t_h) used for transforming box1 to  box2
+    sigmoid(t_x) = b_x - c_x
+    sigmoid(t_y) = b_y - c_y
+    e^t_w = b_w / p_w
+    e^t_h = b_h / p_h
 
     Arguments:
     box1 -- tensor of shape (N, 4) first set of boxes (c_x, c_y, w, h)
@@ -72,7 +76,8 @@ class YOLOv2Loss(nn.Module):
     def build_mask(self, B, H, W, dtype, device):
         # [B, H*W, num_anchors, 1]
         iou_target = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
-        iou_mask = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
+        iou_mask = torch.ones((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
+        iou_mask *= self.noobj_scale
 
         # [B, H*W, num_anchors, 4]
         box_target = torch.zeros((B, H * W, self.num_anchors, 4)).to(dtype=dtype, device=device)
@@ -238,7 +243,7 @@ class YOLOv2Loss(nn.Module):
 
                 # update iou target and iou mask
                 iou_target[bi, cell_idx, argmax_anchor_idx, :] = max_iou[cell_idx, argmax_anchor_idx, :]
-                iou_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
+                iou_mask[bi, cell_idx, argmax_anchor_idx, :] = self.obj_scale
 
         # [B, H*W, num_anchors, 1] -> [B*H*W*num_anchors]
         iou_target = iou_target.reshape(-1)
@@ -291,13 +296,17 @@ class YOLOv2Loss(nn.Module):
 
         # --------------------------------------
         # iou loss
-        obj_pred_confs = pred_confs[iou_mask > 0]
-        obj_iou_target = iou_target[iou_mask > 0]
-        obj_iou_loss = F.mse_loss(obj_pred_confs, obj_iou_target, reduction='sum')
+        pred_confs = pred_confs * iou_mask
+        iou_target = iou_target * iou_mask
+        iou_loss = F.mse_loss(pred_confs, iou_target, reduction='sum')
 
-        noobj_pred_confs = pred_confs[iou_mask == 0]
-        noobj_iou_target = iou_target[iou_mask == 0]
-        noobj_iou_loss = F.mse_loss(noobj_pred_confs, noobj_iou_target, reduction='sum')
+        # obj_pred_confs = pred_confs[iou_mask > 0]
+        # obj_iou_target = iou_target[iou_mask > 0]
+        # obj_iou_loss = F.mse_loss(obj_pred_confs, obj_iou_target, reduction='sum')
+        #
+        # noobj_pred_confs = pred_confs[iou_mask == 0]
+        # noobj_iou_target = iou_target[iou_mask == 0]
+        # noobj_iou_loss = F.mse_loss(noobj_pred_confs, noobj_iou_target, reduction='sum')
 
         # --------------------------------------
         # class loss
@@ -310,7 +319,6 @@ class YOLOv2Loss(nn.Module):
 
         # print(f"box_loss: {box_loss} iou_loss: {iou_loss} class_loss: {class_loss}")
         loss = (box_loss * self.coord_scale +
-                obj_iou_loss * self.obj_scale +
-                noobj_iou_loss * self.noobj_scale +
+                iou_loss +
                 class_loss * self.class_scale) / B
         return loss
