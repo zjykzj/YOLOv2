@@ -23,7 +23,8 @@ from yolo.data.build import build_data
 from yolo.model.build import build_model, build_criterion
 from yolo.optim.optimizers.build import build_optimizer
 from yolo.optim.lr_schedulers.build import build_lr_scheduler
-from yolo.engine.build import validate, train
+from yolo.engine.trainer import train
+from yolo.engine.infer import validate
 from yolo.util.utils import save_checkpoint, synchronize
 
 from yolo.util import logging
