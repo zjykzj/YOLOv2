@@ -134,8 +134,8 @@ def label2yolobox(labels):
     y2 = (labels[..., 1] + labels[..., 3])
 
     # x1/y1/x2/y2 -> xc/yc/w/h
-    labels[..., 1] = ((x1 + x2) / 2)
-    labels[..., 2] = ((y1 + y2) / 2)
+    labels[..., 0] = ((x1 + x2) / 2)
+    labels[..., 1] = ((y1 + y2) / 2)
     return labels
 
 
