@@ -139,10 +139,11 @@ class VOCDataset(Dataset):
         :param labels: [box1_cls_idx, ...]
         :return:
         """
-        # 将数值缩放到[0, 1]区间
-        boxes = boxes / self.target_size
-        # [x1, y1, w, h] -> [xc, yc, w, h]
-        boxes = label2yolobox(boxes)
+        if len(boxes) > 0:
+            # 将数值缩放到[0, 1]区间
+            boxes = boxes / self.target_size
+            # [x1, y1, w, h] -> [xc, yc, w, h]
+            boxes = label2yolobox(boxes)
 
         target = torch.zeros((self.max_det_nums, 5))
         for i, (box, label) in enumerate(zip(boxes[:self.max_det_nums], labels[:self.max_det_nums])):
