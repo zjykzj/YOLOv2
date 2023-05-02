@@ -13,7 +13,7 @@ import numpy as np
 
 from .evaluator import Evaluator
 from .voc_eval import voc_eval
-from yolo.util.utils import yolobox2label
+from yolo.util.box_utils import yolobox2label
 
 
 def do_python_eval(all_boxes_dict, classes, VOCdevkit_dir, year=2012, split='val'):

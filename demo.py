@@ -27,7 +27,8 @@ from torch.nn import Module
 from yolo.model.yolov2 import YOLOv2
 from yolo.data.dataset.vocdataset import VOCDataset
 from yolo.data.transform import Transform
-from yolo.util.utils import postprocess, yolobox2label
+from yolo.util.utils import postprocess
+from yolo.util.box_utils import yolobox2label
 
 
 def parse_args():

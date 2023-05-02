@@ -13,7 +13,7 @@ import tempfile
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-from yolo.util.utils import yolobox2label
+from yolo.util.box_utils import yolobox2label
 from .evaluator import Evaluator
 
 
