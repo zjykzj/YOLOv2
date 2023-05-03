@@ -14,7 +14,7 @@ import torch.cuda
 import argparse
 
 from yolo.data.build import build_data
-from yolo.engine.build import validate
+from yolo.engine.infer import validate
 from yolo.model.build import build_model
 
 
