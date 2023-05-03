@@ -31,9 +31,8 @@ class COCOEvaluator(Evaluator):
     def put(self, outputs: List[List], img_info: List):
         assert isinstance(img_info, list)
         assert len(img_info) == 8, len(img_info)
-        # 从这里也判断出是单个推理
+
         id_ = int(img_info[-1])
-        # 将原始图像下标挨个保存
         self.ids.append(id_)
 
         for output in outputs:
