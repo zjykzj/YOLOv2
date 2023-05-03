@@ -216,8 +216,11 @@ def main():
         # crop_size = 299
         # val_size = 320 # I chose this value arbitrarily, we can adjust.
     else:
-        crop_size = 224
-        val_size = 256
+        # higher resolution
+        crop_size = 448
+        val_size = 512
+        # crop_size = 224
+        # val_size = 256
         # crop_size = 256
         # val_size = 288
 
