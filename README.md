@@ -169,7 +169,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 ### Eval
 
 ```shell
-python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar ../datasets/voc
+python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar --traversal ../datasets/voc
 Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6474
 Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6699
 Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6887
