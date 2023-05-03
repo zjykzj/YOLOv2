@@ -31,30 +31,42 @@
     <th class="tg-7btt"><span style="font-style:normal">Original (darknet)</span></th>
     <th class="tg-7btt"><a href="https://github.com/tztztztztz" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">tztztztztz</span></a><span style="font-weight:400">/</span><a href="https://github.com/tztztztztz/yolov2.pytorch" target="_blank" rel="noopener noreferrer">yolov2.pytorch</a></th>
     <th class="tg-7btt"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer">YOLOv2</a>(This)</th>
+    <th class="tg-7btt"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer">YOLOv2</a>(This)</th>
   </tr>
 </thead>
 <tbody>
   <tr>
+    <td class="tg-7btt">arch</td>
+    <td class="tg-c3ow">YOLOv2</td>
+    <td class="tg-c3ow">YOLOv2</td>
+    <td class="tg-c3ow">YOLOv2</td>
+    <td class="tg-c3ow">YOLOv2-tiny</td>
+  </tr>
+  <tr>
     <td class="tg-7btt">train</td>
-    <td class="tg-c3ow">VOC2007+2012 trainval</td>
-    <td class="tg-c3ow">VOC2007+2012 trainval</td>
-    <td class="tg-c3ow">VOC2007+2012 trainval</td>
+    <td class="tg-c3ow">VOC07+12 trainval</td>
+    <td class="tg-c3ow">VOC07+12 trainval</td>
+    <td class="tg-c3ow">VOC07+12 trainval</td>
+    <td class="tg-c3ow">VOC07+12 trainval</td>
   </tr>
   <tr>
     <td class="tg-7btt">val</td>
-    <td class="tg-c3ow">VOC2007 test </td>
-    <td class="tg-c3ow">VOC2007 test </td>
-    <td class="tg-c3ow">VOC2007 test </td>
+    <td class="tg-c3ow">VOC2007 Test </td>
+    <td class="tg-c3ow">VOC2007 Test </td>
+    <td class="tg-c3ow">VOC2007 Test </td>
+    <td class="tg-c3ow">VOC2007 Test </td>
   </tr>
   <tr>
-    <td class="tg-7btt">VOC AP[IoU=0.50], inference</td>
+    <td class="tg-7btt">VOC AP[IoU=0.50]</td>
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">76.8</span></td>
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">72.7</span></td>
-    <td class="tg-c3ow">69.69</td>
+    <td class="tg-c3ow">70.39</td>
+    <td class="tg-c3ow">63.77</td>
   </tr>
   <tr>
     <td class="tg-7btt">conf_thre</td>
     <td class="tg-c3ow">/</td>
+    <td class="tg-c3ow">0.005</td>
     <td class="tg-c3ow">0.005</td>
     <td class="tg-c3ow">0.005</td>
   </tr>
@@ -63,9 +75,11 @@
     <td class="tg-c3ow">/</td>
     <td class="tg-c3ow">0.45</td>
     <td class="tg-c3ow">0.45</td>
+    <td class="tg-c3ow">0.45</td>
   </tr>
   <tr>
     <td class="tg-7btt">input_size</td>
+    <td class="tg-c3ow">416</td>
     <td class="tg-c3ow">416</td>
     <td class="tg-c3ow">416</td>
     <td class="tg-c3ow">416</td>
@@ -98,14 +112,9 @@
 
 ## Background
 
-YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has created Darknet-19 and added YOLO-layer
-implementation; For the loss function, it adds anchor box settings to help network training with more fine-grained
-features. Compared with YOLOv1, YOLOv2 is more modern and high-performance.
+YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has created Darknet-19 and added YOLO-layer implementation; For the loss function, it adds anchor box settings to help network training with more fine-grained features. Compared with YOLOv1, YOLOv2 is more modern and high-performance.
 
-This repository references many repositories implementations,
-including [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch)
-and [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch), as well
-as [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3).
+This repository references many repositories implementations, including [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch) and [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch), as well as [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3).
 
 ## Prepare Data
 
@@ -160,27 +169,50 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 ```shell
 python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar ../datasets/voc
 VOC07 metric? Yes
-AP for aeroplane = 0.7318
-AP for bicycle = 0.7880
-AP for bird = 0.6608
-AP for boat = 0.5399
-AP for bottle = 0.4175
-AP for bus = 0.7553
-AP for car = 0.7742
-AP for cat = 0.8207
-AP for chair = 0.5147
-AP for cow = 0.7341
-AP for diningtable = 0.7119
-AP for dog = 0.7991
-AP for horse = 0.8170
-AP for motorbike = 0.7938
-AP for person = 0.7281
-AP for pottedplant = 0.4169
-AP for sheep = 0.6964
-AP for sofa = 0.7519
-AP for train = 0.7930
-AP for tvmonitor = 0.6937
-Mean AP = 0.6969
+AP for aeroplane = 0.6945
+AP for bicycle = 0.7869
+AP for bird = 0.7050
+AP for boat = 0.5810
+AP for bottle = 0.4112
+AP for bus = 0.7775
+AP for car = 0.7845
+AP for cat = 0.8198
+AP for chair = 0.5360
+AP for cow = 0.7442
+AP for diningtable = 0.7433
+AP for dog = 0.7968
+AP for horse = 0.8223
+AP for motorbike = 0.7943
+AP for person = 0.7329
+AP for pottedplant = 0.4355
+AP for sheep = 0.6735
+AP for sofa = 0.7462
+AP for train = 0.7986
+AP for tvmonitor = 0.6938
+Mean AP = 0.7039
+python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar ../datasets/voc
+VOC07 metric? Yes
+AP for aeroplane = 0.6610
+AP for bicycle = 0.7584
+AP for bird = 0.5989
+AP for boat = 0.5384
+AP for bottle = 0.3101
+AP for bus = 0.7096
+AP for car = 0.7091
+AP for cat = 0.7853
+AP for chair = 0.4143
+AP for cow = 0.6580
+AP for diningtable = 0.6200
+AP for dog = 0.7247
+AP for horse = 0.7893
+AP for motorbike = 0.7549
+AP for person = 0.6632
+AP for pottedplant = 0.3196
+AP for sheep = 0.6276
+AP for sofa = 0.6904
+AP for train = 0.7656
+AP for tvmonitor = 0.6552
+Mean AP = 0.6377
 ```
 
 ### Demo
