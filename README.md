@@ -170,51 +170,27 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 
 ```shell
 python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar ../datasets/voc
-VOC07 metric? Yes
-AP for aeroplane = 0.6945
-AP for bicycle = 0.7869
-AP for bird = 0.7050
-AP for boat = 0.5810
-AP for bottle = 0.4112
-AP for bus = 0.7775
-AP for car = 0.7845
-AP for cat = 0.8198
-AP for chair = 0.5360
-AP for cow = 0.7442
-AP for diningtable = 0.7433
-AP for dog = 0.7968
-AP for horse = 0.8223
-AP for motorbike = 0.7943
-AP for person = 0.7329
-AP for pottedplant = 0.4355
-AP for sheep = 0.6735
-AP for sofa = 0.7462
-AP for train = 0.7986
-AP for tvmonitor = 0.6938
-Mean AP = 0.7039
-python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar ../datasets/voc
-VOC07 metric? Yes
-AP for aeroplane = 0.6610
-AP for bicycle = 0.7584
-AP for bird = 0.5989
-AP for boat = 0.5384
-AP for bottle = 0.3101
-AP for bus = 0.7096
-AP for car = 0.7091
-AP for cat = 0.7853
-AP for chair = 0.4143
-AP for cow = 0.6580
-AP for diningtable = 0.6200
-AP for dog = 0.7247
-AP for horse = 0.7893
-AP for motorbike = 0.7549
-AP for person = 0.6632
-AP for pottedplant = 0.3196
-AP for sheep = 0.6276
-AP for sofa = 0.6904
-AP for train = 0.7656
-AP for tvmonitor = 0.6552
-Mean AP = 0.6377
+Input Size：[320x320]: ap50_95 = -1.0, ap50 = 0.6473916885776634
+Input Size：[352x352]: ap50_95 = -1.0, ap50 = 0.6699493293389549
+Input Size：[384x384]: ap50_95 = -1.0, ap50 = 0.6877833630828574
+Input Size：[416x416]: ap50_95 = -1.0, ap50 = 0.7039082798745401
+Input Size：[448x448]: ap50_95 = -1.0, ap50 = 0.7137306842275853
+Input Size：[480x480]: ap50_95 = -1.0, ap50 = 0.7146497518374612
+Input Size：[512x512]: ap50_95 = -1.0, ap50 = 0.7257719154658797
+Input Size：[544x544]: ap50_95 = -1.0, ap50 = 0.723212606421827
+Input Size：[576x576]: ap50_95 = -1.0, ap50 = 0.7264400589618275
+Input Size：[608x608]: ap50_95 = -1.0, ap50 = 0.7221935532137194
+python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar --traversal ../datasets/voc
+Input Size：[320x320]: ap50_95 = -1.0, ap50 = 0.5776244836261818
+Input Size：[352x352]: ap50_95 = -1.0, ap50 = 0.6005603646987956
+Input Size：[384x384]: ap50_95 = -1.0, ap50 = 0.6123359908167338
+Input Size：[416x416]: ap50_95 = -1.0, ap50 = 0.6377968104356557
+Input Size：[448x448]: ap50_95 = -1.0, ap50 = 0.6390525515153531
+Input Size：[480x480]: ap50_95 = -1.0, ap50 = 0.6499791462171649
+Input Size：[512x512]: ap50_95 = -1.0, ap50 = 0.6551285666374826
+Input Size：[544x544]: ap50_95 = -1.0, ap50 = 0.647312034410805
+Input Size：[576x576]: ap50_95 = -1.0, ap50 = 0.6364566638453967
+Input Size：[608x608]: ap50_95 = -1.0, ap50 = 0.6245940557796313
 ```
 
 ### Demo
