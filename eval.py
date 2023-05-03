@@ -74,13 +74,13 @@ def main():
         ap50_95, ap50 = validate(
             val_loader, val_evaluator, model,
             num_classes=num_classes, conf_thresh=conf_thresh, nms_thresh=nms_thresh, device=device)
-        print(f"Input Size：[{input_size}x{input_size}]: ap50_95 = {ap50_95:.4f}, ap50 = {ap50:.4f}")
+        print(f"Input Size：[{input_size}x{input_size}] ap50_95: = {ap50_95:.4f} ap50: = {ap50:.4f}")
         res_list.append([input_size, ap50_95, ap50])
 
     print("=> End")
     for item in res_list:
         input_size, ap50_95, ap50 = item
-        print(f"Input Size：[{input_size}x{input_size}]: ap50_95 = {ap50_95:.4f}, ap50 = {ap50:.4f}")
+        print(f"Input Size：[{input_size}x{input_size}] ap50_95: = {ap50_95:.4f} ap50: = {ap50:.4f}")
 
 
 if __name__ == '__main__':
