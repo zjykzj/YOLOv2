@@ -108,6 +108,8 @@
 
 ## Latest News
 
+***03/05/2023: Fix Version ([v0.1.1](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.1)). Fix target transform and update `yolov2_voc.cfg` and `yolov2-tiny_voc.cfg` training results for VOC2007 Test***
+
 ***02/05/2023: Init Version ([v0.1.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.0)). Complete YOLOv2 training/evaluation/prediction, while providing the evaluation results of VOC2007 Test***
 
 ## Background
