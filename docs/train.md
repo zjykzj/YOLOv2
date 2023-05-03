@@ -1,5 +1,60 @@
 # Training Records
 
+## About anchors?
+
+In the original implementation, anchors is fixed no matter what the input size is. Anchors is always be 
+
+```text
+[[1.3221, 1.73145], [3.19275, 4.00944], [5.05587, 8.09892], [9.47112, 4.84053], [11.2364, 10.0071]]
+```
+
+I tried another way that make anchors scaled with input size. The original anchor is relative to the image size
+
+```text
+[[0.1017, 0.133188], [0.245596, 0.308418], [0.388913, 0.622994], [0.728548, 0.372348], [0.864338, 0.769777]]
+```
+
+For example, when input size is 416x416, so the anchors can scaled by 416 / 32 = 13 times.
+
+```python
+        B, C, H, W = outputs.shape[:4]
+        ...
+        ...
+        # broadcast anchors to all grids
+        # [num_anchors] -> [num_anchors, 1, 1] -> [num_anchors, H, W]
+        w_anchors = torch.broadcast_to(self.anchors[:, 0].reshape(self.num_anchors, 1, 1) * W,
+                                       [self.num_anchors, H, W]).to(dtype=dtype, device=device)
+        h_anchors = torch.broadcast_to(self.anchors[:, 1].reshape(self.num_anchors, 1, 1) * H,
+                                       [self.num_anchors, H, W]).to(dtype=dtype, device=device)
+```
+
+Using this way to train, I found that it reduces training stability and the final accuracy is not as good as the original setting.
+
+```text
+# Fixed anchors
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6474
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6699
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6887
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7039
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7138
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7146
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7257
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7232
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7265
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7222
+# Scaled anchors
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.4442
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6025
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6661
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6986
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7056
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6970
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6662
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6078
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.5001
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.3460
+```
+
 ## About LR?
 
 Refer to [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch), modify the ignore threshold,
