@@ -163,6 +163,10 @@ class YOLOv2Loss(nn.Module):
         # 逐图像操作
         for bi in range(B):
             num_obj = gt_num_objs[bi]
+            if num_obj == 0:
+                # 对于没有标注框的图像，不参与损失计算
+                iou_mask[bi, ...] = 0
+                continue
             # [num_obj, 4]
             # [4]: [x_c, y_c, w, h]
             gt_boxes = targets[bi][:num_obj][..., :4]
