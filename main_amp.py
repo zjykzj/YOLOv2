@@ -33,11 +33,11 @@ logger = logging.get_logger(__name__)
 
 
 def parse():
-    parser = argparse.ArgumentParser(description='PyTorch YOLOv2 Training')
+    parser = argparse.ArgumentParser(description='PyTorch YOLO Training')
     parser.add_argument('data', metavar='DIR', type=str,
                         help='path to dataset')
-    parser.add_argument('-c', "--cfg", metavar='CFG', type=str, default='configs/yolov2_default.cfg',
-                        help='path to config file (default: config/yolov2_default.cfg)')
+    parser.add_argument('-c', "--cfg", metavar='CFG', type=str, default='configs/yolov2_voc.cfg',
+                        help='path to config file (default: config/yolov2_voc.cfg)')
     parser.add_argument('-p', '--print-freq', metavar='N', type=int, default=10,
                         help='print frequency (default: 10)')
     parser.add_argument('-r', '--resume', metavar='RESUME', type=str, default=None,

@@ -19,9 +19,9 @@ from yolo.model.build import build_model
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="YOLOv2 Eval.")
+    parser = argparse.ArgumentParser(description="YOLO Eval.")
     parser.add_argument('data', metavar='DIR', help='Path to dataset')
-    parser.add_argument('-c', '--cfg', type=str, default='configs/yolov2_default.cfg', help='Path to config file')
+    parser.add_argument('-c', '--cfg', type=str, default='configs/yolov2_voc.cfg', help='Path to config file')
     parser.add_argument('-ckpt', '--checkpoint', type=str, help='Path to checkpoint file')
 
     parser.add_argument('--traversal', default=False, action="store_true", help='Using different input size.')
