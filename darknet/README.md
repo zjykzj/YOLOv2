@@ -43,6 +43,20 @@ The training results are as follows:
 
 ## Train for FastDarknet19
 
+### 448x448
+
+```shell
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31326" main_amp.py --arch fastdarknet19 -b 128 --workers 4 --lr 0.1 --weight-decay 1e-5 --epochs 120 --opt-level O1 ./imagenet/
+```
+
+The training results are as follows:
+
+```text
+* Prec@1 70.792 Prec@5 89.102
+```
+
+### 224x224
+
 ```shell
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31326" main_amp.py --arch fastdarknet19 -b 256 --workers 4 --lr 0.1 --weight-decay 1e-5 --epochs 120 --opt-level O1 ./imagenet/
 ```
@@ -53,7 +67,7 @@ The training results are as follows:
 * Prec@1 68.758 Prec@5 88.152
 ```
 
-## Recipe
+## Base Recipe
 
 * `Model`: 
   * Type: Darknet19
