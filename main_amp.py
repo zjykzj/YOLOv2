@@ -134,6 +134,7 @@ def main():
     # define loss function (criterion) and optimizer
     criterion = build_criterion(cfg, device=device)
 
+    global start_epoch
     start_epoch = int(cfg['TRAIN']['START_EPOCH'])
     max_epochs = int(cfg['TRAIN']['MAX_EPOCHS'])
 
@@ -145,12 +146,13 @@ def main():
                 logger.info("=> loading checkpoint '{}'".format(args.resume))
                 checkpoint = torch.load(args.resume, map_location=device)
                 # checkpoint = torch.load(args.resume, map_location=lambda storage, loc: storage.cuda(args.gpu))
+                global start_epoch
                 start_epoch = checkpoint['epoch']
 
                 global best_ap50
                 best_ap50 = checkpoint['ap50']
 
-                if args.distributed:
+                if not args.distributed:
                     state_dict = {key.replace("module.", ""): value for key, value in checkpoint['state_dict'].items()}
                 else:
                     state_dict = checkpoint['state_dict']
@@ -161,7 +163,7 @@ def main():
                 if hasattr(checkpoint, 'lr_scheduler'):
                     lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
-                logger.info("=> loaded checkpoint '{}' (epoch {})".format(args.resume, checkpoint['epoch']))
+                logger.info("=> loaded checkpoint '{}' (epoch {})".format(args.resume, start_epoch))
             else:
                 logger.info("=> no checkpoint found at '{}'".format(args.resume))
 
@@ -191,7 +193,8 @@ def main():
     # pytorch-accurate time
     synchronize()
     # Note: epoch begin from 0
-    for epoch in range(start_epoch, max_epochs):
+    logger.info(f"start_epoch: {start_epoch}, max_epochs: {max_epochs}")
+    for epoch in range(start_epoch - 1, max_epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
 
