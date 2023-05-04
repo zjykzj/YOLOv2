@@ -24,7 +24,7 @@ import torch.cuda
 from torch import Tensor
 from torch.nn import Module
 
-from yolo.model.yolov2 import YOLOv2
+from yolo.model.build import build_model
 from yolo.data.dataset.vocdataset import VOCDataset
 from yolo.data.transform import Transform
 from yolo.util.utils import postprocess
@@ -32,8 +32,8 @@ from yolo.util.box_utils import yolobox2label
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='YOLOv2 Demo.')
-    parser.add_argument('cfg', type=str, default='configs/yolov2_default.cfg', help='Model configuration file.')
+    parser = argparse.ArgumentParser(description='YOLO Demo.')
+    parser.add_argument('cfg', type=str, default='configs/yolov2_voc.cfg', help='Model configuration file.')
     parser.add_argument('ckpt', type=str, default=None, help='Path to the checkpoint file.')
     parser.add_argument('image', type=str, default=None, help='Path to image file')
 
@@ -42,6 +42,7 @@ def parse_args():
 
     parser.add_argument('-c', '--conf-thresh', type=float, default=None, help='Confidence Threshold')
     parser.add_argument('-n', '--nms-thresh', type=float, default=None, help='NMS Threshold')
+    parser.add_argument('--channels-last', type=bool, default=False)
     args = parser.parse_args()
 
     with open(args.cfg, 'r') as f:
@@ -100,13 +101,7 @@ def model_init(args: Namespace, cfg: Dict):
     创建模型，赋值预训练权重
     """
     device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
-
-    anchors = torch.FloatTensor(cfg['MODEL']['ANCHORS'])
-    model = YOLOv2(anchors,
-                   num_classes=cfg['MODEL']['N_CLASSES'],
-                   arch=cfg['MODEL']['BACKBONE'],
-                   pretrained=cfg['MODEL']['BACKBONE_PRETRAINED']
-                   ).to(device)
+    model = build_model(args, cfg, device)
 
     assert args.ckpt, '--ckpt must be specified'
     if args.ckpt:
