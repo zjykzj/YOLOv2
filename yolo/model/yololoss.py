@@ -322,7 +322,7 @@ class YOLOv2Loss(nn.Module):
         class_loss = F.cross_entropy(pred_probs, class_target, reduction='sum')
 
         # print(f"box_loss: {box_loss} iou_loss: {iou_loss} class_loss: {class_loss}")
-        loss = (box_loss * self.coord_scale +
-                iou_loss +
+        loss = (box_loss * self.coord_scale / 2.0 +
+                iou_loss / 2.0 +
                 class_loss * self.class_scale) / B
         return loss
