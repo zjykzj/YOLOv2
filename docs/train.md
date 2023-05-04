@@ -1,5 +1,55 @@
 # Training Records
 
+## New Loss
+
+The loss function I implemented earlier (#b54447e) is as follows:
+
+$$
+loss = \lambda_{coord}\sum_{i=0}^{S^{2}}\sum_{j=0}^{B}1_{ij}^{obj}[(x_i - \hat{x_{i}})^{2} + (y_{i} - \hat{y_{i}})^{2} + (w_{i} - \hat{w_{i}})^{2} + (y_{i} - \hat{y_{i}})^{2})] \\ 
++\lambda_{obj}\sum_{i=0}^{S^{2}}\sum_{j=0}^{B}1_{ij}^{obj}(C_{i}-\hat{C_{i}})^{2} \\ 
++\lambda_{noobj}\sum_{i=0}^{S^{2}}\sum_{j=0}^{B}1_{ij}^{noobj}(C_{i}-\hat{C_{i}})^{2} \\
++\lambda_{cls}\sum_{i=0}^{S^{2}}\sum_{j=0}^{B}1_{ij}^{obj}softmax(pi(c))
+$$
+
+In brief, the calculation of the loss function is as follows:
+
+$$
+loss = \lambda_{coord}loss_{coord}+\lambda_{obj}loss_{obj}+\lambda_{noobj}loss_{noobj}+\lambda_{cls}loss_{cls}
+$$
+
+With reference to [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch), the loss function is implemented (#68b66ce) as follows
+
+$$
+loss = \lambda_{coord}loss_{coord}/2.0+\lambda_{obj}loss_{obj}/2.0+\lambda_{noobj}loss_{noobj}/2.0+\lambda_{cls}loss_{cls}
+$$
+
+From the training results, new loss is better than old:
+
+```text
+# New YOLOv2Loss
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6452
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6707
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6852
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7096
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7148
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7243
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7255
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7285
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7262
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7269
+# Old YOLOv2Loss
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6474
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6699
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6887
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7039
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7138
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7146
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7257
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7232
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7265
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7222
+```
+
 ## About anchors?
 
 In the original implementation, anchors is fixed no matter what the input size is. Anchors is always be 
