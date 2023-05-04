@@ -137,6 +137,7 @@ def main():
     global start_epoch
     start_epoch = int(cfg['TRAIN']['START_EPOCH'])
     max_epochs = int(cfg['TRAIN']['MAX_EPOCHS'])
+    eval_epoch = int(cfg['TRAIN']['EVAL_EPOCH'])
 
     # Optionally resume from a checkpoint
     if args.resume:
@@ -211,7 +212,7 @@ def main():
             lr_scheduler.step()
 
         # save checkpoint
-        if args.local_rank == 0:
+        if args.local_rank == 0 and (epoch + 1) % eval_epoch == 0:
             # evaluate on validation set
             logger.info("Begin evaluating ...")
             start = time.time()
