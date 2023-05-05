@@ -1,5 +1,36 @@
 # Training Records
 
+## 224 or 448?
+
+In the implementation of the paper, using the 448x448 pretrained Darknet network can achieve better detection training results. I tried two input sizes, 224x224 and 448x448, and obtained Prec@1 68.758 and Prec@1 70.792 on ImageNet, respectively.
+
+However, when training the detection task on the VOC dataset, the results did not meet expectations, and the 224x224 pretrained model achieved better results:
+
+```text
+# 224x224
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5776
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6006
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6123
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6378
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6391
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6500
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6551
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6473
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6365
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6246
+# 448x448
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5582
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.5809
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.5972
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6128
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6238
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6299
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6326
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6292
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6086
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.5922
+```
+
 ## New Loss? #b54447e #68b66ce
 
 The loss function I implemented earlier (#b54447e) is as follows:
