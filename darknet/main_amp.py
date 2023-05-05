@@ -56,6 +56,10 @@ def parse():
                         help='model architecture: ' +
                              ' | '.join(model_names) +
                              ' (default: resnet18)')
+
+    parser.add_argument('--input', default=True, action='store_false',
+                        help='Input Image Size. Default: 224')
+
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
     parser.add_argument('--epochs', default=90, type=int, metavar='N',
@@ -211,18 +215,26 @@ def main():
     traindir = os.path.join(args.data, 'train')
     valdir = os.path.join(args.data, 'val')
 
-    if (args.arch == "inception_v3"):
-        raise RuntimeError("Currently, inception_v3 is not supported by this example.")
-        # crop_size = 299
-        # val_size = 320 # I chose this value arbitrarily, we can adjust.
+    if args.input:
+        crop_size = 224
+        val_size = 256
     else:
-        # higher resolution
         crop_size = 448
         val_size = 512
-        # crop_size = 224
-        # val_size = 256
-        # crop_size = 256
-        # val_size = 288
+    print(f"crop_size: {crop_size} val_size: {val_size}")
+
+    # if (args.arch == "inception_v3"):
+    #     raise RuntimeError("Currently, inception_v3 is not supported by this example.")
+    #     # crop_size = 299
+    #     # val_size = 320 # I chose this value arbitrarily, we can adjust.
+    # else:
+    #     # higher resolution
+    #     crop_size = 448
+    #     val_size = 512
+    #     # crop_size = 224
+    #     # val_size = 256
+    #     # crop_size = 256
+    #     # val_size = 288
 
     train_dataset = datasets.ImageFolder(
         traindir,

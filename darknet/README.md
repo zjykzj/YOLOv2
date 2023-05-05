@@ -46,7 +46,7 @@ The training results are as follows:
 ### 448x448
 
 ```shell
-CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31326" main_amp.py --arch fastdarknet19 -b 128 --workers 4 --lr 0.1 --weight-decay 1e-5 --epochs 120 --opt-level O1 ./imagenet/
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31326" main_amp.py --arch fastdarknet19 -b 128 --workers 4 --lr 0.1 --weight-decay 1e-5 --epochs 120 --opt-level O1 --input ./imagenet/
 ```
 
 The training results are as follows:
