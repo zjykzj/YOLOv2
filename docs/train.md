@@ -1,6 +1,6 @@
 # Training Records
 
-## New Loss
+## New Loss? #b54447e #68b66ce
 
 The loss function I implemented earlier (#b54447e) is as follows:
 
@@ -23,7 +23,7 @@ $$
 loss = \lambda_{coord}loss_{coord}/2.0+\lambda_{obj}loss_{obj}/2.0+\lambda_{noobj}loss_{noobj}/2.0+\lambda_{cls}loss_{cls}
 $$
 
-From the training results, new loss is better than old:
+From the training results, new loss is a little better than old:
 
 ```text
 # New YOLOv2Loss
@@ -48,6 +48,24 @@ Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7257
 Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7232
 Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7265
 Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7222
+```
+
+But using YOLOv2-tiny, old version is better than new:
+
+```text
+...
+...
+# Old
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5776
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6006
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6123
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6378
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6391
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6500
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6551
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6473
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6365
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6246
 ```
 
 ## About anchors?
