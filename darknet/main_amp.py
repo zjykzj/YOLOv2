@@ -295,7 +295,7 @@ def main():
                 'prec1': prec1,
                 'best_prec1': best_prec1,
                 'optimizer': optimizer.state_dict(),
-            }, is_best)
+            }, is_best, output_dir=f'./weights/{args.arch}_{crop_size}')
 
 
 class data_prefetcher():
@@ -511,11 +511,23 @@ def validate(val_loader, model, criterion):
     return top1.avg
 
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
-    torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
+def save_checkpoint(state, is_best, filename='checkpoint.pth.tar', output_dir='./'):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
+    ckpt_path = os.path.join(output_dir, filename)
+    print(f"=> Save to {ckpt_path}")
+    torch.save(state, ckpt_path)
+    if is_best:
+        best_path = os.path.join(output_dir, 'model_best.pth.tar')
+        print(f"=> Save to {best_path}")
+        shutil.copyfile(ckpt_path, best_path)
+
+
+# def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+#     torch.save(state, filename)
+#     if is_best:
+#         shutil.copyfile(filename, 'weights/darknet59_224/model_best.pth.tar')
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
