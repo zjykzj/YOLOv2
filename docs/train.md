@@ -1,5 +1,34 @@
 # Training Records
 
+## IGNORE_THRESH?
+
+Set the ignore threshold to 0.5 and 0.7 respectively, and the effect is as follows:
+
+```text
+# IGNORE_THRESH: 0.5
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5841
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6048
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6227
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6396
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6420
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6524
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6527
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6515
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6390
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6260
+# IGNORE_THRESH: 0.7
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5776
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6006
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6123
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6378
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6391
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6500
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6551
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6473
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6365
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6246
+```
+
 ## 224 or 448?
 
 In the implementation of the paper, using the 448x448 pretrained Darknet network can achieve better detection training results. I tried two input sizes, 224x224 and 448x448, and obtained Prec@1 68.758 and Prec@1 70.792 on ImageNet, respectively.
