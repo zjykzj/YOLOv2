@@ -208,6 +208,7 @@ python demo.py -c 0.5 configs/yolov2_voc.cfg outputs/yolov2_voc/model_best.pth.t
 ## Thanks
 
 * [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch)
+* [AlexeyAB/darknet](https://github.com/AlexeyAB/darknet)
 * [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch)
 * [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3)
 * [zjykzj/anchor-boxes](https://github.com/zjykzj/anchor-boxes)
