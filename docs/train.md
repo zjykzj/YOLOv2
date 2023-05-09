@@ -4,6 +4,8 @@
 
 Set the ignore threshold to 0.5 and 0.7 respectively, and the effect is as follows:
 
+Using [yolov2-tiny](../configs/yolov2-tiny_voc.cfg),
+
 ```text
 # IGNORE_THRESH: 0.5
 Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5841
@@ -28,6 +30,37 @@ Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6473
 Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6365
 Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6246
 ```
+
+From the experimental results, there is no significant difference.
+
+Using [yolov2](../configs/yolov2_voc.cfg),
+
+```text
+# IGNORE_THRESH: 0.5
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6495
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6688
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6893
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7024
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7137
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7191
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7253
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7240
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7243
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7248
+# IGNORE_THRESH: 0.7
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6474
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6699
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6887
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7039
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7138
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7146
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7257
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7232
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7265
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7222
+```
+
+Using YOLOv2
 
 ## 224 or 448?
 
