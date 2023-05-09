@@ -94,6 +94,7 @@
 - [Background](#background)
 - [Prepare Data](#prepare-data)
   - [Pascal VOC](#pascal-voc)
+  - [COCO](#coco)
 - [Installation](#installation)
   - [Requirements](#requirements)
   - [Container](#container)
@@ -122,8 +123,7 @@ This repository references many repositories implementations, including [tztztzt
 
 ### Pascal VOC
 
-Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py) to obtain Pascal VOC
-datasets:
+Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py)
 
 ```shell
 python voc2yolov5.py -s /home/zj/data/voc -d /home/zj/data/voc/voc2yolov5-train -l trainval-2007 trainval-2012
@@ -135,6 +135,10 @@ Then softlink the folder where the dataset is located to the specified location:
 ```shell
 ln -s /path/to/voc /path/to/YOLOv2/../datasets/voc
 ```
+
+### COCO
+
+Use this script [get_coco.sh](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh)
 
 ## Installation
 
@@ -191,6 +195,17 @@ Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6527
 Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6515
 Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6390
 Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6260
+python eval.py -c configs/yolov2_coco.cfg -ckpt outputs/yolov2_coco/model_best.pth.tar --traversal ../datasets/coco
+Input Size：[320x320] ap50_95: = 0.1274 ap50: = 0.2838
+Input Size：[352x352] ap50_95: = 0.1372 ap50: = 0.3014
+Input Size：[384x384] ap50_95: = 0.1470 ap50: = 0.3192
+Input Size：[416x416] ap50_95: = 0.1551 ap50: = 0.3325
+Input Size：[448x448] ap50_95: = 0.1598 ap50: = 0.3426
+Input Size：[480x480] ap50_95: = 0.1640 ap50: = 0.3500
+Input Size：[512x512] ap50_95: = 0.1658 ap50: = 0.3548
+Input Size：[544x544] ap50_95: = 0.1690 ap50: = 0.3608
+Input Size：[576x576] ap50_95: = 0.1691 ap50: = 0.3621
+Input Size：[608x608] ap50_95: = 0.1683 ap50: = 0.3626
 ```
 
 ### Demo
@@ -213,6 +228,7 @@ python demo.py -c 0.5 configs/yolov2_voc.cfg outputs/yolov2_voc/model_best.pth.t
 * [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3)
 * [zjykzj/anchor-boxes](https://github.com/zjykzj/anchor-boxes)
 * [zjykzj/vocdev](https://github.com/zjykzj/vocdev)
+* [ultralytics/yolov5](https://github.com/ultralytics/yolov5)
 
 ## Contributing
 
