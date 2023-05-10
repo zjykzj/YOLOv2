@@ -213,10 +213,16 @@ Input Size：[608x608] ap50_95: = 0.1683 ap50: = 0.3626
 ### Demo
 
 ```shell
-python demo.py -c 0.5 configs/yolov2_voc.cfg outputs/yolov2_voc/model_best.pth.tar assets/voc2007-test/
+python demo.py -c 0.6 configs/yolov2_voc.cfg outputs/yolov2_voc/model_best.pth.tar --exp voc assets/voc2007-test/
 ```
 
 <p align="left"><img src="results/voc/000237.jpg" height="240"\>  <img src="results/voc/000386.jpg" height="240"\></p>
+
+```shell
+python demo.py -c 0.6 configs/yolov2_coco.cfg outputs/yolov2_coco/model_best.pth.tar --exp coco assets/coco/
+```
+
+<p align="left"><img src="results/coco/bus.jpg" height="240"\>  <img src="results/coco/zidane.jpg" height="240"\></p>
 
 ## Maintainers
 
