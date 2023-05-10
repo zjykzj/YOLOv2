@@ -11,7 +11,7 @@ import random
 import time
 
 from yolo.data.dataset import KEY_TARGET, KEY_IMAGE_INFO, KEY_IMAGE_ID
-from yolo.data.dataset.cocodataset import COCODataset
+from yolo.data.dataset.cocodataset import COCODataset, get_coco_label_names
 from yolo.data.dataset.vocdataset import VOCDataset
 from yolo.data.transform import Transform
 
@@ -95,7 +95,7 @@ def test_coco_train():
     end = time.time()
     for i in range(len(dataset)):
         image, target = dataset.__getitem__(i)
-        print(i, image.shape, target.shape)
+        print(i, image.shape, target)
     print(f"Avg one time: {(time.time() - end) / len(dataset)}")
 
 
@@ -116,11 +116,16 @@ def test_coco_val():
     # img, target = dataset.__getitem__(87564)
     # img, target = dataset.__getitem__(51264)
 
-    end = time.time()
-    for i in range(len(dataset)):
-        image, target = dataset.__getitem__(i)
-        print(i, image.shape, target.shape)
-    print(f"Avg one time: {(time.time() - end) / len(dataset)}")
+    # end = time.time()
+    # for i in range(len(dataset)):
+    #     image, target = dataset.__getitem__(i)
+    #     print(i, image.shape, target[KEY_TARGET].shape)
+    # print(f"Avg one time: {(time.time() - end) / len(dataset)}")
+
+    # 获取类名
+    coco_label_names, coco_class_ids, coco_cls_colors = get_coco_label_names()
+    classes = [coco_label_names[index] for index in dataset.class_ids]
+    print(classes)
 
 
 if __name__ == '__main__':
@@ -128,5 +133,5 @@ if __name__ == '__main__':
 
     # test_voc_train()
     # test_voc_val()
-    test_coco_train()
+    # test_coco_train()
     test_coco_val()
