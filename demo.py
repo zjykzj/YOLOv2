@@ -26,6 +26,7 @@ from torch.nn import Module
 
 from yolo.model.build import build_model
 from yolo.data.dataset.vocdataset import VOCDataset
+from yolo.data.dataset.cocodataset import COCODataset
 from yolo.data.transform import Transform
 from yolo.util.utils import postprocess
 from yolo.util.box_utils import yolobox2label
@@ -115,7 +116,7 @@ def model_init(args: Namespace, cfg: Dict):
     return model, device
 
 
-def parse_info(outputs: List, info_img: List or Tuple):
+def parse_info(outputs: List, info_img: List or Tuple, classes: List):
     import random
 
     bboxes = list()
@@ -130,7 +131,7 @@ def parse_info(outputs: List, info_img: List or Tuple):
     # cls_pred: 分类下标
     for x1, y1, x2, y2, conf, cls_conf, cls_pred in outputs:
         cls_id = int(cls_pred)
-        label = VOCDataset.classes[cls_id]
+        label = classes[cls_id]
 
         random.seed(cls_id)
 
@@ -213,6 +214,14 @@ def main():
         nms_thre = args.nms_thresh
     num_classes = cfg['MODEL']['N_CLASSES']
 
+    data_type = cfg['DATA']['TYPE']
+    if 'PASCAL VOC' == data_type:
+        classes = VOCDataset.classes
+    elif 'COCO' == data_type:
+        classes = COCODataset.classes
+    else:
+        raise ValueError(f"{data_type} doesn't supports")
+
     save_dir = os.path.join(args.outputs, args.exp)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -225,7 +234,7 @@ def main():
             continue
 
         print("Parse INFO")
-        bboxes, confs, labels, colors = parse_info(outputs[0], img_info[:6])
+        bboxes, confs, labels, colors = parse_info(outputs[0], img_info[:6], classes)
         draw_image = draw_bbox(img_raw, bboxes, confs, labels, colors)
 
         img_name = os.path.basename(img_path)
