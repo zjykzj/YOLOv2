@@ -60,7 +60,7 @@
     <td class="tg-7btt">VOC AP[IoU=0.50]</td>
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">76.8</span></td>
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">72.7</span></td>
-    <td class="tg-c3ow">70.39</td>
+    <td class="tg-c3ow">71.65</td>
     <td class="tg-c3ow">63.96</td>
   </tr>
   <tr>
@@ -176,16 +176,16 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 
 ```shell
 python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6474
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6699
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6887
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7039
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7138
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7146
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7257
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7232
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7265
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7222
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6635
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6878
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7016
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7165
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7278
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7323
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7360
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7376
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7387
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7306
 python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar --traversal ../datasets/voc
 Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5841
 Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6048
