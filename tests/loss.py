@@ -8,29 +8,37 @@
 """
 
 import torch
+import torch.nn.functional as F
 
 from yolo.model.yololoss import YOLOv2Loss
 
 
-def test_anchors():
-    cfg_file = 'configs/yolov2_default.cfg'
-    print(f"=> Test {cfg_file}")
-    with open(cfg_file, 'r') as f:
-        import yaml
-        cfg = yaml.safe_load(f)
+def test_scale():
+    a = torch.randn(3, 4)
+    b = torch.randn(3, 4)
 
-    anchors = torch.tensor(cfg['MODEL']['ANCHORS'])
-    criterion = YOLOv2Loss(anchors,
-                           num_classes=cfg['MODEL']['N_CLASSES'],
-                           ignore_thresh=cfg['CRITERION']['IGNORE_THRESH'],
-                           coord_scale=cfg['CRITERION']['COORD_SCALE'],
-                           noobj_scale=cfg['CRITERION']['NOOBJ_SCALE'],
-                           obj_scale=cfg['CRITERION']['OBJ_SCALE'],
-                           class_scale=cfg['CRITERION']['CLASS_SCALE'],
-                           )
-    all_anchors = criterion.build_anchors(13)
-    print(all_anchors.shape)
+    mask = torch.ones(3, 4)
+    mask *= 0.5
+    mask[1] = 5
+
+    aa = a * mask
+    bb = b * mask
+    loss1 = F.mse_loss(aa, bb, reduction='sum')
+
+    aa1 = a[mask == 0.5]
+    bb1 = b[mask == 0.5]
+    loss2 = F.mse_loss(aa1, bb1, reduction='sum')
+
+    aa2 = a[mask == 5]
+    bb2 = b[mask == 5]
+    loss3 = F.mse_loss(aa2, bb2, reduction='sum')
+
+    assert (loss1 - (loss2 * 0.5 * 0.5 + loss3 * 5 * 5)) < 1e-3
+
+    loss4 = F.mse_loss(aa1 * 0.5, bb1 * 0.5, reduction='sum')
+    loss5 = F.mse_loss(aa2 * 5, bb2 * 5, reduction='sum')
+    assert (loss1 - (loss4 + loss5)) < 1e-3
 
 
 if __name__ == '__main__':
-    test_anchors()
+    test_scale()
