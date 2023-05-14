@@ -61,7 +61,7 @@
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">76.8</span></td>
     <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">72.7</span></td>
     <td class="tg-c3ow">71.65</td>
-    <td class="tg-c3ow">63.96</td>
+    <td class="tg-c3ow">64.19</td>
   </tr>
   <tr>
     <td class="tg-7btt">conf_thre</td>
@@ -187,16 +187,16 @@ Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7376
 Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7387
 Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7306
 python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5841
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6048
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6227
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6396
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6420
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6524
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6527
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6515
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6390
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6260
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5863
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6102
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6314
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6419
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6560
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6570
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6572
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6511
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6422
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6329
 python eval.py -c configs/yolov2_coco.cfg -ckpt outputs/yolov2_coco/model_best.pth.tar --traversal ../datasets/coco
 Input Size：[320x320] ap50_95: = 0.1274 ap50: = 0.2838
 Input Size：[352x352] ap50_95: = 0.1372 ap50: = 0.3014
