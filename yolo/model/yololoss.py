@@ -60,7 +60,7 @@ def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
 class YOLOv2Loss(nn.Module):
 
     def __init__(self, anchors, num_classes=20, ignore_thresh=0.5,
-                 coord_scale=1.0, noobj_scale=1.0, obj_scale=5.0, class_scale=1.0):
+                 coord_scale=1.0, noobj_scale=1.0, obj_scale=1.0, class_scale=1.0):
         super(YOLOv2Loss, self).__init__()
         self.anchors = anchors
         self.num_classes = num_classes
