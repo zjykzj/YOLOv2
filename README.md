@@ -50,7 +50,6 @@
     <td class="tg-zkss">YOLOv2+Darknet53</td>
     <td class="tg-zkss">YOLOv2</td>
     <td class="tg-zkss">YOLOv2-tiny</td>
-    <td class="tg-baqh"></td>
   </tr>
   <tr>
     <td class="tg-17st">train</td>
@@ -59,7 +58,6 @@
     <td class="tg-zkss">VOC07+12 trainval</td>
     <td class="tg-zkss">VOC07+12 trainval</td>
     <td class="tg-zkss">VOC07+12 trainval</td>
-    <td class="tg-baqh"></td>
   </tr>
   <tr>
     <td class="tg-17st">val</td>
@@ -68,7 +66,6 @@
     <td class="tg-zkss">VOC2007 Test</td>
     <td class="tg-zkss">VOC2007 Test</td>
     <td class="tg-zkss">VOC2007 Test</td>
-    <td class="tg-baqh"></td>
   </tr>
   <tr>
     <td class="tg-17st">VOC AP[IoU=0.50]</td>
@@ -77,7 +74,6 @@
     <td class="tg-zkss">76.27</td>
     <td class="tg-zkss">71.65</td>
     <td class="tg-zkss">64.19</td>
-    <td class="tg-baqh"></td>
   </tr>
   <tr>
     <td class="tg-17st">conf_thre</td>
@@ -86,7 +82,6 @@
     <td class="tg-zkss">0.005</td>
     <td class="tg-zkss">0.005</td>
     <td class="tg-zkss">0.005</td>
-    <td class="tg-baqh"></td>
   </tr>
   <tr>
     <td class="tg-17st">nms_thre</td>
@@ -95,7 +90,6 @@
     <td class="tg-zkss">0.45</td>
     <td class="tg-zkss">0.45</td>
     <td class="tg-zkss">0.45</td>
-    <td class="tg-baqh"></td>
   </tr>
   <tr>
     <td class="tg-17st">input_size</td>
@@ -104,7 +98,6 @@
     <td class="tg-zkss">416</td>
     <td class="tg-zkss">416</td>
     <td class="tg-zkss">416</td>
-    <td class="tg-baqh"></td>
   </tr>
 </tbody>
 </table>
