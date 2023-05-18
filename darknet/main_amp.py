@@ -47,6 +47,8 @@ def parse():
                          and callable(models.__dict__[name]))
     model_names.append('darknet19')
     model_names.append('fastdarknet19')
+    model_names.append('darknet53')
+    model_names.append('fastdarknet53')
 
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
     parser.add_argument('data', metavar='DIR',
@@ -148,12 +150,20 @@ def main():
     #     model = models.__dict__[args.arch]()
     if args.arch == 'darknet19':
         print("=> creating model Darknet19")
-        from darknet import Darknet19
+        from darknet19 import Darknet19
         model = Darknet19(num_classes=1000)
     elif args.arch == 'fastdarknet19':
         print("=> creating model FastDarknet19")
-        from darknet import FastDarknet19
+        from darknet19 import FastDarknet19
         model = FastDarknet19(num_classes=1000)
+    elif args.arch == 'fastdarknet19':
+        print("=> creating model Darknet53")
+        from darknet53 import Darknet53
+        model = Darknet53(num_classes=1000)
+    elif args.arch == 'fastdarknet19':
+        print("=> creating model FastDarknet53")
+        from darknet53 import FastDarknet53
+        model = FastDarknet53(num_classes=1000)
     else:
         raise ValueError(f"{args.arch} doesn't supports")
 
