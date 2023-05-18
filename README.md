@@ -21,68 +21,90 @@
   overflow:hidden;padding:10px 5px;word-break:normal;}
 .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
   font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
-.tg .tg-7btt{border-color:inherit;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-ftdh{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;text-decoration:underline;
+  vertical-align:top}
+.tg .tg-zkss{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:top}
+.tg .tg-uibn{color:#00E;font-weight:bold;text-align:center;text-decoration:underline;vertical-align:top}
+.tg .tg-baqh{text-align:center;vertical-align:top}
+.tg .tg-fr9f{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-17st{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:middle}
+.tg .tg-h2b0{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:middle}
 </style> -->
 <table class="tg">
 <thead>
   <tr>
-    <th class="tg-c3ow"></th>
-    <th class="tg-7btt"><span style="font-style:normal">Original (darknet)</span></th>
-    <th class="tg-7btt"><a href="https://github.com/tztztztztz" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">tztztztztz</span></a><span style="font-weight:400">/</span><a href="https://github.com/tztztztztz/yolov2.pytorch" target="_blank" rel="noopener noreferrer">yolov2.pytorch</a></th>
-    <th class="tg-7btt"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer">YOLOv2</a>(This)</th>
-    <th class="tg-7btt"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer">YOLOv2</a>(This)</th>
+    <th class="tg-fr9f"></th>
+    <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
+    <th class="tg-ftdh"><a href="https://github.com/tztztztztz" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">tztztztztz</span></a><span style="font-weight:400">/</span><a href="https://github.com/tztztztztz/yolov2.pytorch" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">yolov2.pytorch</span></a></th>
+    <th class="tg-ftdh"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">YOLOv2</span></a><span style="font-weight:bold;color:#000">(This)</span></th>
+    <th class="tg-ftdh"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">YOLOv2</span></a><span style="font-weight:bold;color:#000">(This)</span></th>
+    <th class="tg-ftdh"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">YOLOv2</span></a><span style="font-weight:bold;color:#000">(This)</span></th>
+    <th class="tg-uibn"></th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td class="tg-7btt">arch</td>
-    <td class="tg-c3ow">YOLOv2</td>
-    <td class="tg-c3ow">YOLOv2</td>
-    <td class="tg-c3ow">YOLOv2</td>
-    <td class="tg-c3ow">YOLOv2-tiny</td>
+    <td class="tg-17st">arch</td>
+    <td class="tg-h2b0">YOLOv2</td>
+    <td class="tg-h2b0">YOLOv2</td>
+    <td class="tg-zkss">YOLOv2+Darknet53</td>
+    <td class="tg-zkss">YOLOv2</td>
+    <td class="tg-zkss">YOLOv2-tiny</td>
+    <td class="tg-baqh"></td>
   </tr>
   <tr>
-    <td class="tg-7btt">train</td>
-    <td class="tg-c3ow">VOC07+12 trainval</td>
-    <td class="tg-c3ow">VOC07+12 trainval</td>
-    <td class="tg-c3ow">VOC07+12 trainval</td>
-    <td class="tg-c3ow">VOC07+12 trainval</td>
+    <td class="tg-17st">train</td>
+    <td class="tg-h2b0">VOC07+12 trainval</td>
+    <td class="tg-h2b0">VOC07+12 trainval</td>
+    <td class="tg-zkss">VOC07+12 trainval</td>
+    <td class="tg-zkss">VOC07+12 trainval</td>
+    <td class="tg-zkss">VOC07+12 trainval</td>
+    <td class="tg-baqh"></td>
   </tr>
   <tr>
-    <td class="tg-7btt">val</td>
-    <td class="tg-c3ow">VOC2007 Test </td>
-    <td class="tg-c3ow">VOC2007 Test </td>
-    <td class="tg-c3ow">VOC2007 Test </td>
-    <td class="tg-c3ow">VOC2007 Test </td>
+    <td class="tg-17st">val</td>
+    <td class="tg-h2b0">VOC2007 Test</td>
+    <td class="tg-h2b0">VOC2007 Test</td>
+    <td class="tg-zkss">VOC2007 Test</td>
+    <td class="tg-zkss">VOC2007 Test</td>
+    <td class="tg-zkss">VOC2007 Test</td>
+    <td class="tg-baqh"></td>
   </tr>
   <tr>
-    <td class="tg-7btt">VOC AP[IoU=0.50]</td>
-    <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">76.8</span></td>
-    <td class="tg-c3ow"><span style="font-weight:400;font-style:normal">72.7</span></td>
-    <td class="tg-c3ow">71.65</td>
-    <td class="tg-c3ow">64.19</td>
+    <td class="tg-17st">VOC AP[IoU=0.50]</td>
+    <td class="tg-zkss"><span style="font-weight:400;font-style:normal">76.8</span></td>
+    <td class="tg-zkss"><span style="font-weight:400;font-style:normal">72.7</span></td>
+    <td class="tg-zkss">76.27</td>
+    <td class="tg-zkss">71.65</td>
+    <td class="tg-zkss">64.19</td>
+    <td class="tg-baqh"></td>
   </tr>
   <tr>
-    <td class="tg-7btt">conf_thre</td>
-    <td class="tg-c3ow">/</td>
-    <td class="tg-c3ow">0.005</td>
-    <td class="tg-c3ow">0.005</td>
-    <td class="tg-c3ow">0.005</td>
+    <td class="tg-17st">conf_thre</td>
+    <td class="tg-h2b0">/</td>
+    <td class="tg-h2b0">0.005</td>
+    <td class="tg-zkss">0.005</td>
+    <td class="tg-zkss">0.005</td>
+    <td class="tg-zkss">0.005</td>
+    <td class="tg-baqh"></td>
   </tr>
   <tr>
-    <td class="tg-7btt">nms_thre</td>
-    <td class="tg-c3ow">/</td>
-    <td class="tg-c3ow">0.45</td>
-    <td class="tg-c3ow">0.45</td>
-    <td class="tg-c3ow">0.45</td>
+    <td class="tg-17st">nms_thre</td>
+    <td class="tg-h2b0">/</td>
+    <td class="tg-h2b0">0.45</td>
+    <td class="tg-zkss">0.45</td>
+    <td class="tg-zkss">0.45</td>
+    <td class="tg-zkss">0.45</td>
+    <td class="tg-baqh"></td>
   </tr>
   <tr>
-    <td class="tg-7btt">input_size</td>
-    <td class="tg-c3ow">416</td>
-    <td class="tg-c3ow">416</td>
-    <td class="tg-c3ow">416</td>
-    <td class="tg-c3ow">416</td>
+    <td class="tg-17st">input_size</td>
+    <td class="tg-h2b0">416</td>
+    <td class="tg-h2b0">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-baqh"></td>
   </tr>
 </tbody>
 </table>
@@ -175,6 +197,17 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 ### Eval
 
 ```shell
+python eval.py -c configs/yolov2_d53_voc.cfg -ckpt outputs/yolov2_d53_voc/model_best.pth.tar --traversal ../datasets/voc
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.7140
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.7304
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7456
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7627
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7672
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7691
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7689
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7704
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7672
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7685
 python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar --traversal ../datasets/voc
 Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6635
 Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6878
