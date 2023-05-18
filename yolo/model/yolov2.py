@@ -14,7 +14,8 @@ import torch
 from torch import Tensor
 from torch import nn
 
-from darknet.darknet import conv_bn_act, Darknet19, FastDarknet19
+from darknet.darknet19 import conv_bn_act, Darknet19, FastDarknet19
+from darknet.darknet53 import Darknet53, FastDarknet53
 
 from yolo.util.box_utils import xywh2xyxy
 from yolo.util import logging
@@ -60,6 +61,10 @@ class Backbone(nn.Module):
             self.darknet = Darknet19()
         elif 'FastDarknet19' == arch:
             self.darknet = FastDarknet19()
+        elif 'Darknet53' == arch:
+            self.darknet = Darknet53()
+        elif 'FastDarknet53' == arch:
+            self.darknet = FastDarknet53()
         else:
             raise ValueError(f"{arch} doesn't supports")
         # # darknet backbone
@@ -98,15 +103,26 @@ class Backbone(nn.Module):
             self.darknet.load_state_dict(state_dict, strict=True)
 
     def conv1(self, x):
-        x = self.darknet.backbone.layer0(x)
-        x = self.darknet.backbone.layer1(x)
-        x = self.darknet.backbone.layer2(x)
-        x = self.darknet.backbone.layer3(x)
-        x = self.darknet.backbone.layer4(x)
+        if self.arch in ['Darknet19', 'FastDarknet19']:
+            x = self.darknet.backbone.layer0(x)
+            x = self.darknet.backbone.layer1(x)
+            x = self.darknet.backbone.layer2(x)
+            x = self.darknet.backbone.layer3(x)
+            x = self.darknet.backbone.layer4(x)
+        else:
+            x = self.darknet.backbone.stem(x)
+
+            x = self.darknet.backbone.stage1(x)
+            x = self.darknet.backbone.stage2(x)
+            x = self.darknet.backbone.stage3(x)
+            x = self.darknet.backbone.stage4(x)
         return x
 
     def conv2(self, x):
-        x = self.darknet.backbone.layer5(x)
+        if self.arch in ['Darknet19', 'FastDarknet19']:
+            x = self.darknet.backbone.layer5(x)
+        else:
+            x = self.darknet.backbone.stage5(x)
         return x
 
     def forward(self, x):
