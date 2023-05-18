@@ -24,8 +24,6 @@
 .tg .tg-ftdh{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;text-decoration:underline;
   vertical-align:top}
 .tg .tg-zkss{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:top}
-.tg .tg-uibn{color:#00E;font-weight:bold;text-align:center;text-decoration:underline;vertical-align:top}
-.tg .tg-baqh{text-align:center;vertical-align:top}
 .tg .tg-fr9f{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:top}
 .tg .tg-17st{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:middle}
 .tg .tg-h2b0{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:middle}
@@ -37,9 +35,6 @@
     <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
     <th class="tg-ftdh"><a href="https://github.com/tztztztztz" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">tztztztztz</span></a><span style="font-weight:400">/</span><a href="https://github.com/tztztztztz/yolov2.pytorch" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">yolov2.pytorch</span></a></th>
     <th class="tg-ftdh"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">YOLOv2</span></a><span style="font-weight:bold;color:#000">(This)</span></th>
-    <th class="tg-ftdh"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">YOLOv2</span></a><span style="font-weight:bold;color:#000">(This)</span></th>
-    <th class="tg-ftdh"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">YOLOv2</span></a><span style="font-weight:bold;color:#000">(This)</span></th>
-    <th class="tg-uibn"></th>
   </tr>
 </thead>
 <tbody>
@@ -48,15 +43,11 @@
     <td class="tg-h2b0">YOLOv2</td>
     <td class="tg-h2b0">YOLOv2</td>
     <td class="tg-zkss">YOLOv2+Darknet53</td>
-    <td class="tg-zkss">YOLOv2</td>
-    <td class="tg-zkss">YOLOv2-tiny</td>
   </tr>
   <tr>
     <td class="tg-17st">train</td>
     <td class="tg-h2b0">VOC07+12 trainval</td>
     <td class="tg-h2b0">VOC07+12 trainval</td>
-    <td class="tg-zkss">VOC07+12 trainval</td>
-    <td class="tg-zkss">VOC07+12 trainval</td>
     <td class="tg-zkss">VOC07+12 trainval</td>
   </tr>
   <tr>
@@ -64,23 +55,17 @@
     <td class="tg-h2b0">VOC2007 Test</td>
     <td class="tg-h2b0">VOC2007 Test</td>
     <td class="tg-zkss">VOC2007 Test</td>
-    <td class="tg-zkss">VOC2007 Test</td>
-    <td class="tg-zkss">VOC2007 Test</td>
   </tr>
   <tr>
     <td class="tg-17st">VOC AP[IoU=0.50]</td>
     <td class="tg-zkss"><span style="font-weight:400;font-style:normal">76.8</span></td>
     <td class="tg-zkss"><span style="font-weight:400;font-style:normal">72.7</span></td>
     <td class="tg-zkss">76.27</td>
-    <td class="tg-zkss">71.65</td>
-    <td class="tg-zkss">64.19</td>
   </tr>
   <tr>
     <td class="tg-17st">conf_thre</td>
     <td class="tg-h2b0">/</td>
     <td class="tg-h2b0">0.005</td>
-    <td class="tg-zkss">0.005</td>
-    <td class="tg-zkss">0.005</td>
     <td class="tg-zkss">0.005</td>
   </tr>
   <tr>
@@ -88,15 +73,11 @@
     <td class="tg-h2b0">/</td>
     <td class="tg-h2b0">0.45</td>
     <td class="tg-zkss">0.45</td>
-    <td class="tg-zkss">0.45</td>
-    <td class="tg-zkss">0.45</td>
   </tr>
   <tr>
     <td class="tg-17st">input_size</td>
     <td class="tg-h2b0">416</td>
     <td class="tg-h2b0">416</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
     <td class="tg-zkss">416</td>
   </tr>
 </tbody>
