@@ -14,7 +14,7 @@ from yolo.model.yolov2 import YOLOv2
 
 
 def test_yolov2():
-    cfg_file = 'configs/yolov2_default.cfg'
+    cfg_file = 'configs/yolov2_voc.cfg'
     print(f"=> Test {cfg_file}")
     with open(cfg_file, 'r') as f:
         import yaml
