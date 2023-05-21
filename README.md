@@ -21,64 +21,133 @@
   overflow:hidden;padding:10px 5px;word-break:normal;}
 .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
   font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-tlx9{background-color:#FFF;color:#333;text-align:center;vertical-align:top}
 .tg .tg-ftdh{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;text-decoration:underline;
   vertical-align:top}
 .tg .tg-zkss{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:top}
+.tg .tg-vc3l{background-color:#FFF;border-color:inherit;color:#1F2328;text-align:center;vertical-align:top}
+.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
 .tg .tg-fr9f{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:top}
-.tg .tg-17st{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:middle}
+.tg .tg-1rzx{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;text-decoration:underline;
+  vertical-align:top}
 .tg .tg-h2b0{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:middle}
+.tg .tg-17st{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:middle}
+.tg .tg-7btt{border-color:inherit;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-amwm{font-weight:bold;text-align:center;vertical-align:top}
 </style> -->
 <table class="tg">
 <thead>
   <tr>
     <th class="tg-fr9f"></th>
     <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
-    <th class="tg-ftdh"><a href="https://github.com/tztztztztz" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">tztztztztz</span></a><span style="font-weight:400">/</span><a href="https://github.com/tztztztztz/yolov2.pytorch" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">yolov2.pytorch</span></a></th>
-    <th class="tg-ftdh"><a href="https://github.com/zjykzj" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none">zjykzj</span></a><span style="font-weight:400">/</span><a href="https://github.com/zjykzj/YOLOv2" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:#08C">YOLOv2</span></a><span style="font-weight:bold;color:#000">(This)</span></th>
+    <th class="tg-1rzx"><span style="font-style:normal">Original (darknet)</span></th>
+    <th class="tg-ftdh">tztztztztz/yolov2.pytorch</th>
+    <th class="tg-ftdh">zjykzj/YOLOv2(This)</th>
+    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
+    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
+    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
+    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td class="tg-17st">arch</td>
-    <td class="tg-h2b0">YOLOv2</td>
-    <td class="tg-h2b0">YOLOv2</td>
-    <td class="tg-zkss">YOLOv2+Darknet53</td>
+    <td class="tg-fr9f">ARCH</td>
+    <td class="tg-fr9f">YOLOv2</td>
+    <td class="tg-fr9f">YOLOv2</td>
+    <td class="tg-fr9f">YOLOv2</td>
+    <td class="tg-fr9f">YOLOv2+Darknet53</td>
+    <td class="tg-zkss">YOLOv2</td>
+    <td class="tg-c3ow">YOLOv2-tiny</td>
+    <td class="tg-zkss">YOLOv2</td>
+    <td class="tg-c3ow">YOLOv2-tiny</td>
   </tr>
   <tr>
-    <td class="tg-17st">train</td>
-    <td class="tg-h2b0">VOC07+12 trainval</td>
-    <td class="tg-h2b0">VOC07+12 trainval</td>
+    <td class="tg-fr9f">TRAIN</td>
     <td class="tg-zkss">VOC07+12 trainval</td>
+    <td class="tg-h2b0">COCO train2015</td>
+    <td class="tg-zkss">VOC07+12 trainval</td>
+    <td class="tg-zkss">VOC07+12 trainval</td>
+    <td class="tg-c3ow">VOC07+12 trainval</td>
+    <td class="tg-c3ow">VOC07+12 trainval</td>
+    <td class="tg-zkss">COCO train2017</td>
+    <td class="tg-zkss">COCO train2017</td>
   </tr>
   <tr>
-    <td class="tg-17st">val</td>
-    <td class="tg-h2b0">VOC2007 Test</td>
-    <td class="tg-h2b0">VOC2007 Test</td>
+    <td class="tg-17st">VAL</td>
     <td class="tg-zkss">VOC2007 Test</td>
+    <td class="tg-h2b0">COCO test-dev2015</td>
+    <td class="tg-zkss">VOC2007 Test</td>
+    <td class="tg-zkss">VOC2007 Test</td>
+    <td class="tg-c3ow">VOC2007 Test</td>
+    <td class="tg-c3ow">VOC2007 Test</td>
+    <td class="tg-c3ow">COCO val2017</td>
+    <td class="tg-c3ow">COCO val2017</td>
   </tr>
   <tr>
     <td class="tg-17st">VOC AP[IoU=0.50]</td>
-    <td class="tg-zkss"><span style="font-weight:400;font-style:normal">76.8</span></td>
-    <td class="tg-zkss"><span style="font-weight:400;font-style:normal">72.7</span></td>
-    <td class="tg-zkss">76.27</td>
+    <td class="tg-zkss">/</td>
+    <td class="tg-vc3l">21.6</td>
+    <td class="tg-zkss">/</td>
+    <td class="tg-zkss">/</td>
+    <td class="tg-c3ow">/</td>
+    <td class="tg-c3ow">/</td>
+    <td class="tg-7btt">25.33</td>
+    <td class="tg-c3ow">21.96</td>
   </tr>
   <tr>
-    <td class="tg-17st">conf_thre</td>
+    <td class="tg-fr9f">COCO AP[IoU=0.50:0.95]</td>
     <td class="tg-h2b0">/</td>
-    <td class="tg-h2b0">0.005</td>
+    <td class="tg-h2b0">44.0</td>
+    <td class="tg-zkss">/</td>
+    <td class="tg-zkss">/</td>
+    <td class="tg-c3ow">/</td>
+    <td class="tg-c3ow">/</td>
+    <td class="tg-7btt">47.24</td>
+    <td class="tg-c3ow">42.65</td>
+  </tr>
+  <tr>
+    <td class="tg-fr9f">COCO AP[IoU=0.50]</td>
+    <td class="tg-h2b0">76.8</td>
+    <td class="tg-vc3l">/</td>
+    <td class="tg-zkss">72.7</td>
+    <td class="tg-fr9f">76.27</td>
+    <td class="tg-c3ow">71.65</td>
+    <td class="tg-c3ow">64.19</td>
+    <td class="tg-c3ow">/</td>
+    <td class="tg-c3ow">/</td>
+  </tr>
+  <tr>
+    <td class="tg-fr9f">INPUT_SIZE</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+    <td class="tg-zkss">416</td>
+  </tr>
+  <tr>
+    <td class="tg-7btt">CONF_THRESH</td>
+    <td class="tg-zkss">/</td>
+    <td class="tg-zkss">/</td>
+    <td class="tg-zkss">0.005</td>
+    <td class="tg-zkss">0.005</td>
+    <td class="tg-zkss">0.005</td>
+    <td class="tg-zkss">0.005</td>
+    <td class="tg-zkss">0.005</td>
     <td class="tg-zkss">0.005</td>
   </tr>
   <tr>
-    <td class="tg-17st">nms_thre</td>
-    <td class="tg-h2b0">/</td>
-    <td class="tg-h2b0">0.45</td>
-    <td class="tg-zkss">0.45</td>
-  </tr>
-  <tr>
-    <td class="tg-17st">input_size</td>
-    <td class="tg-h2b0">416</td>
-    <td class="tg-h2b0">416</td>
-    <td class="tg-zkss">416</td>
+    <td class="tg-amwm">NMS_THRESH</td>
+    <td class="tg-tlx9">/</td>
+    <td class="tg-tlx9">/</td>
+    <td class="tg-tlx9">0.45</td>
+    <td class="tg-tlx9">0.45</td>
+    <td class="tg-tlx9">0.45</td>
+    <td class="tg-tlx9">0.45</td>
+    <td class="tg-tlx9">0.45</td>
+    <td class="tg-tlx9">0.45</td>
   </tr>
 </tbody>
 </table>
@@ -204,17 +273,28 @@ Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6572
 Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6511
 Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6422
 Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6329
+python eval.py -c configs/yolov2_d53_coco.cfg -ckpt outputs/yolov2_d53_coco/model_best.pth.tar --traversal ../datasets/coco
+Input Size：[320x320] ap50_95: = 0.2194 ap50: = 0.4139
+Input Size：[352x352] ap50_95: = 0.2321 ap50: = 0.4368
+Input Size：[384x384] ap50_95: = 0.2450 ap50: = 0.4553
+Input Size：[416x416] ap50_95: = 0.2533 ap50: = 0.4724
+Input Size：[448x448] ap50_95: = 0.2608 ap50: = 0.4844
+Input Size：[480x480] ap50_95: = 0.2656 ap50: = 0.4961
+Input Size：[512x512] ap50_95: = 0.2715 ap50: = 0.5060
+Input Size：[544x544] ap50_95: = 0.2752 ap50: = 0.5103
+Input Size：[576x576] ap50_95: = 0.2799 ap50: = 0.5208
+Input Size：[608x608] ap50_95: = 0.2789 ap50: = 0.5209
 python eval.py -c configs/yolov2_coco.cfg -ckpt outputs/yolov2_coco/model_best.pth.tar --traversal ../datasets/coco
-Input Size：[320x320] ap50_95: = 0.1274 ap50: = 0.2838
-Input Size：[352x352] ap50_95: = 0.1372 ap50: = 0.3014
-Input Size：[384x384] ap50_95: = 0.1470 ap50: = 0.3192
-Input Size：[416x416] ap50_95: = 0.1551 ap50: = 0.3325
-Input Size：[448x448] ap50_95: = 0.1598 ap50: = 0.3426
-Input Size：[480x480] ap50_95: = 0.1640 ap50: = 0.3500
-Input Size：[512x512] ap50_95: = 0.1658 ap50: = 0.3548
-Input Size：[544x544] ap50_95: = 0.1690 ap50: = 0.3608
-Input Size：[576x576] ap50_95: = 0.1691 ap50: = 0.3621
-Input Size：[608x608] ap50_95: = 0.1683 ap50: = 0.3626
+Input Size：[320x320] ap50_95: = 0.1846 ap50: = 0.3692
+Input Size：[352x352] ap50_95: = 0.1985 ap50: = 0.3898
+Input Size：[384x384] ap50_95: = 0.2094 ap50: = 0.4078
+Input Size：[416x416] ap50_95: = 0.2196 ap50: = 0.4265
+Input Size：[448x448] ap50_95: = 0.2264 ap50: = 0.4400
+Input Size：[480x480] ap50_95: = 0.2331 ap50: = 0.4481
+Input Size：[512x512] ap50_95: = 0.2380 ap50: = 0.4590
+Input Size：[544x544] ap50_95: = 0.2410 ap50: = 0.4635
+Input Size：[576x576] ap50_95: = 0.2384 ap50: = 0.4668
+Input Size：[608x608] ap50_95: = 0.2396 ap50: = 0.4722
 ```
 
 ### Demo
