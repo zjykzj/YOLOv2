@@ -126,7 +126,7 @@
 
 ## Latest News
 
-***21/05/2023: Update Version ([v0.2.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.0)).  Reconstructed loss function and add Darknet53 as a backbone***
+***21/05/2023: Upgrade Version ([v0.2.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.0)).  Reconstructed loss function and add Darknet53 as a backbone***
 
 ***09/05/2023: Update Version ([v0.1.2](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.2)). Add COCO dataset result and update VOC dataset training results***
 
