@@ -15,139 +15,91 @@
   <a href="http://commitizen.github.io/cz-cli/"><img src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg" alt=""></a>
 </p>
 
+* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `416x416`. give the result as follows
+
 <!-- <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
   overflow:hidden;padding:10px 5px;word-break:normal;}
 .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
   font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-tlx9{background-color:#FFF;color:#333;text-align:center;vertical-align:top}
-.tg .tg-ftdh{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;text-decoration:underline;
-  vertical-align:top}
 .tg .tg-zkss{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:top}
-.tg .tg-vc3l{background-color:#FFF;border-color:inherit;color:#1F2328;text-align:center;vertical-align:top}
 .tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
 .tg .tg-fr9f{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:top}
-.tg .tg-1rzx{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;text-decoration:underline;
-  vertical-align:top}
-.tg .tg-h2b0{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:middle}
-.tg .tg-17st{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:middle}
-.tg .tg-7btt{border-color:inherit;font-weight:bold;text-align:center;vertical-align:top}
-.tg .tg-amwm{font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-y5w1{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;vertical-align:top}
 </style> -->
 <table class="tg">
 <thead>
   <tr>
     <th class="tg-fr9f"></th>
     <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
-    <th class="tg-1rzx"><span style="font-style:normal">Original (darknet)</span></th>
-    <th class="tg-ftdh">tztztztztz/yolov2.pytorch</th>
-    <th class="tg-ftdh">zjykzj/YOLOv2(This)</th>
-    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
-    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
-    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
+    <th class="tg-y5w1">tztztztztz/yolov2.pytorch</th>
+    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
+    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
     <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
   </tr>
 </thead>
 <tbody>
   <tr>
     <td class="tg-fr9f">ARCH</td>
-    <td class="tg-fr9f">YOLOv2</td>
-    <td class="tg-fr9f">YOLOv2</td>
-    <td class="tg-fr9f">YOLOv2</td>
-    <td class="tg-fr9f">YOLOv2+Darknet53</td>
     <td class="tg-zkss">YOLOv2</td>
-    <td class="tg-c3ow">YOLOv2-tiny</td>
     <td class="tg-zkss">YOLOv2</td>
-    <td class="tg-c3ow">YOLOv2-tiny</td>
+    <td class="tg-zkss">YOLOv2+Darknet53</td>
+    <td class="tg-zkss">YOLOv2</td>
+    <td class="tg-zkss">YOLOv2-tiny</td>
   </tr>
   <tr>
-    <td class="tg-fr9f">TRAIN</td>
-    <td class="tg-zkss">VOC07+12 trainval</td>
-    <td class="tg-h2b0">COCO train2015</td>
-    <td class="tg-zkss">VOC07+12 trainval</td>
-    <td class="tg-zkss">VOC07+12 trainval</td>
-    <td class="tg-c3ow">VOC07+12 trainval</td>
-    <td class="tg-c3ow">VOC07+12 trainval</td>
-    <td class="tg-zkss">COCO train2017</td>
-    <td class="tg-zkss">COCO train2017</td>
+    <td class="tg-fr9f">VOC AP[IoU=0.50]</td>
+    <td class="tg-zkss">76.8</td>
+    <td class="tg-zkss">72.7</td>
+    <td class="tg-zkss">76.27</td>
+    <td class="tg-zkss">71.65</td>
+    <td class="tg-c3ow">64.19</td>
   </tr>
+</tbody>
+</table>
+
+* Train using the `COCO train2017` dataset and test using the `COCO val2017` dataset with an input size of `416x416`. give the result as follows (*Note: The results of the original paper were evaluated on the `COCO test-dev2015` dataset*)
+
+<!-- <style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-zkss{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:top}
+.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
+.tg .tg-fr9f{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-y5w1{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-9y4h{background-color:#FFF;border-color:inherit;color:#1F2328;text-align:center;vertical-align:middle}
+</style> -->
+<table class="tg">
+<thead>
   <tr>
-    <td class="tg-17st">VAL</td>
-    <td class="tg-zkss">VOC2007 Test</td>
-    <td class="tg-h2b0">COCO test-dev2015</td>
-    <td class="tg-zkss">VOC2007 Test</td>
-    <td class="tg-zkss">VOC2007 Test</td>
-    <td class="tg-c3ow">VOC2007 Test</td>
-    <td class="tg-c3ow">VOC2007 Test</td>
-    <td class="tg-c3ow">COCO val2017</td>
-    <td class="tg-c3ow">COCO val2017</td>
+    <th class="tg-fr9f"></th>
+    <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
+    <th class="tg-y5w1">tztztztztz/yolov2.pytorch</th>
+    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
   </tr>
+</thead>
+<tbody>
   <tr>
-    <td class="tg-17st">VOC AP[IoU=0.50]</td>
-    <td class="tg-zkss">/</td>
-    <td class="tg-vc3l">21.6</td>
-    <td class="tg-zkss">/</td>
-    <td class="tg-zkss">/</td>
-    <td class="tg-c3ow">/</td>
-    <td class="tg-c3ow">/</td>
-    <td class="tg-7btt">25.33</td>
-    <td class="tg-c3ow">21.96</td>
+    <td class="tg-fr9f">ARCH</td>
+    <td class="tg-zkss">YOLOv2</td>
+    <td class="tg-zkss">YOLOv2+Darknet53</td>
+    <td class="tg-zkss">YOLOv2</td>
   </tr>
   <tr>
     <td class="tg-fr9f">COCO AP[IoU=0.50:0.95]</td>
-    <td class="tg-h2b0">/</td>
-    <td class="tg-h2b0">44.0</td>
-    <td class="tg-zkss">/</td>
-    <td class="tg-zkss">/</td>
-    <td class="tg-c3ow">/</td>
-    <td class="tg-c3ow">/</td>
-    <td class="tg-7btt">47.24</td>
-    <td class="tg-c3ow">42.65</td>
+    <td class="tg-zkss">21.6</td>
+    <td class="tg-9y4h">25.33</td>
+    <td class="tg-9y4h">21.96</td>
   </tr>
   <tr>
     <td class="tg-fr9f">COCO AP[IoU=0.50]</td>
-    <td class="tg-h2b0">76.8</td>
-    <td class="tg-vc3l">/</td>
-    <td class="tg-zkss">72.7</td>
-    <td class="tg-fr9f">76.27</td>
-    <td class="tg-c3ow">71.65</td>
-    <td class="tg-c3ow">64.19</td>
-    <td class="tg-c3ow">/</td>
-    <td class="tg-c3ow">/</td>
-  </tr>
-  <tr>
-    <td class="tg-fr9f">INPUT_SIZE</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
-    <td class="tg-zkss">416</td>
-  </tr>
-  <tr>
-    <td class="tg-7btt">CONF_THRESH</td>
-    <td class="tg-zkss">/</td>
-    <td class="tg-zkss">/</td>
-    <td class="tg-zkss">0.005</td>
-    <td class="tg-zkss">0.005</td>
-    <td class="tg-zkss">0.005</td>
-    <td class="tg-zkss">0.005</td>
-    <td class="tg-zkss">0.005</td>
-    <td class="tg-zkss">0.005</td>
-  </tr>
-  <tr>
-    <td class="tg-amwm">NMS_THRESH</td>
-    <td class="tg-tlx9">/</td>
-    <td class="tg-tlx9">/</td>
-    <td class="tg-tlx9">0.45</td>
-    <td class="tg-tlx9">0.45</td>
-    <td class="tg-tlx9">0.45</td>
-    <td class="tg-tlx9">0.45</td>
-    <td class="tg-tlx9">0.45</td>
-    <td class="tg-tlx9">0.45</td>
+    <td class="tg-c3ow">44.0</td>
+    <td class="tg-9y4h">47.24</td>
+    <td class="tg-9y4h">42.65</td>
   </tr>
 </tbody>
 </table>
