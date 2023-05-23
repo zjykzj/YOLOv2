@@ -78,7 +78,7 @@
   <tr>
     <th class="tg-fr9f"></th>
     <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
-    <th class="tg-y5w1">tztztztztz/yolov2.pytorch</th>
+    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
     <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
   </tr>
 </thead>
