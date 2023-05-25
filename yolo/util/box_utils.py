@@ -9,13 +9,17 @@
 
 import copy
 
+import numpy as np
 import torch
 from torch import Tensor
 
 
 def xywh2xyxy(boxes, is_center=False):
     assert len(boxes.shape) >= 2 and boxes.shape[-1] == 4
-    boxes_xxyy = boxes.new_zeros(boxes.shape)
+    if isinstance(boxes, np.ndarray):
+        boxes_xxyy = np.zeros(boxes.shape)
+    else:
+        boxes_xxyy = boxes.new_zeros(boxes.shape)
     if is_center:
         # [x_c, y_c, w, h] -> [x1, y1, x2, y2]
         boxes_xxyy[..., 0] = (boxes[..., 0] - boxes[..., 2] / 2)
@@ -24,6 +28,8 @@ def xywh2xyxy(boxes, is_center=False):
         boxes_xxyy[..., 3] = (boxes[..., 1] + boxes[..., 3] / 2)
     else:
         # [x1, y1, w, h] -> [x1, y1, x2, y2]
+        boxes_xxyy[..., 0] = boxes[..., 0]
+        boxes_xxyy[..., 1] = boxes[..., 1]
         boxes_xxyy[..., 2] = (boxes[..., 0] + boxes[..., 2])
         boxes_xxyy[..., 3] = (boxes[..., 1] + boxes[..., 3])
     return boxes_xxyy
@@ -31,7 +37,10 @@ def xywh2xyxy(boxes, is_center=False):
 
 def xyxy2xywh(boxes, is_center=False):
     assert len(boxes.shape) == 2 and boxes.shape[1] == 4
-    boxes_xywh = copy.deepcopy(boxes)
+    if isinstance(boxes, np.ndarray):
+        boxes_xywh = np.zeros(boxes.shape)
+    else:
+        boxes_xywh = boxes.new_zeros(boxes.shape)
     if is_center:
         # [x1, y1, x2, y2] -> [x_c, y_c, w, h]
         boxes_xywh[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2
@@ -40,6 +49,8 @@ def xyxy2xywh(boxes, is_center=False):
         boxes_xywh[:, 3] = (boxes[:, 3] - boxes[:, 1])
     else:
         # [x1, y1, x2, y2] -> [x1, y1, w, h]
+        boxes_xywh[..., 0] = boxes[..., 0]
+        boxes_xywh[..., 1] = boxes[..., 1]
         boxes_xywh[:, 2] = (boxes[:, 2] - boxes[:, 0])
         boxes_xywh[:, 3] = (boxes[:, 3] - boxes[:, 1])
     return boxes_xywh
