@@ -170,9 +170,9 @@ class YOLOv2Loss(nn.Module):
                 continue
             # [num_obj, 4]
             # [4]: [x_c, y_c, w, h]
-            gt_boxes = targets[bi][:num_obj][..., :4]
+            gt_boxes = targets[bi][:num_obj][..., 1:]
             # [num_obj]
-            gt_cls_ids = targets[bi][:num_obj][..., 4]
+            gt_cls_ids = targets[bi][:num_obj][..., 0]
 
             # 放大到网格大小
             gt_boxes[..., 0::2] *= W
