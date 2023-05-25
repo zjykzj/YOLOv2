@@ -6,21 +6,25 @@
 @author: zj
 @description: 
 """
-import copy
-import random
 from typing import Dict, List
 
 import cv2
-import numpy as np
 import torch
+import copy
+import random
+
+import numpy as np
 from numpy import ndarray
 
 from yolo.util.box_utils import xyxy2xywh, xywh2xyxy
 
 
-def bgr2rgb(img: ndarray):
-    return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # return img[:, :, ::-1]
+def bgr2rgb(img: ndarray, is_rgb=True):
+    if is_rgb:
+        # return img[:, :, ::-1]
+        return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    else:
+        return img
 
 
 def rect_intersection(a, b):
@@ -44,17 +48,18 @@ def crop_and_pad(src_img: ndarray, labels: ndarray, jitter_ratio: float = 0.3, )
 
     crop_h = src_h - crop_top - crop_bottom
     crop_w = src_w - crop_left - crop_right
+    assert crop_h > 1 and crop_w > 1
 
     # x1,y1,x2,y2
     crop_rect = [crop_left, crop_top, crop_left + crop_w, crop_top + crop_h]
     img_rect = [0, 0, src_w, src_h]
 
-    # intersection_rect = rect_intersection(img_rect, crop_rect)
     intersection_rect = rect_intersection(crop_rect, img_rect)
     intersection_rect_w = intersection_rect[2] - intersection_rect[0]
     intersection_rect_h = intersection_rect[3] - intersection_rect[1]
     # x1,y1,x2,y2
-    dst_intersection_rect = [max(0, -crop_left), max(0, -crop_top),
+    dst_intersection_rect = [max(0, -crop_left),
+                             max(0, -crop_top),
                              max(0, -crop_left) + intersection_rect_w,
                              max(0, -crop_top) + intersection_rect_h]
     assert (dst_intersection_rect[3] - dst_intersection_rect[1]) == (intersection_rect[3] - intersection_rect[1])
@@ -82,21 +87,22 @@ def crop_and_pad(src_img: ndarray, labels: ndarray, jitter_ratio: float = 0.3, )
         labels[:, 2] -= crop_top
         labels[:, 4] -= crop_top
 
+        # 精度截断
         # 设置x0, x1的最大最小值
-        # 精度截断
-        labels[:, 1] = np.clip(labels[:, 1], 0, crop_w)
-        labels[:, 3] = np.clip(labels[:, 3], 0, crop_w)
+        labels[:, 1] = np.clip(labels[:, 1], 0, crop_w - 1)
+        labels[:, 3] = np.clip(labels[:, 3], 0, crop_w - 1)
         # 设置y0，y1的最大最小值
-        # 精度截断
-        labels[:, 2] = np.clip(labels[:, 2], 0, crop_h)
-        labels[:, 4] = np.clip(labels[:, 4], 0, crop_h)
+        labels[:, 2] = np.clip(labels[:, 2], 0, crop_h - 1)
+        labels[:, 4] = np.clip(labels[:, 4], 0, crop_h - 1)
 
-        # 找出x0==x1，取值为0或者sx 或者y0==y1，取值为0或者xy的边界框
+        # 找出x0==x1，或者y0==y1的边界框
         # 也就是说，边界框经过抖动和截断后变成了一条线
-        out_box = list(np.where(((labels[:, 2] == crop_h) & (labels[:, 4] == crop_h)) |
-                                ((labels[:, 1] == crop_w) & (labels[:, 3] == crop_w)) |
-                                ((labels[:, 2] == 0) & (labels[:, 4] == 0)) |
-                                ((labels[:, 1] == 0) & (labels[:, 3] == 0)))[0])
+        out_box = list(
+            np.where(
+                (labels[:, 1] == labels[:, 3]) |
+                (labels[:, 2] == labels[:, 4])
+            )[0]
+        )
         list_box = list(range(labels.shape[0]))
         # 移除这种边界框
         for i in out_box:
@@ -119,9 +125,9 @@ def left_right_flip(img, labels, crop_info, is_flip=True):
 
         if len(labels) > 0:
             # 左右翻转，所以y值不变，变换x值
-            temp = w - labels[:, 1]
+            tmp_x = w - labels[:, 1]
             labels[:, 1] = w - labels[:, 3]
-            labels[:, 3] = temp
+            labels[:, 3] = tmp_x
 
         crop_w, crop_h = crop_info[4:6]
         crop_info[4] = crop_h
@@ -140,10 +146,10 @@ def image_resize(img, labels, dst_size):
         # dst_bbox / bbox = dst_size / img_size
         # dst_bbox = bbox * (dst_size / img_size)
         #
-        # x_min / box_w
+        # x_min / x_max
         labels[..., 1] *= (dst_size / img_w)
         labels[..., 3] *= (dst_size / img_w)
-        # y_min / box_h
+        # y_min / y_max
         labels[..., 2] *= (dst_size / img_h)
         labels[..., 4] *= (dst_size / img_h)
 
@@ -304,6 +310,8 @@ class Transform(object):
     def __init__(self, cfg: Dict, is_train: bool = True):
         self.is_train = is_train
 
+        # RGB
+        self.is_rgb = cfg['AUGMENTATION']['RGB']
         # crop
         self.jitter_ratio = cfg['AUGMENTATION']['JITTER']
         # self.jitter_ratio = 0.
@@ -336,10 +344,10 @@ class Transform(object):
             assert len(labels) == 0 or labels.shape[1] == 5
             assert len(img.shape) == 3 and img.shape[2] == 3
             if len(labels) > 0:
-                labels[..., 1:] = xywh2xyxy(labels[..., 1:])
+                labels[..., 1:] = xywh2xyxy(labels[..., 1:], is_center=False)
 
             # BGR -> RGB
-            img = bgr2rgb(img)
+            img = bgr2rgb(img, is_rgb=self.is_rgb)
             # 随机裁剪 + 填充
             img, labels, crop_info = crop_and_pad(img, labels, self.jitter_ratio)
             # 随机翻转
@@ -362,7 +370,8 @@ class Transform(object):
         if self.is_mosaic and len(out_labels) > 0:
             out_labels = np.concatenate(out_labels, axis=0)
         if len(out_labels) > 0:
-            out_labels[..., 1:] = xyxy2xywh(out_labels[..., 1:])
+            out_labels[..., 1:] = np.clip(out_labels[..., 1:], 0, img_size - 1)
+            out_labels[..., 1:] = xyxy2xywh(out_labels[..., 1:], is_center=False)
 
         img_info = list()
         return out_img, out_labels, img_info
@@ -371,8 +380,11 @@ class Transform(object):
         assert len(img_list) == 1 and len(label_list) == 1
         src_img = img_list[0]
         src_labels = label_list[0]
+
         # labels: [cls_id, x_min, y_min, box_w, box_h]
         assert len(src_labels) == 0 or len(src_labels[0]) == 5
+        if len(src_labels) > 0:
+            src_labels[..., 1:] = xywh2xyxy(src_labels[..., 1:], is_center=False)
 
         dst_img = bgr2rgb(src_img)
         # 图像缩放
@@ -384,6 +396,9 @@ class Transform(object):
         dy = 0
         img_info = [src_img_h, src_img_w, dst_img_h, dst_img_w, dx, dy]
 
+        if len(dst_labels) > 0:
+            dst_labels[..., 1:] = np.clip(dst_labels[..., 1:], 0, img_size - 1)
+            dst_labels[..., 1:] = xyxy2xywh(dst_labels[..., 1:], is_center=False)
         return dst_img, dst_labels, img_info
 
     def __call__(self, img_list: List[ndarray], label_list: List[ndarray], img_size: int):
