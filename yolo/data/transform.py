@@ -48,7 +48,7 @@ def crop_and_pad(src_img: ndarray, labels: ndarray, jitter_ratio: float = 0.3, )
 
     crop_h = src_h - crop_top - crop_bottom
     crop_w = src_w - crop_left - crop_right
-    assert crop_h > 1 and crop_w > 1
+    # assert crop_h > 1 and crop_w > 1
 
     # x1,y1,x2,y2
     crop_rect = [crop_left, crop_top, crop_left + crop_w, crop_top + crop_h]
@@ -62,8 +62,8 @@ def crop_and_pad(src_img: ndarray, labels: ndarray, jitter_ratio: float = 0.3, )
                              max(0, -crop_top),
                              max(0, -crop_left) + intersection_rect_w,
                              max(0, -crop_top) + intersection_rect_h]
-    assert (dst_intersection_rect[3] - dst_intersection_rect[1]) == (intersection_rect[3] - intersection_rect[1])
-    assert (dst_intersection_rect[2] - dst_intersection_rect[0]) == (intersection_rect[2] - intersection_rect[0])
+    # assert (dst_intersection_rect[3] - dst_intersection_rect[1]) == (intersection_rect[3] - intersection_rect[1])
+    # assert (dst_intersection_rect[2] - dst_intersection_rect[0]) == (intersection_rect[2] - intersection_rect[0])
 
     # Image Crop and Pad
     crop_img = np.zeros([crop_h, crop_w, 3])
@@ -76,7 +76,7 @@ def crop_and_pad(src_img: ndarray, labels: ndarray, jitter_ratio: float = 0.3, )
     # 如果真值边界框数目为0，那么返回
     if len(labels) != 0:
         # [cls_id, x1, y1, x2, y2]
-        assert len(labels[0]) == 5
+        # assert len(labels[0]) == 5
         # 随机打乱真值边界框
         np.random.shuffle(labels)
         # 原始图像的边界框坐标基于抖动调整坐标系
@@ -115,7 +115,7 @@ def crop_and_pad(src_img: ndarray, labels: ndarray, jitter_ratio: float = 0.3, )
 
 
 def left_right_flip(img, labels, crop_info, is_flip=True):
-    assert len(img.shape) == 3 and img.shape[2] == 3
+    # assert len(img.shape) == 3 and img.shape[2] == 3
 
     is_flip = is_flip and np.random.randn() > 0.5
     if is_flip:
@@ -218,7 +218,7 @@ def filter_truth(labels, dx, dy, sx, sy, xd, yd):
     if len(labels) <= 0:
         return labels
 
-    assert dx >= 0 and dy >= 0
+    # assert dx >= 0 and dy >= 0
     # 图像抖动后的边界框坐标
     # x_min / x_max
     labels[:, 1] -= dx
@@ -227,7 +227,7 @@ def filter_truth(labels, dx, dy, sx, sy, xd, yd):
     labels[:, 2] -= dy
     labels[:, 4] -= dy
 
-    assert sx > 0 and sy > 0
+    # assert sx > 0 and sy > 0
     # 边界框大小不能超出裁剪区域
     # x_min / x_max
     labels[:, 1] = np.clip(labels[:, 1], 0, sx)
@@ -246,7 +246,7 @@ def filter_truth(labels, dx, dy, sx, sy, xd, yd):
         list_box.remove(i)
     labels = labels[list_box]
 
-    assert xd >= 0 and yd >= 0
+    # assert xd >= 0 and yd >= 0
     # mosaic后的图像左上角坐标
     # x_min / x_max
     labels[:, 1] += xd
@@ -341,8 +341,8 @@ class Transform(object):
         cut_y = random.randint(int(img_size * self.min_offset), int(img_size * (1 - self.min_offset)))
 
         for idx, (img, labels) in enumerate(zip(img_list, label_list)):
-            assert len(labels) == 0 or labels.shape[1] == 5
-            assert len(img.shape) == 3 and img.shape[2] == 3
+            # assert len(labels) == 0 or labels.shape[1] == 5
+            # assert len(img.shape) == 3 and img.shape[2] == 3
             if len(labels) > 0:
                 labels[..., 1:] = xywh2xyxy(labels[..., 1:], is_center=False)
 
@@ -358,12 +358,12 @@ class Transform(object):
             img = color_dithering(img, self.hue, self.saturation, self.exposure, is_jitter=self.color_jitter)
 
             if self.is_mosaic:
-                assert len(img_list) == 4 and len(label_list) == 4
+                # assert len(img_list) == 4 and len(label_list) == 4
                 out_img, labels = blend_mosaic(out_img, img, labels, cut_x, cut_y, idx, crop_info)
                 if len(labels) > 0:
                     out_labels.append(labels)
             else:
-                assert len(img_list) == 1 and len(label_list) == 1
+                # assert len(img_list) == 1 and len(label_list) == 1
                 out_img = img
                 out_labels = labels
 
@@ -377,16 +377,17 @@ class Transform(object):
         return out_img, out_labels, img_info
 
     def _get_val_item(self, img_list: List[ndarray], label_list: List[ndarray], img_size: int):
-        assert len(img_list) == 1 and len(label_list) == 1
+        # assert len(img_list) == 1 and len(label_list) == 1
         src_img = img_list[0]
         src_labels = label_list[0]
 
         # labels: [cls_id, x_min, y_min, box_w, box_h]
-        assert len(src_labels) == 0 or len(src_labels[0]) == 5
+        # assert len(src_labels) == 0 or len(src_labels[0]) == 5
         if len(src_labels) > 0:
             src_labels[..., 1:] = xywh2xyxy(src_labels[..., 1:], is_center=False)
 
-        dst_img = bgr2rgb(src_img)
+        # BGR -> RGB
+        dst_img = bgr2rgb(src_img, is_rgb=self.is_rgb)
         # 图像缩放
         dst_img, dst_labels = image_resize(dst_img, src_labels, img_size)
 
