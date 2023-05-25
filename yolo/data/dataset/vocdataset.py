@@ -10,6 +10,7 @@ import os
 import cv2
 import glob
 import copy
+import random
 
 import numpy as np
 
@@ -52,7 +53,6 @@ class VOCDataset(Dataset):
         self.label_path_list = sorted(glob.glob(os.path.join(label_dir, '*.txt')))
         assert len(self.image_path_list) == len(self.label_path_list)
 
-        box_list = list()
         label_list = list()
         for image_path, label_path in zip(self.image_path_list, self.label_path_list):
             img_name = os.path.basename(image_path).rstrip('.jpg')
@@ -62,57 +62,70 @@ class VOCDataset(Dataset):
             image = cv2.imread(image_path)
             img_h, img_w = image.shape[:2]
 
-            sub_box_list = list()
             sub_label_list = list()
             # [[cls_id, x_center, y_center, box_w, box_h], ]
             # The coordinate size is relative to the width and height of the image
-            boxes = np.loadtxt(label_path, delimiter=' ', dtype=float)
-            if len(boxes.shape) == 1:
-                boxes = [boxes]
-            for label, xc, yc, box_w, box_h in boxes:
+            labels = np.loadtxt(label_path, delimiter=' ', dtype=float)
+            if len(labels.shape) == 1:
+                labels = [labels]
+            for cls_id, xc, yc, box_w, box_h in labels:
                 x_min = (xc - 0.5 * box_w) * img_w
                 y_min = (yc - 0.5 * box_h) * img_h
                 assert x_min >= 0 and y_min >= 0
 
                 box_w = box_w * img_w
                 box_h = box_h * img_h
-                if (x_min + box_w) >= img_w:
-                    box_w = img_w - x_min - 1
-                if (y_min + box_h) >= img_h:
-                    box_h = img_h - y_min - 1
+                assert box_w < img_w and box_h < img_h
 
                 # 转换成原始大小，方便后续图像预处理阶段进行转换和调试
-                sub_box_list.append([x_min, y_min, box_w, box_h])
-                sub_label_list.append(int(label))
-            box_list.append(np.array(sub_box_list))
-            label_list.append(sub_label_list)
+                sub_label_list.append([cls_id, x_min, y_min, box_w, box_h])
+            label_list.append(np.array(sub_label_list, dtype=float))
 
-        self.box_list = np.array(box_list, dtype=object)
         self.label_list = label_list
         self.num_classes = len(self.classes)
 
-    def __getitem__(self, index) -> T_co:
-        image_path = self.image_path_list[index]
-        boxes = copy.deepcopy(self.box_list[index])
-        labels = copy.deepcopy(self.label_list[index])
+    def _getdata(self, index=None):
+        if index is None:
+            index = random.choice(range(len(self.image_path_list)))
 
+        image_path = self.image_path_list[index]
         image = cv2.imread(image_path)
 
+        labels = copy.deepcopy(self.label_list[index])
+
+        return index, image_path, image, labels
+
+    def __getitem__(self, index) -> T_co:
+        index, image_path, image, labels = self._getdata(index)
+
         # src_img = copy.deepcopy(image)
-        # for box in boxes:
-        #     x_min, y_min, box_w, box_h = box
+        # for (cls_id, x_min, y_min, box_w, box_h) in labels:
         #     cv2.rectangle(src_img, (int(x_min), int(y_min)), (int(x_min + box_w), int(y_min + box_h)),
         #                   (255, 255, 255), 1)
         # cv2.imshow('src_img', src_img)
 
         img_info = None
         if self.transform is not None:
-            image, boxes, img_info = self.transform(index, image, boxes, self.target_size)
+            image_list = list()
+            label_list = list()
+            image_list.append(image)
+            label_list.append(labels)
+
+            if self.train and self.transform.is_mosaic:
+                for _ in range(3):
+                    while True:
+                        _, _, sub_image, sub_labels = self._getdata()
+                        if len(sub_labels) > 0:
+                            break
+
+                    image_list.append(sub_image)
+                    label_list.append(sub_labels)
+
+            image, labels, img_info = self.transform(image_list, label_list, self.target_size)
 
         # dst_img = copy.deepcopy(image).astype(np.uint8)
         # dst_img = cv2.cvtColor(dst_img, cv2.COLOR_RGB2BGR)
-        # for box in boxes:
-        #     x_min, y_min, box_w, box_h = box
+        # for (cls_id, x_min, y_min, box_w, box_h) in labels:
         #     cv2.rectangle(dst_img, (int(x_min), int(y_min)), (int(x_min + box_w), int(y_min + box_h)),
         #                   (255, 255, 255), 1)
         # cv2.imshow('dst_img', dst_img)
@@ -120,7 +133,7 @@ class VOCDataset(Dataset):
 
         image = torch.from_numpy(image).permute(2, 0, 1).contiguous() / 255
 
-        target = self.build_target(boxes, labels)
+        target = self.build_target(labels)
 
         if self.train:
             return image, target
@@ -133,22 +146,20 @@ class VOCDataset(Dataset):
             }
             return image, target
 
-    def build_target(self, boxes, labels):
+    def build_target(self, labels):
         """
-        :param boxes: [[x1, y1, box_w, box_h], ...]
-        :param labels: [box1_cls_idx, ...]
+        :param bboxes: [[cls_id, x1, y1, box_w, box_h], ...]
         :return:
         """
-        if len(boxes) > 0:
+        if len(labels) > 0:
             # 将数值缩放到[0, 1]区间
-            boxes = boxes / self.target_size
+            labels[..., 1:] = labels[..., 1:] / self.target_size
             # [x1, y1, w, h] -> [xc, yc, w, h]
-            boxes = label2yolobox(boxes)
+            labels[..., 1:] = label2yolobox(labels[..., 1:])
 
         target = torch.zeros((self.max_det_nums, 5))
-        for i, (box, label) in enumerate(zip(boxes[:self.max_det_nums], labels[:self.max_det_nums])):
-            target[i, :4] = torch.from_numpy(box)
-            target[i, 4] = label
+        for i, label in enumerate(labels[:self.max_det_nums]):
+            target[i, :] = torch.from_numpy(label)
 
         return target
 
