@@ -33,7 +33,7 @@ class COCOEvaluator(Evaluator):
 
     def put(self, outputs: List[List], img_info: List):
         assert isinstance(img_info, list)
-        assert len(img_info) == 8, len(img_info)
+        assert len(img_info) == 7, len(img_info)
 
         id_ = int(img_info[-1])
         self.ids.append(id_)
