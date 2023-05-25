@@ -72,9 +72,11 @@ class VOCDataset(Dataset):
                 x_min = (xc - 0.5 * box_w) * img_w
                 y_min = (yc - 0.5 * box_h) * img_h
                 assert x_min >= 0 and y_min >= 0
+                assert x_min < img_w and y_min < img_h
 
                 box_w = box_w * img_w
                 box_h = box_h * img_h
+                assert box_w > 1 and box_h > 1
                 assert box_w < img_w and box_h < img_h
 
                 # 转换成原始大小，方便后续图像预处理阶段进行转换和调试
