@@ -126,10 +126,10 @@
 
 ## Latest News
 
-* ***[2023/05/21]Upgrade Version ([v0.2.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.0)).  Reconstructed loss function and add Darknet53 as a backbone***
-* ***[2023/05/09]Update Version ([v0.1.2](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.2)). Add COCO dataset result and update VOC dataset training results***
-* ***[2023/05/03]Fix Version ([v0.1.1](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.1)). Fix target transform and update `yolov2_voc.cfg` and `yolov2-tiny_voc.cfg` training results for VOC2007 Test***
-* ***[2023/05/02]Init Version ([v0.1.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.0)). Complete YOLOv2 training/evaluation/prediction, while providing the evaluation results of VOC2007 Test***
+* ***[2023/05/21][v0.2.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.0). Reconstructed loss function and add Darknet53 as a backbone***
+* ***[2023/05/09][v0.1.2](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.2). Add COCO dataset result and update VOC dataset training results***
+* ***[2023/05/03][v0.1.1](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.1). Fix target transform and update `yolov2_voc.cfg` and `yolov2-tiny_voc.cfg` training results for VOC2007 Test***
+* ***[2023/05/02][v0.1.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.1.0). Complete YOLOv2 training/evaluation/prediction, while providing the evaluation results of VOC2007 Test***
 
 ## Background
 
