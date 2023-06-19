@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-@date: 2023/4/26 下午9:42
-@file: dataset.py
+@date: 2023/6/15 下午2:53
+@file: cocodataset.py
 @author: zj
 @description: 
 """
@@ -10,14 +10,12 @@
 import random
 import time
 
-from tqdm import tqdm
 
 import torch
-from torch.utils.data import DataLoader
 
-from yolo.data.dataset import KEY_TARGET, KEY_IMAGE_INFO, KEY_IMAGE_ID
 from yolo.data.dataset.cocodataset import COCODataset, get_coco_label_names
 from yolo.data.transform import Transform
+from yolo.data.target import Target
 
 root = '../datasets/coco'
 
@@ -73,33 +71,32 @@ def test_train(cfg_file):
     train_dataset = COCODataset(root, name='train2017', train=True, transform=transform, target_size=416)
     print("Total len:", len(train_dataset))
 
-    # print("Train Dataset")
-    # end = time.time()
-    # for i in range(len(train_dataset)):
-    #     image, target = train_dataset.__getitem__(i)
-    #     images = image.unsqueeze(0)
-    #     targets = target.unsqueeze(0)
-    #
-    #     assert_data(images, targets)
-    #     print(f"[{i}/{len(train_dataset)}] {images.shape} {targets.shape}")
-    # print(f"Avg one time: {(time.time() - end) / len(train_dataset)}")
+    print("Train Dataset")
+    end = time.time()
+    for i in range(len(train_dataset)):
+        image, target = train_dataset.__getitem__(i)
+        image = torch.from_numpy(image)
+        images = image.unsqueeze(0)
+        targets = target.unsqueeze(0)
 
-    for num_workers in [16, 8, 4]:
-        print(f"Train Dataloader, num_workers: {num_workers}")
-        train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=num_workers,
-                                      shuffle=False, sampler=None, pin_memory=True)
-        end = time.time()
-        for i, (images, targets) in enumerate(tqdm(train_dataloader)):
-            assert_data(images, targets)
-            # print(f"[{i}/{len(train_dataloader)}] {images.shape} {targets.shape}")
-        print(f"Avg one time: {(time.time() - end) / len(train_dataset)}")
+        assert_data(images, targets)
+        print(f"[{i}/{len(train_dataset)}] {images.shape} {targets.shape}")
+    print(f"Avg one time: {(time.time() - end) / len(train_dataset)}")
+
+    # for num_workers in [16, 8, 4]:
+    #     print(f"Train Dataloader, num_workers: {num_workers}")
+    #     train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=num_workers,
+    #                                   shuffle=False, sampler=None, pin_memory=True)
+    #     end = time.time()
+    #     for i, (images, targets) in enumerate(tqdm(train_dataloader)):
+    #         assert_data(images, targets)
+    #         # print(f"[{i}/{len(train_dataloader)}] {images.shape} {targets.shape}")
+    #     print(f"Avg one time: {(time.time() - end) / len(train_dataset)}")
 
 
 def test_val(cfg_file):
-    with open(cfg_file, 'r') as f:
-        import yaml
-
-        cfg = yaml.safe_load(f)
+    cfg = load_cfg(cfg_file)
+    print(f"load cfg: {cfg_file}")
 
     # test_dataset = VOCDataset(root, name, S=7, B=2, train=False, transform=Transform(is_train=False))
     # image, target = test_dataset.__getitem__(300)
@@ -121,10 +118,12 @@ def test_val(cfg_file):
     end = time.time()
     for i in range(len(val_dataset)):
         image, target = val_dataset.__getitem__(i)
-        print(i, image.shape, target[KEY_TARGET].shape, len(target[KEY_IMAGE_INFO]), target[KEY_IMAGE_ID])
+        image = torch.from_numpy(image)
+        assert isinstance(target, Target)
+        print(i, image.shape, target.target.shape, len(target.img_info), target.img_id)
 
         images = image.unsqueeze(0)
-        targets = target[KEY_TARGET].unsqueeze(0)
+        targets = target.target.unsqueeze(0)
         assert_data(images, targets)
     print(f"Avg one time: {(time.time() - end) / len(val_dataset)}")
 
@@ -137,7 +136,7 @@ def test_val(cfg_file):
 if __name__ == '__main__':
     random.seed(10)
 
-    cfg_file = 'configs/yolov2_coco.cfg'
+    cfg_file = 'tests/data/coco.cfg'
 
     print("=> COCO Train")
     test_train(cfg_file)

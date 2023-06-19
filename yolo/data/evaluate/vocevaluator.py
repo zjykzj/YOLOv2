@@ -73,7 +73,7 @@ class VOCEvaluator(Evaluator):
 
     def put(self, outputs: List[List], img_info: List):
         assert isinstance(img_info, list)
-        assert len(img_info) == 7, len(img_info)
+        assert len(img_info) == 8, len(img_info)
         # super().put(outputs, img_info)
 
         image_name = str(img_info[-1])

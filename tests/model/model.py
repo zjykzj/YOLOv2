@@ -13,12 +13,18 @@ import numpy as np
 from yolo.model.yolov2 import YOLOv2
 
 
-def test_yolov2():
-    cfg_file = 'configs/yolov2_voc.cfg'
-    print(f"=> Test {cfg_file}")
+def load_cfg(cfg_file):
     with open(cfg_file, 'r') as f:
         import yaml
+
         cfg = yaml.safe_load(f)
+
+    return cfg
+
+
+def test_yolov2(cfg_file):
+    cfg = load_cfg(cfg_file)
+    print(f"load cfg: {cfg_file}")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
 
@@ -78,5 +84,11 @@ def test_yolov2_fast():
 
 
 if __name__ == '__main__':
-    test_yolov2()
-    test_yolov2_fast()
+    import random
+
+    random.seed(10)
+
+    cfg_file = 'configs/yolov2.cfg'
+
+    test_yolov2(cfg_file)
+    test_yolov2_fast(cfg_file)
