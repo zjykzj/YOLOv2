@@ -10,8 +10,6 @@
 import torch
 import torch.nn.functional as F
 
-from yolo.model.yololoss import YOLOv2Loss
-
 
 def test_scale():
     a = torch.randn(3, 4)

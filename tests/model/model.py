@@ -51,12 +51,9 @@ def test_yolov2(cfg_file):
     print("outputs:", outputs.shape)
 
 
-def test_yolov2_fast():
-    cfg_file = 'configs/yolov2-tiny_voc.cfg'
-    print(f"=> Test {cfg_file}")
-    with open(cfg_file, 'r') as f:
-        import yaml
-        cfg = yaml.safe_load(f)
+def test_yolov2_fast(cfg_file):
+    cfg = load_cfg(cfg_file)
+    print(f"load cfg: {cfg_file}")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
 
@@ -88,7 +85,8 @@ if __name__ == '__main__':
 
     random.seed(10)
 
-    cfg_file = 'configs/yolov2.cfg'
-
+    cfg_file = 'tests/model/yolov2.cfg'
     test_yolov2(cfg_file)
+
+    cfg_file = 'tests/model/yolov2-tiny.cfg'
     test_yolov2_fast(cfg_file)
