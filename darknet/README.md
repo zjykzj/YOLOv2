@@ -7,38 +7,9 @@
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "31226" main_amp.py --arch darknet19 -b 256 --workers 4 --lr 0.1 --weight-decay 1e-4 --epochs 120 --opt-level O1 ./imagenet/
 ```
 
-The implementation of the fc layer is as follows:
-
-```python
-        self.fc = nn.Sequential(
-            conv_bn_act(1024, num_classes, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
-                        act='leaky_relu'),
-            nn.AdaptiveAvgPool2d((1, 1))
-        )
-```
-
-The training results are as follows:
-
-```text
-* Prec@1 74.034 Prec@5 91.858
-```
-
-Another implementation is as follows:
-
-```python
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(1024 * 7 * 7, 4096),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Dropout(p=0.5),
-            nn.Linear(4096, self.num_classes)
-        )
-```
-
-The training results are as follows:
-
-```text
-* Prec@1 74.006 Prec@5 91.730
+```shell
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 --master_port "31226" main_amp.py --arch darknet19 -b 256 --workers 4 --opt-level O1 --resume weights/darknet19_224/model_best.pth.tar --evaluate ./imagenet/
+* Prec@1 73.980 Prec@5 91.790
 ```
 
 ## Train for FastDarknet19
@@ -51,8 +22,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 
 The training results are as follows:
 
-```text
-* Prec@1 70.792 Prec@5 89.102
+```shell
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 --master_port "31226" main_amp.py --arch fastdarknet19 -b 256 --workers 4 --opt-level O1 --input --resume weights/fastdarknet19_448/model_best.pth.tar --evaluate ./imagenet/
+ * Prec@1 70.776 Prec@5 89.114
 ```
 
 ### 224x224
@@ -63,8 +35,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 
 The training results are as follows:
 
-```text
-* Prec@1 68.758 Prec@5 88.152
+```shell
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 --master_port "31226" main_amp.py --arch fastdarknet19 -b 256 --workers 4 --opt-level O1 --resume weights/fastdarknet19_224/model_best.pth.tar --evaluate ./imagenet/
+* Prec@1 68.686 Prec@5 88.118
 ```
 
 ## Base Recipe
@@ -109,3 +82,39 @@ The training results are as follows:
     * `Transform`:
       * Resize: 256
       * CenterCrop: 224
+
+## Linear FC vs. Conv FC
+
+The implementation of the fc layer is as follows:
+
+```python
+        self.fc = nn.Sequential(
+            conv_bn_act(1024, num_classes, kernel_size=1, stride=1, padding=0, bias=False, is_bn=True,
+                        act='leaky_relu'),
+            nn.AdaptiveAvgPool2d((1, 1))
+        )
+```
+
+The training results are as follows:
+
+```text
+* Prec@1 74.034 Prec@5 91.858
+```
+
+Another implementation is as follows:
+
+```python
+        self.fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(1024 * 7 * 7, 4096),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(4096, self.num_classes)
+        )
+```
+
+The training results are as follows:
+
+```text
+* Prec@1 74.006 Prec@5 91.730
+```
