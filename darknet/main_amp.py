@@ -167,6 +167,9 @@ def main():
     else:
         raise ValueError(f"{args.arch} doesn't supports")
 
+    if args.local_rank == 0:
+        print(model)
+
     if args.sync_bn:
         import apex
         print("using apex synced BN")
