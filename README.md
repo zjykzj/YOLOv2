@@ -15,7 +15,7 @@
   <a href="http://commitizen.github.io/cz-cli/"><img src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg" alt=""></a>
 </p>
 
-* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `416x416`. give the result as follows
+* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `448x448`. give the result as follows
 
 <!-- <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
