@@ -52,9 +52,9 @@
     <td class="tg-fr9f">VOC AP[IoU=0.50]</td>
     <td class="tg-zkss">76.8</td>
     <td class="tg-zkss">72.7</td>
-    <td class="tg-zkss">76.27</td>
-    <td class="tg-zkss">71.65</td>
-    <td class="tg-c3ow">64.19</td>
+    <td class="tg-zkss">76.33</td>
+    <td class="tg-zkss">72.00</td>
+    <td class="tg-c3ow">64.36</td>
   </tr>
 </tbody>
 </table>
@@ -192,38 +192,38 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 
 ```shell
 python eval.py -c configs/yolov2_d53_voc.cfg -ckpt outputs/yolov2_d53_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.7140
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.7304
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7456
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7627
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7672
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7691
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7689
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7704
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7672
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7685
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.7104
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.7283
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7490
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7633
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7688
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7684
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7751
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7751
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7706
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7732
 python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6635
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6878
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7016
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7165
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7278
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7323
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7360
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7376
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7387
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7306
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6711
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6944
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7015
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7200
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7221
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7281
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7346
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7319
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7295
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7286
 python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5863
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6102
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6314
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6419
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6560
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6570
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6572
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6511
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6422
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6329
+Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5882
+Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6113
+Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6269
+Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6436
+Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6527
+Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6538
+Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6603
+Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6528
+Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6493
+Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6330
 python eval.py -c configs/yolov2_d53_coco.cfg -ckpt outputs/yolov2_d53_coco/model_best.pth.tar --traversal ../datasets/coco
 Input Size：[320x320] ap50_95: = 0.2194 ap50: = 0.4139
 Input Size：[352x352] ap50_95: = 0.2321 ap50: = 0.4368
