@@ -92,14 +92,14 @@
   <tr>
     <td class="tg-fr9f">COCO AP[IoU=0.50:0.95]</td>
     <td class="tg-zkss">21.6</td>
-    <td class="tg-9y4h">25.33</td>
-    <td class="tg-9y4h">21.96</td>
+    <td class="tg-9y4h">24.98</td>
+    <td class="tg-9y4h">22.01</td>
   </tr>
   <tr>
     <td class="tg-fr9f">COCO AP[IoU=0.50]</td>
     <td class="tg-c3ow">44.0</td>
-    <td class="tg-9y4h">47.24</td>
-    <td class="tg-9y4h">42.65</td>
+    <td class="tg-9y4h">46.85</td>
+    <td class="tg-9y4h">42.70</td>
   </tr>
 </tbody>
 </table>
@@ -225,27 +225,27 @@ Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6528
 Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6493
 Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6330
 python eval.py -c configs/yolov2_d53_coco.cfg -ckpt outputs/yolov2_d53_coco/model_best.pth.tar --traversal ../datasets/coco
-Input Size：[320x320] ap50_95: = 0.2194 ap50: = 0.4139
-Input Size：[352x352] ap50_95: = 0.2321 ap50: = 0.4368
-Input Size：[384x384] ap50_95: = 0.2450 ap50: = 0.4553
-Input Size：[416x416] ap50_95: = 0.2533 ap50: = 0.4724
-Input Size：[448x448] ap50_95: = 0.2608 ap50: = 0.4844
-Input Size：[480x480] ap50_95: = 0.2656 ap50: = 0.4961
-Input Size：[512x512] ap50_95: = 0.2715 ap50: = 0.5060
-Input Size：[544x544] ap50_95: = 0.2752 ap50: = 0.5103
-Input Size：[576x576] ap50_95: = 0.2799 ap50: = 0.5208
-Input Size：[608x608] ap50_95: = 0.2789 ap50: = 0.5209
+Input Size：[320x320] ap50_95: = 0.2162 ap50: = 0.4133
+Input Size：[352x352] ap50_95: = 0.2289 ap50: = 0.4323
+Input Size：[384x384] ap50_95: = 0.2386 ap50: = 0.4485
+Input Size：[416x416] ap50_95: = 0.2498 ap50: = 0.4685
+Input Size：[448x448] ap50_95: = 0.2596 ap50: = 0.4839
+Input Size：[480x480] ap50_95: = 0.2657 ap50: = 0.4950
+Input Size：[512x512] ap50_95: = 0.2699 ap50: = 0.5047
+Input Size：[544x544] ap50_95: = 0.2755 ap50: = 0.5115
+Input Size：[576x576] ap50_95: = 0.2767 ap50: = 0.5164
+Input Size：[608x608] ap50_95: = 0.2801 ap50: = 0.5215
 python eval.py -c configs/yolov2_coco.cfg -ckpt outputs/yolov2_coco/model_best.pth.tar --traversal ../datasets/coco
-Input Size：[320x320] ap50_95: = 0.1846 ap50: = 0.3692
-Input Size：[352x352] ap50_95: = 0.1985 ap50: = 0.3898
-Input Size：[384x384] ap50_95: = 0.2094 ap50: = 0.4078
-Input Size：[416x416] ap50_95: = 0.2196 ap50: = 0.4265
-Input Size：[448x448] ap50_95: = 0.2264 ap50: = 0.4400
-Input Size：[480x480] ap50_95: = 0.2331 ap50: = 0.4481
-Input Size：[512x512] ap50_95: = 0.2380 ap50: = 0.4590
-Input Size：[544x544] ap50_95: = 0.2410 ap50: = 0.4635
-Input Size：[576x576] ap50_95: = 0.2384 ap50: = 0.4668
-Input Size：[608x608] ap50_95: = 0.2396 ap50: = 0.4722
+Input Size：[320x320] ap50_95: = 0.1862 ap50: = 0.3671
+Input Size：[352x352] ap50_95: = 0.2003 ap50: = 0.3926
+Input Size：[384x384] ap50_95: = 0.2087 ap50: = 0.4082
+Input Size：[416x416] ap50_95: = 0.2201 ap50: = 0.4270
+Input Size：[448x448] ap50_95: = 0.2291 ap50: = 0.4412
+Input Size：[480x480] ap50_95: = 0.2323 ap50: = 0.4476
+Input Size：[512x512] ap50_95: = 0.2394 ap50: = 0.4607
+Input Size：[544x544] ap50_95: = 0.2427 ap50: = 0.4663
+Input Size：[576x576] ap50_95: = 0.2439 ap50: = 0.4692
+Input Size：[608x608] ap50_95: = 0.2435 ap50: = 0.4765
 ```
 
 ### Demo
