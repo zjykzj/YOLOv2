@@ -15,7 +15,7 @@
   <a href="http://commitizen.github.io/cz-cli/"><img src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg" alt=""></a>
 </p>
 
-* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `448x448`. give the result as follows
+* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `416x416`. give the result as follows
 
 <!-- <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -192,28 +192,52 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 ### Eval
 
 ```shell
-python eval.py -c configs/yolov2_d53_voc.cfg -ckpt outputs/yolov2_d53_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.7104
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.7283
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7490
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7633
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7688
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7684
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7751
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7751
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7706
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7732
-python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.6711
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6944
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.7015
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.7200
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.7221
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.7281
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.7346
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.7319
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.7295
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.7286
+python eval.py -c configs/yolov2_d53_voc.cfg -ckpt outputs/yolov2_d53_voc/model_best.pth.tar ../datasets/voc
+VOC07 metric? Yes                                                                                                                                                                                                  
+AP for aeroplane = 0.7804                                                                                                                                                                                          
+AP for bicycle = 0.8453                                                                                                                                                                                            
+AP for bird = 0.7612                                                                                                                                                                                               
+AP for boat = 0.6260                                                                                                                                                                                               
+AP for bottle = 0.5240                                                                                                                                                                                             
+AP for bus = 0.8261                                                                                                                                                                                                
+AP for car = 0.8244                                                                                                                                                                                                
+AP for cat = 0.8635
+AP for chair = 0.5690
+AP for cow = 0.8161
+AP for diningtable = 0.7046
+AP for dog = 0.8470
+AP for horse = 0.8398
+AP for motorbike = 0.8014
+AP for person = 0.7673
+AP for pottedplant = 0.5069
+AP for sheep = 0.7639
+AP for sofa = 0.7374
+AP for train = 0.8268
+AP for tvmonitor = 0.7581
+Mean AP = 0.7495
+python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar ../datasets/voc
+VOC07 metric? Yes
+AP for aeroplane = 0.7396
+AP for bicycle = 0.7876
+AP for bird = 0.7264
+AP for boat = 0.6345
+AP for bottle = 0.4606
+AP for bus = 0.7885
+AP for car = 0.7927
+AP for cat = 0.8630
+AP for chair = 0.5502
+AP for cow = 0.8029
+AP for diningtable = 0.7024
+AP for dog = 0.8457
+AP for horse = 0.8374
+AP for motorbike = 0.8048
+AP for person = 0.7514
+AP for pottedplant = 0.4933
+AP for sheep = 0.7716
+AP for sofa = 0.7068
+AP for train = 0.8618
+AP for tvmonitor = 0.7328
+Mean AP = 0.7327
 python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar --traversal ../datasets/voc
 Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5882
 Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6113
