@@ -53,8 +53,8 @@
     <td class="tg-zkss">76.8</td>
     <td class="tg-zkss">72.7</td>
     <td class="tg-zkss">76.33</td>
-    <td class="tg-zkss">72.00</td>
-    <td class="tg-c3ow">64.36</td>
+    <td class="tg-zkss">73.27</td>
+    <td class="tg-c3ow">65.44</td>
   </tr>
 </tbody>
 </table>
@@ -238,17 +238,29 @@ AP for sofa = 0.7068
 AP for train = 0.8618
 AP for tvmonitor = 0.7328
 Mean AP = 0.7327
-python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar --traversal ../datasets/voc
-Input Size：[320x320] ap50_95: = -1.0000 ap50: = 0.5882
-Input Size：[352x352] ap50_95: = -1.0000 ap50: = 0.6113
-Input Size：[384x384] ap50_95: = -1.0000 ap50: = 0.6269
-Input Size：[416x416] ap50_95: = -1.0000 ap50: = 0.6436
-Input Size：[448x448] ap50_95: = -1.0000 ap50: = 0.6527
-Input Size：[480x480] ap50_95: = -1.0000 ap50: = 0.6538
-Input Size：[512x512] ap50_95: = -1.0000 ap50: = 0.6603
-Input Size：[544x544] ap50_95: = -1.0000 ap50: = 0.6528
-Input Size：[576x576] ap50_95: = -1.0000 ap50: = 0.6493
-Input Size：[608x608] ap50_95: = -1.0000 ap50: = 0.6330
+python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar ../datasets/voc
+VOC07 metric? Yes
+AP for aeroplane = 0.6745
+AP for bicycle = 0.7511
+AP for bird = 0.6245
+AP for boat = 0.5421
+AP for bottle = 0.3319
+AP for bus = 0.7508
+AP for car = 0.7413
+AP for cat = 0.8123
+AP for chair = 0.4276
+AP for cow = 0.7286
+AP for diningtable = 0.6336
+AP for dog = 0.7646
+AP for horse = 0.8083
+AP for motorbike = 0.7378
+AP for person = 0.6835
+AP for pottedplant = 0.3593
+AP for sheep = 0.6390
+AP for sofa = 0.6519
+AP for train = 0.7772
+AP for tvmonitor = 0.6479
+Mean AP = 0.6544
 python eval.py -c configs/yolov2_d53_coco.cfg -ckpt outputs/yolov2_d53_coco/model_best.pth.tar --traversal ../datasets/coco
 Input Size：[320x320] ap50_95: = 0.2162 ap50: = 0.4133
 Input Size：[352x352] ap50_95: = 0.2289 ap50: = 0.4323
