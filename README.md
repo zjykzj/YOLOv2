@@ -52,7 +52,7 @@
     <td class="tg-fr9f">VOC AP[IoU=0.50]</td>
     <td class="tg-zkss">76.8</td>
     <td class="tg-zkss">72.7</td>
-    <td class="tg-zkss">76.33</td>
+    <td class="tg-zkss">74.95/76.33(<a href="https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.1">v0.2.1</a>)</td>
     <td class="tg-zkss">73.27</td>
     <td class="tg-c3ow">65.44</td>
   </tr>
@@ -92,14 +92,14 @@
   <tr>
     <td class="tg-fr9f">COCO AP[IoU=0.50:0.95]</td>
     <td class="tg-zkss">21.6</td>
-    <td class="tg-9y4h">24.98</td>
-    <td class="tg-9y4h">22.01</td>
+    <td class="tg-9y4h">25.86</td>
+    <td class="tg-9y4h">22.84</td>
   </tr>
   <tr>
     <td class="tg-fr9f">COCO AP[IoU=0.50]</td>
     <td class="tg-c3ow">44.0</td>
-    <td class="tg-9y4h">46.85</td>
-    <td class="tg-9y4h">42.70</td>
+    <td class="tg-9y4h">48.40</td>
+    <td class="tg-9y4h">43.95</td>
   </tr>
 </tbody>
 </table>
@@ -134,7 +134,7 @@
 
 ## Background
 
-YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has created Darknet-19 and added YOLO-layer implementation; For the loss function, it adds anchor box settings to help network training with more fine-grained features. Compared with YOLOv1, YOLOv2 is more modern and high-performance.
+YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has created Darknet-19; For the loss function, it adds anchor box settings to help network training with more fine-grained features. Compared with YOLOv1, YOLOv2 is more modern and high-performance.
 
 This repository references many repositories implementations, including [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch) and [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch), as well as [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3).
 
@@ -262,27 +262,31 @@ AP for train = 0.7772
 AP for tvmonitor = 0.6479
 Mean AP = 0.6544
 python eval.py -c configs/yolov2_d53_coco.cfg -ckpt outputs/yolov2_d53_coco/model_best.pth.tar --traversal ../datasets/coco
-Input Size：[320x320] ap50_95: = 0.2162 ap50: = 0.4133
-Input Size：[352x352] ap50_95: = 0.2289 ap50: = 0.4323
-Input Size：[384x384] ap50_95: = 0.2386 ap50: = 0.4485
-Input Size：[416x416] ap50_95: = 0.2498 ap50: = 0.4685
-Input Size：[448x448] ap50_95: = 0.2596 ap50: = 0.4839
-Input Size：[480x480] ap50_95: = 0.2657 ap50: = 0.4950
-Input Size：[512x512] ap50_95: = 0.2699 ap50: = 0.5047
-Input Size：[544x544] ap50_95: = 0.2755 ap50: = 0.5115
-Input Size：[576x576] ap50_95: = 0.2767 ap50: = 0.5164
-Input Size：[608x608] ap50_95: = 0.2801 ap50: = 0.5215
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.259
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.484
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.249
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.071
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.285
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.440
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.233
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.341
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.351
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.110
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.387
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.585
 python eval.py -c configs/yolov2_coco.cfg -ckpt outputs/yolov2_coco/model_best.pth.tar --traversal ../datasets/coco
-Input Size：[320x320] ap50_95: = 0.1862 ap50: = 0.3671
-Input Size：[352x352] ap50_95: = 0.2003 ap50: = 0.3926
-Input Size：[384x384] ap50_95: = 0.2087 ap50: = 0.4082
-Input Size：[416x416] ap50_95: = 0.2201 ap50: = 0.4270
-Input Size：[448x448] ap50_95: = 0.2291 ap50: = 0.4412
-Input Size：[480x480] ap50_95: = 0.2323 ap50: = 0.4476
-Input Size：[512x512] ap50_95: = 0.2394 ap50: = 0.4607
-Input Size：[544x544] ap50_95: = 0.2427 ap50: = 0.4663
-Input Size：[576x576] ap50_95: = 0.2439 ap50: = 0.4692
-Input Size：[608x608] ap50_95: = 0.2435 ap50: = 0.4765
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.228
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.440
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.217
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.052
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.237
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.402
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.216
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.313
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.324
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.092
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.344
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.561
 ```
 
 ### Demo
