@@ -52,7 +52,7 @@
     <td class="tg-fr9f">VOC AP[IoU=0.50]</td>
     <td class="tg-zkss">76.8</td>
     <td class="tg-zkss">72.7</td>
-    <td class="tg-zkss">74.95/76.33(<a href="https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.1">v0.2.1</a>)</td>
+    <td class="tg-zkss">74.95(<a href="https://github.com/zjykzj/YOLOv2/releases/tag/v0.3.0">v0.3.0</a>)/76.33(<a href="https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.1">v0.2.1</a>)</td>
     <td class="tg-zkss">73.27</td>
     <td class="tg-c3ow">65.44</td>
   </tr>
