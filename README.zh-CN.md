@@ -111,6 +111,7 @@
 - [背景](#背景)
 - [数据准备](#数据准备)
   - [Pascal VOC](#pascal-voc)
+  - [COCO](#coco)
 - [安装](#安装)
   - [需求](#需求)
   - [容器](#容器)
@@ -155,6 +156,10 @@ python voc2yolov5.py -s /home/zj/data/voc -d /home/zj/data/voc/voc2yolov5-val -l
 ln -s /path/to/voc /path/to/YOLOv1/../datasets/voc
 ```
 
+### COCO
+
+使用脚本[get_coco.sh](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh)
+
 ## 安装
 
 ### 需求
@@ -176,7 +181,7 @@ docker run --gpus all -it --rm -v </path/to/YOLOv1>:/app/YOLOv1 -v </path/to/voc
 * 单个GPU
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov1_s14_voc.cfg --opt-level=O1 ../datasets/voc
+CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_voc.cfg --opt-level=O1 ../datasets/voc
 ```
 
 * 多个GPUs
