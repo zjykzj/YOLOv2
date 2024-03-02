@@ -44,6 +44,14 @@ names:
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
+# wget -c https://github.com/ultralytics/yolov5/releases/download/v1.0/VOCtrainval_06-Nov-2007.zip
+# wget -c https://github.com/ultralytics/yolov5/releases/download/v1.0/VOCtest_06-Nov-2007.zip
+# wget -c https://github.com/ultralytics/yolov5/releases/download/v1.0/VOCtrainval_11-May-2012.zip
+# move to ../datasets/VOC/images/
+#
+# or
+#
+# note off # download(urls, dir=dir / 'images', delete=False, curl=True, threads=3)
 download: |
   import xml.etree.ElementTree as ET
 
@@ -81,7 +89,7 @@ download: |
   urls = [f'{url}VOCtrainval_06-Nov-2007.zip',  # 446MB, 5012 images
           f'{url}VOCtest_06-Nov-2007.zip',  # 438MB, 4953 images
           f'{url}VOCtrainval_11-May-2012.zip']  # 1.95GB, 17126 images
-  download(urls, dir=dir / 'images', delete=False, curl=True, threads=3)
+  # download(urls, dir=dir / 'images', delete=False, curl=True, threads=3)
 
   # Convert
   path = dir / 'images/VOCdevkit'
