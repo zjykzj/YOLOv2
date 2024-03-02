@@ -697,3 +697,5 @@ cython_debug/
 
 /darknet/weights/
 /outputs/
+/runs/
+/*.pt
