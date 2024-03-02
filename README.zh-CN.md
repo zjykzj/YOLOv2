@@ -4,7 +4,7 @@
   <a title="英语" href="./README.md">🇺🇸</a>
 </div>
 
-<div align="center"><a title="" href="https://github.com/zjykzj/YOLOv2"><img align="center" src="./imgs/YOLOv2.png" alt=""></a></div>
+<div align="center"><a title="" href="https://github.com/zjykzj/YOLOv2"><img align="center" src="assets/imgs/YOLOv2.png" alt=""></a></div>
 
 <p align="center">
   «YOLOv2» 复现了论文 "YOLO9000: Better, Faster, Stronger"

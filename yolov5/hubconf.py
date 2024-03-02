@@ -30,12 +30,12 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.common import AutoShape, DetectMultiBackend
+    from models import AutoShape, DetectMultiBackend
     from models.experimental import attempt_load
-    from models.yolo import ClassificationModel, DetectionModel, SegmentationModel
+    from models import ClassificationModel, DetectionModel, SegmentationModel
     from utils.downloads import attempt_download
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
-    from utils.torch_utils import select_device
+    from utils import select_device
 
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
@@ -158,7 +158,7 @@ if __name__ == '__main__':
         Path('data/images/zidane.jpg'),  # Path
         'https://ultralytics.com/images/zidane.jpg',  # URI
         cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
-        Image.open('data/images/bus.jpg'),  # PIL
+        Image.open('../data/images/bus.jpg'),  # PIL
         np.zeros((320, 640, 3))]  # numpy
 
     # Inference

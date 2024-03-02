@@ -7,7 +7,7 @@ output
 coco
 storage.googleapis.com
 
-data/samples/*
+../data/samples/*
 **/results*.csv
 *.jpg
 
