@@ -59,7 +59,7 @@
 </tbody>
 </table>
 
-* Train using the `COCO train2017` dataset and test using the `COCO val2017` dataset with an input size of `416x416`. give the result as follows (*Note: The results of the original paper were evaluated on the `COCO test-dev2015` dataset*)
+* Train using the `COCO train2017` dataset and test using the `COCO val2017` dataset with an input size of `640x640`. give the result as follows (*Note: The results of the original paper were evaluated on the `COCO test-dev2015` dataset*)
 
 <!-- <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -67,39 +67,70 @@
   overflow:hidden;padding:10px 5px;word-break:normal;}
 .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
   font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-zkss{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:top}
-.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
-.tg .tg-fr9f{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:top}
-.tg .tg-y5w1{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-b6ls{background-color:#FFF;border-color:inherit;color:#1F2328;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-23cg{background-color:#FFF;border-color:inherit;color:#1F2328;font-weight:bold;text-align:center;vertical-align:middle}
+.tg .tg-baqh{text-align:center;vertical-align:top}
+.tg .tg-vc3l{background-color:#FFF;border-color:inherit;color:#1F2328;text-align:center;vertical-align:top}
 .tg .tg-9y4h{background-color:#FFF;border-color:inherit;color:#1F2328;text-align:center;vertical-align:middle}
+.tg .tg-d5y0{background-color:#FFF;color:#1F2328;text-align:center;vertical-align:top}
 </style> -->
 <table class="tg">
 <thead>
   <tr>
-    <th class="tg-fr9f"></th>
-    <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
-    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
-    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
+    <th class="tg-b6ls"></th>
+    <th class="tg-b6ls">Original (darknet)</th>
+    <th class="tg-23cg"><span style="font-weight:var(--base-text-weight-semibold, 600)">zjykzj/YOLOv2(This)</span></th>
+    <th class="tg-23cg"><span style="font-weight:var(--base-text-weight-semibold, 600)">zjykzj/YOLOv2(This)</span></th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td class="tg-fr9f">ARCH</td>
-    <td class="tg-zkss">YOLOv2</td>
-    <td class="tg-zkss">YOLOv2+Darknet53</td>
-    <td class="tg-zkss">YOLOv2</td>
+    <td class="tg-9y4h">ARCH</td>
+    <td class="tg-9y4h">YOLOv2</td>
+    <td class="tg-9y4h">YOLOv2</td>
+    <td class="tg-9y4h">YOLOv2-Fast</td>
   </tr>
   <tr>
-    <td class="tg-fr9f">COCO AP[IoU=0.50:0.95]</td>
-    <td class="tg-zkss">21.6</td>
-    <td class="tg-9y4h">25.86</td>
-    <td class="tg-9y4h">22.84</td>
+    <td class="tg-baqh">GFLOPs</td>
+    <td class="tg-baqh">/</td>
+    <td class="tg-baqh">69.7</td>
+    <td class="tg-baqh">48.8</td>
   </tr>
   <tr>
-    <td class="tg-fr9f">COCO AP[IoU=0.50]</td>
-    <td class="tg-c3ow">44.0</td>
-    <td class="tg-9y4h">48.40</td>
-    <td class="tg-9y4h">43.95</td>
+    <td class="tg-baqh">DATASET(TRAIN)</td>
+    <td class="tg-baqh">/</td>
+    <td class="tg-baqh">COCO TRAIN2017</td>
+    <td class="tg-baqh">COCO TRAIN2017</td>
+  </tr>
+  <tr>
+    <td class="tg-vc3l">DATASET(VAL)</td>
+    <td class="tg-9y4h">/</td>
+    <td class="tg-vc3l">COCO VAL2017</td>
+    <td class="tg-vc3l">COCO VAL2017</td>
+  </tr>
+  <tr>
+    <td class="tg-9y4h">INPUT_SIZE</td>
+    <td class="tg-9y4h">416x416</td>
+    <td class="tg-9y4h">640x640</td>
+    <td class="tg-vc3l">640x640</td>
+  </tr>
+  <tr>
+    <td class="tg-baqh">PRETRAINED</td>
+    <td class="tg-baqh">TRUE</td>
+    <td class="tg-baqh">FALSE</td>
+    <td class="tg-baqh">FALSE</td>
+  </tr>
+  <tr>
+    <td class="tg-d5y0">COCO AP[IoU=0.50:0.95]</td>
+    <td class="tg-d5y0">21.6</td>
+    <td class="tg-d5y0">30.5</td>
+    <td class="tg-d5y0">20.3</td>
+  </tr>
+  <tr>
+    <td class="tg-d5y0">COCO AP[IoU=0.50]</td>
+    <td class="tg-d5y0">44.0</td>
+    <td class="tg-d5y0">48.5</td>
+    <td class="tg-d5y0">37.4</td>
   </tr>
 </tbody>
 </table>
@@ -262,32 +293,32 @@ AP for sofa = 0.6519
 AP for train = 0.7772
 AP for tvmonitor = 0.6479
 Mean AP = 0.6544
-python eval.py -c configs/yolov2_d53_coco.cfg -ckpt outputs/yolov2_d53_coco/model_best.pth.tar --traversal ../datasets/coco
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.259
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.484
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.249
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.071
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.285
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.440
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.233
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.341
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.351
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.110
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.387
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.585
-python eval.py -c configs/yolov2_coco.cfg -ckpt outputs/yolov2_coco/model_best.pth.tar --traversal ../datasets/coco
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.228
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.440
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.217
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.052
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.237
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.402
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.216
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.313
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.324
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.092
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.344
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.561
+python3 val.py --weights runs/train/yolov2_coco_wo_pretrained/weights/best.pt --data coco.yaml --img 640
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.305
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.485
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.325
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.133
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.363
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.434
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.275
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.440
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.467
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.209
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.552
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.674
+python3 val.py --weights runs/train/yolov2-fast_coco_wo_pretrained/weights/best.pt --data coco.yaml --img 640
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.203
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.374
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.195
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.091
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.288
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.278
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.215
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.358
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.389
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.168
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.481
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.549
 ```
 
 ### Demo
