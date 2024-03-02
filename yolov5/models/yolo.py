@@ -35,6 +35,38 @@ except ImportError:
     thop = None
 
 
+## ---------------------------------------------------------------- YOLOv2 Components
+
+class Reorg(nn.Module):
+
+    def __init__(self, stride=2):
+        super(Reorg, self).__init__()
+        self.stride = stride
+
+    def forward(self, x):
+        # [1, 64, 26, 26]
+        N, C, H, W = x.shape[:4]
+        ws = self.stride
+        hs = self.stride
+
+        # [N, C, H, W] -> [N, C, H/S, S, W/S, S] -> [N, C, H/S, W/S, S, S]
+        # [1, 64, 26, 26] -> [1, 64, 13, 2, 13, 2] -> [1, 64, 13, 13, 2, 2]
+        x = x.view(N, C, int(H / hs), hs, int(W / ws), ws).transpose(3, 4).contiguous()
+        # [N, C, H/S, W/S, S, S] -> [N, C, H/S * W/S, S * S] -> [N, C, S * S, H/S * W/S]
+        # [1, 64, 13, 13, 2, 2] -> [1, 64, 13 * 13, 2 * 2] -> [1, 64, 2 * 2, 13 * 13]
+        x = x.view(N, C, int(H / hs * W / ws), hs * ws).transpose(2, 3).contiguous()
+        # [N, C, S * S, H/S * W/S] -> [N, C, S * S, H/S, W/S] -> [N, S * S, C, H/S, W/S]
+        # [1, 64, 2 * 2, 13 * 13] -> [1, 64, 2*2, 13, 13] -> [1, 2*2, 64, 13, 13]
+        x = x.view(N, C, hs * ws, int(H / hs), int(W / ws)).transpose(1, 2).contiguous()
+        # [N, S * S, C, H/S, W/S] -> [N, S * S * C, H/S, W/S]
+        # [1, 2*2, 64, 13, 13] -> [1, 2*2*64, 13, 13]
+        x = x.view(N, hs * ws * C, int(H / hs), int(W / ws)).contiguous()
+        # [1, 256, 13, 13]
+        return x
+
+
+## ----------------------------------------------------------------
+
 class Detect(nn.Module):
     # YOLOv5 Detect head for detection models
     stride = None  # strides computed during build
@@ -315,8 +347,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in {
-                Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
-                BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x}:
+            Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
+            BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x}:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
@@ -340,6 +372,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        elif m is Reorg:
+            c1 = ch[f]
+            c2 = c1 * 4
         else:
             c2 = ch[f]
 
