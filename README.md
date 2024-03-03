@@ -15,7 +15,7 @@
   <a href="http://commitizen.github.io/cz-cli/"><img src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg" alt=""></a>
 </p>
 
-* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `640x640`. give the result as follows
+* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `640x640`. Given the result as follows
 
 <!-- <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -101,7 +101,7 @@
 </tbody>
 </table>
 
-* Train using the `COCO train2017` dataset and test using the `COCO val2017` dataset with an input size of `640x640`. give the result as follows (*Note: The results of the original paper were evaluated on the `COCO test-dev2015` dataset*)
+* Train using the `COCO train2017` dataset and test using the `COCO val2017` dataset with an input size of `640x640`. Given the result as follows (*Note: The results of the original paper were evaluated on the `COCO test-dev2015` dataset*)
 
 <!-- <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -182,12 +182,7 @@
 - [Table of Contents](#table-of-contents)
 - [Latest News](#latest-news)
 - [Background](#background)
-- [Prepare Data](#prepare-data)
-  - [Pascal VOC](#pascal-voc)
-  - [COCO](#coco)
 - [Installation](#installation)
-  - [Requirements](#requirements)
-  - [Container](#container)
 - [Usage](#usage)
   - [Train](#train)
   - [Eval](#eval)
@@ -212,39 +207,18 @@ YOLOv2 has made more innovations on the basis of YOLOv1. For the network, it has
 
 This repository references many repositories implementations, including [tztztztztz/yolov2.pytorch](https://github.com/tztztztztz/yolov2.pytorch) and [yjh0410/yolov2-yolov3_PyTorch](https://github.com/yjh0410/yolov2-yolov3_PyTorch), as well as [zjykzj/YOLOv3](https://github.com/zjykzj/YOLOv3).
 
-## Prepare Data
-
-### Pascal VOC
-
-Use this script [voc2yolov5.py](https://github.com/zjykzj/vocdev/blob/master/py/voc2yolov5.py)
-
-```shell
-python voc2yolov5.py -s /home/zj/data/voc -d /home/zj/data/voc/voc2yolov5-train -l trainval-2007 trainval-2012
-python voc2yolov5.py -s /home/zj/data/voc -d /home/zj/data/voc/voc2yolov5-val -l test-2007
-```
-
-Then softlink the folder where the dataset is located to the specified location:
-
-```shell
-ln -s /path/to/voc /path/to/YOLOv2/../datasets/voc
-```
-
-### COCO
-
-Use this script [get_coco.sh](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh)
+Note: the latest implementation of YOLOv2 in our warehouse is entirely based on [ultralytics/yolov5 v7.0](https://github.com/ultralytics/yolov5/releases/tag/v7.0)
 
 ## Installation
 
-### Requirements
+```shell
+pip3 install -r requirements.txt
+```
 
-See [NVIDIA/apex](https://github.com/NVIDIA/apex)
-
-### Container
-
-Development environment (Use nvidia docker container)
+Or use docker container
 
 ```shell
-docker run --gpus all -it --rm -v </path/to/YOLOv2>:/app/YOLOv2 -v </path/to/voc>:/app/datasets/voc nvcr.io/nvidia/pytorch:22.08-py3
+docker run -it --runtime nvidia --gpus=all --shm-size=16g -v /etc/localtime:/etc/localtime -v $(pwd):/workdir --workdir=/workdir --name yolov2 ultralytics/yolov5:latest
 ```
 
 ## Usage
@@ -254,13 +228,15 @@ docker run --gpus all -it --rm -v </path/to/YOLOv2>:/app/YOLOv2 -v </path/to/voc
 * One GPU
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python main_amp.py -c configs/yolov2_voc.cfg --opt-level=O1 ../datasets/voc
+python train.py --data VOC.yaml --weights "" --cfg yolov2.yaml --img 640 --device 0
+python train.py --data VOC.yaml --weights "" --cfg yolov2-fast.yaml --img 640 --device 0
 ```
 
 * Multi-GPUs
 
 ```shell
-CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 --master_port "32111" main_amp.py -c configs/yolov2_voc.cfg --opt-level=O1 ../datasets/voc
+python -m torch.distributed.run --nproc_per_node 4 --master_port 23122 train.py --data coco.yaml --weights "" --cfg yolov2.yaml --img 640 --device 0,1,2,3
+python -m torch.distributed.run --nproc_per_node 4 --master_port 23122 train.py --data coco.yaml --weights "" --cfg yolov2-fast.yaml --img 640 --device 0,1,2,3
 ```
 
 ### Eval
