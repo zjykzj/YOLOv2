@@ -4,7 +4,7 @@
   <a title="Chinese" href="./README.zh-CN.md">🇨🇳</a>
 </div>
 
-<div align="center"><a title="" href="https://github.com/zjykzj/YOLOv2"><img align="center" src="assets/imgs/YOLOv2.png" alt=""></a></div>
+<div align="center"><a title="" href="https://github.com/zjykzj/YOLOv2"><img align="center" src="assets/logo/YOLOv2.png" alt=""></a></div>
 
 <p align="center">
   «YOLOv2» reproduced the paper "YOLO9000: Better, Faster, Stronger"
@@ -85,14 +85,14 @@
     <td class="tg-c3ow">FALSE</td>
   </tr>
   <tr>
-    <td class="tg-vc3l">COCO AP[IoU=0.50:0.95]</td>
+    <td class="tg-vc3l">VOC AP[IoU=0.50:0.95]</td>
     <td class="tg-vc3l">/</td>
     <td class="tg-baqh">/</td>
     <td class="tg-vc3l">47.8</td>
     <td class="tg-vc3l">34.8</td>
   </tr>
   <tr>
-    <td class="tg-vc3l">COCO AP[IoU=0.50]</td>
+    <td class="tg-vc3l">VOC AP[IoU=0.50]</td>
     <td class="tg-vc3l">76.8</td>
     <td class="tg-baqh"><span style="font-weight:400;font-style:normal">72.7</span></td>
     <td class="tg-vc3l">74.6</td>
