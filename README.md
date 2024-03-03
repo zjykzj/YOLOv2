@@ -15,7 +15,7 @@
   <a href="http://commitizen.github.io/cz-cli/"><img src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg" alt=""></a>
 </p>
 
-* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `416x416`. give the result as follows
+* Train using the `VOC07+12 trainval` dataset and test using the `VOC2007 Test` dataset with an input size of `640x640`. give the result as follows
 
 <!-- <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -23,38 +23,80 @@
   overflow:hidden;padding:10px 5px;word-break:normal;}
 .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
   font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-zkss{background-color:#FFF;border-color:inherit;color:#333;text-align:center;vertical-align:top}
+.tg .tg-b6ls{background-color:#FFF;border-color:inherit;color:#1F2328;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-23cg{background-color:#FFF;border-color:inherit;color:#1F2328;font-weight:bold;text-align:center;vertical-align:middle}
+.tg .tg-baqh{text-align:center;vertical-align:top}
+.tg .tg-vc3l{background-color:#FFF;border-color:inherit;color:#1F2328;text-align:center;vertical-align:top}
 .tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
-.tg .tg-fr9f{background-color:#FFF;border-color:inherit;color:#333;font-weight:bold;text-align:center;vertical-align:top}
-.tg .tg-y5w1{background-color:#FFF;border-color:inherit;color:#00E;font-weight:bold;text-align:center;vertical-align:top}
+.tg .tg-9y4h{background-color:#FFF;border-color:inherit;color:#1F2328;text-align:center;vertical-align:middle}
+.tg .tg-d5y0{background-color:#FFF;color:#1F2328;text-align:center;vertical-align:top}
 </style> -->
 <table class="tg">
 <thead>
   <tr>
-    <th class="tg-fr9f"></th>
-    <th class="tg-fr9f"><span style="font-style:normal">Original (darknet)</span></th>
-    <th class="tg-y5w1">tztztztztz/yolov2.pytorch</th>
-    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
-    <th class="tg-y5w1">zjykzj/YOLOv2(This)</th>
-    <th class="tg-c3ow">zjykzj/YOLOv2(This)</th>
+    <th class="tg-b6ls"></th>
+    <th class="tg-b6ls">Original (darknet)</th>
+    <th class="tg-baqh"><span style="font-weight:700;font-style:normal">tztztztztz/yolov2.pytorch</span></th>
+    <th class="tg-23cg"><span style="font-weight:var(--base-text-weight-semibold, 600)">zjykzj/YOLOv2(This)</span></th>
+    <th class="tg-23cg"><span style="font-weight:var(--base-text-weight-semibold, 600)">zjykzj/YOLOv2(This)</span></th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td class="tg-fr9f">ARCH</td>
-    <td class="tg-zkss">YOLOv2</td>
-    <td class="tg-zkss">YOLOv2</td>
-    <td class="tg-zkss">YOLOv2+Darknet53</td>
-    <td class="tg-zkss">YOLOv2</td>
-    <td class="tg-zkss">YOLOv2-tiny</td>
+    <td class="tg-9y4h">ARCH</td>
+    <td class="tg-9y4h">YOLOv2</td>
+    <td class="tg-d5y0">YOLOv2</td>
+    <td class="tg-9y4h">YOLOv2</td>
+    <td class="tg-9y4h">YOLOv2-Fast</td>
   </tr>
   <tr>
-    <td class="tg-fr9f">VOC AP[IoU=0.50]</td>
-    <td class="tg-zkss">76.8</td>
-    <td class="tg-zkss">72.7</td>
-    <td class="tg-zkss">74.95(<a href="https://github.com/zjykzj/YOLOv2/releases/tag/v0.3.0">v0.3.0</a>)/76.33(<a href="https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.1">v0.2.1</a>)</td>
-    <td class="tg-zkss">73.27</td>
-    <td class="tg-c3ow">65.44</td>
+    <td class="tg-c3ow">GFLOPs</td>
+    <td class="tg-c3ow">/</td>
+    <td class="tg-baqh">/</td>
+    <td class="tg-c3ow">69.7</td>
+    <td class="tg-c3ow">48.8</td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">DATASET(TRAIN)</td>
+    <td class="tg-c3ow">VOC TRAINVAL 2007+2012</td>
+    <td class="tg-baqh">VOC TRAINVAL 2007+2012</td>
+    <td class="tg-c3ow">VOC TRAINVAL 2007+2012</td>
+    <td class="tg-c3ow">VOC TRAINVAL 2007+2012</td>
+  </tr>
+  <tr>
+    <td class="tg-vc3l">DATASET(VAL)</td>
+    <td class="tg-9y4h">VOC TEST 2007</td>
+    <td class="tg-d5y0">VOC TEST 2007</td>
+    <td class="tg-vc3l">VOC TEST 2007</td>
+    <td class="tg-vc3l">VOC TEST 2007</td>
+  </tr>
+  <tr>
+    <td class="tg-9y4h">INPUT_SIZE</td>
+    <td class="tg-9y4h">416x416</td>
+    <td class="tg-d5y0">416x416</td>
+    <td class="tg-9y4h">640x640</td>
+    <td class="tg-vc3l">640x640</td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">PRETRAINED</td>
+    <td class="tg-c3ow">TRUE</td>
+    <td class="tg-baqh">TRUE</td>
+    <td class="tg-c3ow">FALSE</td>
+    <td class="tg-c3ow">FALSE</td>
+  </tr>
+  <tr>
+    <td class="tg-vc3l">COCO AP[IoU=0.50:0.95]</td>
+    <td class="tg-vc3l">/</td>
+    <td class="tg-baqh">/</td>
+    <td class="tg-vc3l">47.8</td>
+    <td class="tg-vc3l">34.8</td>
+  </tr>
+  <tr>
+    <td class="tg-vc3l">COCO AP[IoU=0.50]</td>
+    <td class="tg-vc3l">76.8</td>
+    <td class="tg-baqh"><span style="font-weight:400;font-style:normal">72.7</span></td>
+    <td class="tg-vc3l">74.6</td>
+    <td class="tg-vc3l">65</td>
   </tr>
 </tbody>
 </table>
@@ -149,7 +191,7 @@
 - [Usage](#usage)
   - [Train](#train)
   - [Eval](#eval)
-  - [Demo](#demo)
+  - [Predict](#predict)
 - [Maintainers](#maintainers)
 - [Thanks](#thanks)
 - [Contributing](#contributing)
@@ -224,75 +266,52 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 ### Eval
 
 ```shell
-python eval.py -c configs/yolov2_d53_voc.cfg -ckpt outputs/yolov2_d53_voc/model_best.pth.tar ../datasets/voc
-VOC07 metric? Yes                                                                                                                                                                                                  
-AP for aeroplane = 0.7804                                                                                                                                                                                          
-AP for bicycle = 0.8453                                                                                                                                                                                            
-AP for bird = 0.7612                                                                                                                                                                                               
-AP for boat = 0.6260                                                                                                                                                                                               
-AP for bottle = 0.5240                                                                                                                                                                                             
-AP for bus = 0.8261                                                                                                                                                                                                
-AP for car = 0.8244                                                                                                                                                                                                
-AP for cat = 0.8635
-AP for chair = 0.5690
-AP for cow = 0.8161
-AP for diningtable = 0.7046
-AP for dog = 0.8470
-AP for horse = 0.8398
-AP for motorbike = 0.8014
-AP for person = 0.7673
-AP for pottedplant = 0.5069
-AP for sheep = 0.7639
-AP for sofa = 0.7374
-AP for train = 0.8268
-AP for tvmonitor = 0.7581
-Mean AP = 0.7495
-python eval.py -c configs/yolov2_voc.cfg -ckpt outputs/yolov2_voc/model_best.pth.tar ../datasets/voc
-VOC07 metric? Yes
-AP for aeroplane = 0.7396
-AP for bicycle = 0.7876
-AP for bird = 0.7264
-AP for boat = 0.6345
-AP for bottle = 0.4606
-AP for bus = 0.7885
-AP for car = 0.7927
-AP for cat = 0.8630
-AP for chair = 0.5502
-AP for cow = 0.8029
-AP for diningtable = 0.7024
-AP for dog = 0.8457
-AP for horse = 0.8374
-AP for motorbike = 0.8048
-AP for person = 0.7514
-AP for pottedplant = 0.4933
-AP for sheep = 0.7716
-AP for sofa = 0.7068
-AP for train = 0.8618
-AP for tvmonitor = 0.7328
-Mean AP = 0.7327
-python eval.py -c configs/yolov2-tiny_voc.cfg -ckpt outputs/yolov2-tiny_voc/model_best.pth.tar ../datasets/voc
-VOC07 metric? Yes
-AP for aeroplane = 0.6745
-AP for bicycle = 0.7511
-AP for bird = 0.6245
-AP for boat = 0.5421
-AP for bottle = 0.3319
-AP for bus = 0.7508
-AP for car = 0.7413
-AP for cat = 0.8123
-AP for chair = 0.4276
-AP for cow = 0.7286
-AP for diningtable = 0.6336
-AP for dog = 0.7646
-AP for horse = 0.8083
-AP for motorbike = 0.7378
-AP for person = 0.6835
-AP for pottedplant = 0.3593
-AP for sheep = 0.6390
-AP for sofa = 0.6519
-AP for train = 0.7772
-AP for tvmonitor = 0.6479
-Mean AP = 0.6544
+python3 val.py --weights runs/train/yolov2_voc_wo_pretrained/weights/best.pt --data VOC.yaml --img 640 --device 0
+                 Class     Images  Instances          P          R      mAP50   mAP50-95: 100%|██████████| 155/155 00:47
+                   all       4952      12032      0.738      0.702      0.746      0.478
+             aeroplane       4952        285      0.801      0.708      0.756      0.439
+               bicycle       4952        337      0.871       0.78      0.869      0.561
+                  bird       4952        459      0.699      0.641      0.701      0.429
+                  boat       4952        263      0.636       0.62      0.647      0.357
+                bottle       4952        469      0.702      0.588      0.622      0.359
+                   bus       4952        213      0.815      0.761      0.834      0.632
+                   car       4952       1201      0.806      0.857      0.873      0.616
+                   cat       4952        358      0.777      0.723      0.789      0.526
+                 chair       4952        756      0.615      0.595      0.597      0.361
+                   cow       4952        244      0.673      0.693      0.743      0.492
+           diningtable       4952        206      0.693      0.694      0.694        0.4
+                   dog       4952        489      0.721       0.64      0.753      0.487
+                 horse       4952        348      0.808      0.787      0.835      0.564
+             motorbike       4952        325      0.832      0.751      0.832      0.532
+                person       4952       4528       0.83      0.788      0.856      0.527
+           pottedplant       4952        480      0.653      0.485      0.509      0.254
+                 sheep       4952        242      0.631      0.752      0.756      0.533
+                  sofa       4952        239      0.667      0.661       0.69       0.47
+                 train       4952        282      0.753      0.791      0.793      0.496
+             tvmonitor       4952        308      0.786      0.727       0.76      0.523
+python3 val.py --weights runs/train/yolov2-fast_voc_wo_pretrained/weights/best.pt --data VOC.yaml --img 640 --device 0
+                 Class     Images  Instances          P          R      mAP50   mAP50-95: 100%|██████████| 155/155 00:44
+                   all       4952      12032      0.664      0.616       0.65      0.348
+             aeroplane       4952        285      0.656      0.649      0.674      0.312
+               bicycle       4952        337       0.78      0.695      0.789      0.458
+                  bird       4952        459      0.627      0.505      0.583      0.295
+                  boat       4952        263       0.53       0.57      0.526      0.246
+                bottle       4952        469      0.653      0.505       0.51      0.254
+                   bus       4952        213      0.677      0.679      0.694      0.439
+                   car       4952       1201      0.738      0.774      0.804      0.491
+                   cat       4952        358       0.69      0.606      0.654      0.306
+                 chair       4952        756      0.593      0.479      0.519      0.282
+                   cow       4952        244      0.629       0.68      0.694      0.415
+           diningtable       4952        206      0.679      0.476      0.545      0.215
+                   dog       4952        489      0.648      0.526      0.613       0.31
+                 horse       4952        348      0.711      0.727       0.75      0.403
+             motorbike       4952        325      0.732      0.692       0.76      0.407
+                person       4952       4528       0.76      0.729      0.786      0.412
+           pottedplant       4952        480      0.553      0.423      0.439      0.184
+                 sheep       4952        242      0.655      0.711      0.731      0.462
+                  sofa       4952        239      0.566       0.54      0.547        0.3
+                 train       4952        282      0.656      0.695      0.678      0.344
+             tvmonitor       4952        308      0.746      0.653        0.7      0.432
 python3 val.py --weights runs/train/yolov2_coco_wo_pretrained/weights/best.pt --data coco.yaml --img 640
  Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.305
  Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.485
@@ -321,16 +340,16 @@ python3 val.py --weights runs/train/yolov2-fast_coco_wo_pretrained/weights/best.
  Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.549
 ```
 
-### Demo
+### Predict
 
 ```shell
-python demo.py -c 0.6 configs/yolov2_voc.cfg outputs/yolov2_voc/model_best.pth.tar --exp voc assets/voc2007-test/
+python detect.py --weights runs/yolov2_voc_wo_pretrained/weights/best.pt --source ./assets/voc2007-test/
 ```
 
 <p align="left"><img src="results/voc/000237.jpg" height="240"\>  <img src="results/voc/000386.jpg" height="240"\></p>
 
 ```shell
-python demo.py -c 0.6 configs/yolov2_coco.cfg outputs/yolov2_coco/model_best.pth.tar --exp coco assets/coco/
+python detect.py --weights runs/yolov2_coco_wo_pretrained/weights/best.pt --source ./assets/coco/
 ```
 
 <p align="left"><img src="results/coco/bus.jpg" height="240"\>  <img src="results/coco/zidane.jpg" height="240"\></p>
