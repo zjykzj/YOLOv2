@@ -57,7 +57,7 @@ def train(opt, device):
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
         opt.save_dir, Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
-        opt.imgsz, str(opt.pretrained).lower() == 'true'
+            opt.imgsz, str(opt.pretrained).lower() == 'true'
     cuda = device.type != 'cpu'
 
     # Directories
@@ -110,7 +110,10 @@ def train(opt, device):
         if Path(opt.model).is_file() or opt.model.endswith('.pt'):
             model = attempt_load(opt.model, device='cpu', fuse=False)
         elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
-            model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
+            if '0.11.0' in torchvision.__version__:
+                model = torchvision.models.__dict__[opt.model](pretrained=True if pretrained else None)
+            else:
+                model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
         else:
             m = hub.list('ultralytics/yolov5')  # + hub.list('pytorch/vision')  # models
             raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(m))
