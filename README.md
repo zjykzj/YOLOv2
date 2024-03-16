@@ -322,13 +322,13 @@ python3 val.py --weights runs/train/yolov2-fast_coco_wo_pretrained/weights/best.
 python detect.py --weights runs/yolov2_voc_wo_pretrained/weights/best.pt --source ./assets/voc2007-test/
 ```
 
-<p align="left"><img src="results/voc/000237.jpg" height="240"\>  <img src="results/voc/000386.jpg" height="240"\></p>
+<p align="left"><img src="assets/results/voc/000237.jpg" height="240"\>  <img src="assets/results/voc/000386.jpg" height="240"\></p>
 
 ```shell
 python detect.py --weights runs/yolov2_coco_wo_pretrained/weights/best.pt --source ./assets/coco/
 ```
 
-<p align="left"><img src="results/coco/bus.jpg" height="240"\>  <img src="results/coco/zidane.jpg" height="240"\></p>
+<p align="left"><img src="assets/results/coco/bus.jpg" height="240"\>  <img src="assets/results/coco/zidane.jpg" height="240"\></p>
 
 ## Maintainers
 
