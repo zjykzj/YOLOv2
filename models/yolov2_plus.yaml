@@ -38,5 +38,5 @@ head:
     [ [ -1, -2 ], 1, Concat, [ 1, ] ],  # cat [20, 19]
 
     [ -1, 1, Conv, [ 1024, 3, 1, 1 ] ],  # 21
-    [ [ -1, ], 1, YOLOv2Detect, [ nc, anchors ] ],  # Detect(21)
+    [ [ -1, ], 1, Detect, [ nc, anchors ] ],  # Detect(21)
   ]
