@@ -161,12 +161,12 @@ class YOLOv2Detect(Detect):
         z = []  # inference output
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
+            # YOLOv2 use 5 anchors
+            bs, _, ny, nx = x[i].shape  # x(bs,425,20,20) to x(bs,5,20,20,85)
+            x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
-                bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
-                x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
-
-                if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
+                if self.dynamic or self.grid[i].shape[-2:] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
 
                 # b_x = sigmoid(t_x) + c_x
@@ -175,9 +175,9 @@ class YOLOv2Detect(Detect):
                 # b_h = p_h * e^t_h
                 #
                 # x/y/conf compress to [0,1]
-                xy = torch.sigmoid(x[i][..., np.r_[:2, 4:5]])
-                xy[..., 0] += self.grid[i][0]
-                xy[..., 1] += self.grid[i][1]
+                xy_conf = torch.sigmoid(x[i][..., np.r_[:2, 4:5]])
+                xy_conf[..., 0] += self.grid[i][0]
+                xy_conf[..., 1] += self.grid[i][1]
                 # exp()
                 wh = torch.exp(x[i][..., 2:4])
                 wh[..., 0] *= self.anchor_grid[i][0]
@@ -186,7 +186,7 @@ class YOLOv2Detect(Detect):
                 probs = torch.softmax(x[i][..., 5:], dim=-1)
 
                 # [xcyc, wh, conf, probs]
-                y = torch.cat((xy[..., :2], wh, xy[..., 2:], probs), 4)
+                y = torch.cat((xy_conf[..., :2], wh, xy_conf[..., 2:], probs), dim=4)
                 # Scale relative to image width/height
                 y[..., :4] *= self.stride[i]
 
@@ -197,38 +197,29 @@ class YOLOv2Detect(Detect):
         # 5: 锚点个数
         # 8: 特征数据高
         # 9: 特征数据宽
-        # 85: 类别数+预测框坐标（xc/yc/box_w/box_h）+预测框置信度
+        # 85: 预测框坐标（xc/yc/box_w/box_h）+预测框置信度+类别数
         # 推理阶段，返回特征层数据+推理结果（Tuple(Tensor, Tensor)）
-        # 导出阶段，返回推理结果（bs, 每个特征层输出的预测锚点个数, 每个锚点输出维度）
+        #         如果导出，仅返回推理结果（bs, 每个特征层输出的预测锚点个数, 每个锚点输出维度）
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, bs, nx=20, ny=20, i=0):
         d = self.anchors[i].device
         t = self.anchors[i].dtype
 
-        B = bs
-        W = nx
-        H = ny
-        dtype = t
-        device = d
-        num_anchors = self.na
-
         # grid coordinate
         # [F_size] -> [B, num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(W),
-                                     (B, num_anchors, H, W)).to(dtype=dtype, device=device)
+        x_shift = torch.broadcast_to(torch.arange(nx), (bs, self.na, ny, nx)).to(dtype=t, device=d)
         # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
-        y_shift = torch.broadcast_to(torch.arange(H).reshape(H, 1),
-                                     (B, num_anchors, H, W)).to(dtype=dtype, device=device)
+        y_shift = torch.broadcast_to(torch.arange(ny).reshape(ny, 1), (bs, self.na, ny, nx)).to(dtype=t, device=d)
 
         # broadcast anchors to all grids
         # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
-        w_anchors = torch.broadcast_to(self.anchors[i][:, 0].reshape(1, num_anchors, 1, 1),
-                                       [B, num_anchors, H, W]).to(dtype=dtype, device=device)
-        h_anchors = torch.broadcast_to(self.anchors[i][:, 1].reshape(1, num_anchors, 1, 1),
-                                       [B, num_anchors, H, W]).to(dtype=dtype, device=device)
+        w_anchors = torch.broadcast_to(self.anchors[i][:, 0].reshape(1, self.na, 1, 1),
+                                       [bs, self.na, ny, nx]).to(dtype=t, device=d)
+        h_anchors = torch.broadcast_to(self.anchors[i][:, 1].reshape(1, self.na, 1, 1),
+                                       [bs, self.na, ny, nx]).to(dtype=t, device=d)
 
-        return torch.stack([x_shift, y_shift]), (w_anchors, h_anchors)
+        return torch.stack([x_shift, y_shift]), torch.stack([w_anchors, h_anchors])
 
 
 ## ----------------------------------------------------------------
