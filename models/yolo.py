@@ -29,7 +29,7 @@ from utils.plots import feature_visualization
 from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
                                time_sync)
 
-from yolov2v3.components import ResBlock
+from yolov2v3.components import ResBlock, Reorg, YOLOv2Detect
 
 try:
     import thop  # for FLOPs computation
@@ -78,9 +78,6 @@ class Detect(nn.Module):
                     y = torch.cat((xy, wh, conf), 4)
                 z.append(y.view(bs, self.na * nx * ny, self.no))
 
-        # if self.training:
-        #     print(f"type(x): {type(x)} - x len: {len(x)} - x[0].shape: {x[0].shape} - type(x[0]): {type(x[0])}")
-        #     exit(1)
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, '1.10.0')):
@@ -110,121 +107,6 @@ class Segment(Detect):
         x = self.detect(self, x)
         return (x, p) if self.training else (x[0], p) if self.export else (x[0], p, x[1])
 
-
-## ---------------------------------------------------------------- YOLOv2 Components
-
-class Reorg(nn.Module):
-
-    def __init__(self, stride=2):
-        super(Reorg, self).__init__()
-        self.stride = stride
-
-    def forward(self, x):
-        # [1, 64, 26, 26]
-        N, C, H, W = x.shape[:4]
-        ws = self.stride
-        hs = self.stride
-
-        # [N, C, H, W] -> [N, C, H/S, S, W/S, S] -> [N, C, H/S, W/S, S, S]
-        # [1, 64, 26, 26] -> [1, 64, 13, 2, 13, 2] -> [1, 64, 13, 13, 2, 2]
-        x = x.view(N, C, int(H / hs), hs, int(W / ws), ws).transpose(3, 4).contiguous()
-        # [N, C, H/S, W/S, S, S] -> [N, C, H/S * W/S, S * S] -> [N, C, S * S, H/S * W/S]
-        # [1, 64, 13, 13, 2, 2] -> [1, 64, 13 * 13, 2 * 2] -> [1, 64, 2 * 2, 13 * 13]
-        x = x.view(N, C, int(H / hs * W / ws), hs * ws).transpose(2, 3).contiguous()
-        # [N, C, S * S, H/S * W/S] -> [N, C, S * S, H/S, W/S] -> [N, S * S, C, H/S, W/S]
-        # [1, 64, 2 * 2, 13 * 13] -> [1, 64, 2*2, 13, 13] -> [1, 2*2, 64, 13, 13]
-        x = x.view(N, C, hs * ws, int(H / hs), int(W / ws)).transpose(1, 2).contiguous()
-        # [N, S * S, C, H/S, W/S] -> [N, S * S * C, H/S, W/S]
-        # [1, 2*2, 64, 13, 13] -> [1, 2*2*64, 13, 13]
-        x = x.view(N, hs * ws * C, int(H / hs), int(W / ws)).contiguous()
-        # [1, 256, 13, 13]
-        return x
-
-
-class YOLOv2Detect(Detect):
-    # YOLOv2 Detect head for detection models
-    stride = None  # strides computed during build
-    dynamic = False  # force grid reconstruction
-    export = False  # export mode
-
-    def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
-        super().__init__(nc=nc, anchors=anchors, ch=ch, inplace=inplace)
-        self.nc = nc  # number of classes
-        self.no = nc + 5  # number of outputs per anchor
-        self.nl = len(anchors)  # number of detection layers
-        self.na = len(anchors[0]) // 2  # number of anchors
-        self.grid = [torch.empty(0) for _ in range(self.nl)]  # init grid
-        self.anchor_grid = [torch.empty(0) for _ in range(self.nl)]  # init anchor grid
-        self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
-        self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.inplace = inplace  # use inplace ops (e.g. slice assignment)
-
-    def forward(self, x):
-        z = []  # inference output
-        for i in range(self.nl):
-            x[i] = self.m[i](x[i])  # conv
-            # YOLOv2 use 5 anchors
-            bs, _, ny, nx = x[i].shape  # x(bs,425,20,20) to x(bs,5,20,20,85)
-            x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
-
-            if not self.training:  # inference
-                if self.dynamic or self.grid[i].shape[-2:] != x[i].shape[2:4]:
-                    self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
-
-                # b_x = sigmoid(t_x) + c_x
-                # b_y = sigmoid(t_y) + c_y
-                # b_w = p_w * e^t_w
-                # b_h = p_h * e^t_h
-                #
-                # x/y/conf compress to [0,1]
-                xy_conf = torch.sigmoid(x[i][..., np.r_[:2, 4:5]])
-                xy_conf[..., 0] += self.grid[i][0]
-                xy_conf[..., 1] += self.grid[i][1]
-                # exp()
-                wh = torch.exp(x[i][..., 2:4])
-                wh[..., 0] *= self.anchor_grid[i][0]
-                wh[..., 1] *= self.anchor_grid[i][1]
-                # calculate classification probability
-                probs = torch.softmax(x[i][..., 5:], dim=-1)
-
-                # [xcyc, wh, conf, probs]
-                y = torch.cat((xy_conf[..., :2], wh, xy_conf[..., 2:], probs), dim=4)
-                # Scale relative to image width/height
-                y[..., :4] *= self.stride[i]
-
-                z.append(y.view(bs, self.na * nx * ny, self.no))
-
-        # 训练阶段，返回特征层数据（List[Tensor]） [1, 5, 8, 8, 85]
-        # 1: 批量大小
-        # 5: 锚点个数
-        # 8: 特征数据高
-        # 9: 特征数据宽
-        # 85: 预测框坐标（xc/yc/box_w/box_h）+预测框置信度+类别数
-        # 推理阶段，返回特征层数据+推理结果（Tuple(Tensor, Tensor)）
-        #         如果导出，仅返回推理结果（bs, 每个特征层输出的预测锚点个数, 每个锚点输出维度）
-        return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
-
-    def _make_grid(self, bs, nx=20, ny=20, i=0):
-        d = self.anchors[i].device
-        t = self.anchors[i].dtype
-
-        # grid coordinate
-        # [F_size] -> [B, num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(nx), (bs, self.na, ny, nx)).to(dtype=t, device=d)
-        # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
-        y_shift = torch.broadcast_to(torch.arange(ny).reshape(ny, 1), (bs, self.na, ny, nx)).to(dtype=t, device=d)
-
-        # broadcast anchors to all grids
-        # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
-        w_anchors = torch.broadcast_to(self.anchors[i][:, 0].reshape(1, self.na, 1, 1),
-                                       [bs, self.na, ny, nx]).to(dtype=t, device=d)
-        h_anchors = torch.broadcast_to(self.anchors[i][:, 1].reshape(1, self.na, 1, 1),
-                                       [bs, self.na, ny, nx]).to(dtype=t, device=d)
-
-        return torch.stack([x_shift, y_shift]), torch.stack([w_anchors, h_anchors])
-
-
-## ----------------------------------------------------------------
 
 class BaseModel(nn.Module):
     # YOLOv5 base model
@@ -274,7 +156,7 @@ class BaseModel(nn.Module):
         # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
-        if isinstance(m, (Detect, Segment)):
+        if isinstance(m, (Detect, Segment, YOLOv2Detect)):
             m.stride = fn(m.stride)
             m.grid = list(map(fn, m.grid))
             if isinstance(m.anchor_grid, list):
@@ -308,7 +190,7 @@ class DetectionModel(BaseModel):
 
         # Build strides, anchors
         m = self.model[-1]  # Detect()
-        if isinstance(m, (Detect, Segment)):
+        if isinstance(m, (Detect, Segment, YOLOv2Detect)):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, Segment) else self.forward(x)
