@@ -29,6 +29,8 @@ from utils.plots import feature_visualization
 from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
                                time_sync)
 
+from yolov2v3.components import ResBlock
+
 try:
     import thop  # for FLOPs computation
 except ImportError:
@@ -458,9 +460,13 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        # yolov2
         elif m is Reorg:
             c1 = ch[f]
             c2 = c1 * 4
+        # yolov3
+        elif m is ResBlock:
+            pass
         else:
             c2 = ch[f]
 
