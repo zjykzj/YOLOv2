@@ -22,39 +22,37 @@ import torch.nn.functional as F
 
 from utils.torch_utils import de_parallel
 from utils.general import xywh2xyxy
-from utils.metrics import box_iou
-
-"""
-特征层输出：[t_x, t_y, t_w, t_h]
-锚点框坐标：[c_x, c_y, p_w, p_h]
-预测框坐标：[b_x, b_y, b_w, b_h]
-标注框坐标：[g_x, g_y, g_w, g_h]
-
-根据特征层输出和锚点框坐标计算预测框坐标
-
-b_x = sigmoid(t_x) + c_x
-b_y = sigmoid(t_y) + c_y
-b_w = p_w * e^t_w
-b_h = p_h * e^t_h
-
-目标是使得[b_x, b_y, b_w, b_h] == [g_x, g_y, g_w, g_h]，上式等价于
-
-g_x = sigmoid(t_x) + c_x
-g_y = sigmoid(t_y) + c_y
-g_w = p_w * e^t_w
-g_h = p_h * e^t_h
-
-所以计算差值如下：
-
-sigmoid(t_x) = g_x - c_x
-sigmoid(t_y) = g_y - c_y
-e^t_w = g_w / p_w
-e^t_h = g_h / p_h
-"""
+from utils.metrics import bbox_iou
 
 
 def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
     """
+    特征层输出：[t_x, t_y, t_w, t_h]
+    锚点框坐标：[c_x, c_y, p_w, p_h]
+    预测框坐标：[b_x, b_y, b_w, b_h]
+    标注框坐标：[g_x, g_y, g_w, g_h]
+
+    根据特征层输出和锚点框坐标计算预测框坐标
+
+    b_x = sigmoid(t_x) + c_x
+    b_y = sigmoid(t_y) + c_y
+    b_w = p_w * e^t_w
+    b_h = p_h * e^t_h
+
+    目标是使得[b_x, b_y, b_w, b_h] == [g_x, g_y, g_w, g_h]，上式等价于
+
+    g_x = sigmoid(t_x) + c_x
+    g_y = sigmoid(t_y) + c_y
+    g_w = p_w * e^t_w
+    g_h = p_h * e^t_h
+
+    所以计算差值如下：
+
+    sigmoid(t_x) = g_x - c_x
+    sigmoid(t_y) = g_y - c_y
+    e^t_w = g_w / p_w
+    e^t_h = g_h / p_h
+
     Calculate the delta values σ(t_x), σ(t_y), exp(t_w), exp(t_h) used for transforming box1 to box2
     sigmoid(t_x) = b_x - c_x
     sigmoid(t_y) = b_y - c_y
@@ -118,6 +116,8 @@ class YOLOv2Loss(nn.Module):
         p(bs, n_anchors, feat_h, feat_w, (xcycwh, conf, n_classes))
         targets(image_id, class_id, xc, yc, box_w, box_h)
         """
+        assert len(p) == self.nl, "The number of feature layers and prediction layers should be equal."
+        # 逐层特征计算损失
         for i in range(self.nl):
             iou_target, iou_mask, box_target, box_mask, box_scale, class_target, class_mask = \
                 self.build_targets(p.detach().clone(), targets, i)
@@ -134,31 +134,8 @@ class YOLOv2Loss(nn.Module):
             outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
 
     def build_targets(self, x, targets, i=0):
-        """
-        逐层特征计算targets
-        """
         bs, _, ny, nx = x[i].shape  # x(bs,425,20,20)
-        if self.grid[i].shape[-2:] != x[i].shape[2:4]:
-            self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
-
-        # b_x = sigmoid(t_x) + c_x
-        # b_y = sigmoid(t_y) + c_y
-        # b_w = p_w * e^t_w
-        # b_h = p_h * e^t_h
-        #
-        # x/y compress to [0,1]
-        xy = torch.sigmoid(x[i][..., :2])
-        xy[..., 0] += self.grid[i][0]
-        xy[..., 1] += self.grid[i][1]
-        # exp()
-        wh = torch.exp(x[i][..., 2:4])
-        wh[..., 0] *= self.anchor_grid[i][0]
-        wh[..., 1] *= self.anchor_grid[i][1]
-
-        # [bs, n_anchors, f_h, f_w, 4] -> [bs, n_anchors, f_h*f_w, 4]
-        pred_boxes = torch.cat((xy, wh), dim=4).reshape(bs, self.na, -1, 4)
-        # [xc, yc, w, h] -> [x1, y1, x2, y2]
-        pred_boxes_xyxy = xywh2xyxy(pred_boxes)
+        pred_boxes = self._make_pred(x, i)
         iou_target, iou_mask, box_target, box_mask, box_scale, class_target, class_mask = \
             self._build_mask(bs, nx, ny, i)
         # 逐个图像进行计算
@@ -170,9 +147,6 @@ class YOLOv2Loss(nn.Module):
                 # 这一步是否可优化？没有标注框，那么可以计算负样本置信度损失
                 iou_mask[bi, ...] = 0
                 continue
-            # [n_anchors, f_h, f_w, 4] -> [n_anchors, f_h*f_w, 4]
-            all_anchors = torch.cat([self.grid[i][bi], self.anchor_grid[i]][bi]).reshape(self.na, -1, 4)
-
             gt_targets = targets[targets[..., 0] == bi]
             gt_boxes = gt_targets[..., 2:]
             gt_cls_ids = gt_targets[..., 1]
@@ -180,12 +154,10 @@ class YOLOv2Loss(nn.Module):
             # 放大到网格大小
             gt_boxes[..., 0::2] *= nx
             gt_boxes[..., 1::2] *= ny
-            # [xc, yc, w, h] -> [x1, y1, x2, y2]
-            gt_boxes_xyxy = xywh2xyxy(gt_boxes)
 
             # 第一步：计算所有预测框和所有标注框两两之间的IOU
             # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj]
-            ious = box_iou(pred_boxes_xyxy.reshape(-1, 4), gt_boxes_xyxy)
+            ious = bbox_iou(pred_boxes.reshape(-1, 4), gt_boxes, xywh=True)
             ious = ious.reshape(self.na, -1, num_obj)
             # 计算每个网格中每个预测框计算得到的最大IoU
             max_iou, _ = torch.max(ious, dim=-1, keepdim=True)
@@ -198,8 +170,13 @@ class YOLOv2Loss(nn.Module):
                 iou_mask[bi][max_iou >= self.ignore_thresh] = 0
 
             # 第二步：计算每个网格上锚点框与标注框的IoU，保证每个标注框拥有一个对应的正样本
+            # [n_anchors, f_h, f_w, 4] -> [n_anchors, f_h*f_w, 4]
+            all_anchors = torch.stack(
+                (self.grid[i][bi][0], self.grid[i][bi][1], self.anchor_grid[i][bi][0],
+                 self.anchor_grid[i][bi][1])).permute(1, 2, 3, 0).reshape(self.na, -1, 4)
+
             # [n_anchors, f_h*f_w, num_obj]
-            overlaps = box_iou(all_anchors.reshape(-1, 4), gt_boxes).reshape(self.na, -1, num_obj)
+            overlaps = bbox_iou(all_anchors.reshape(-1, 4), gt_boxes, xywh=True).reshape(self.na, -1, num_obj)
 
             # 第三步：逐个锚点框计算，选择最适合的预测框计算损失
             # iterate over all objects
@@ -266,7 +243,32 @@ class YOLOv2Loss(nn.Module):
         h_anchors = torch.broadcast_to(self.anchors[i][:, 1].reshape(1, self.na, 1, 1),
                                        [bs, self.na, ny, nx]).to(dtype=t, device=d)
 
+        # [2, B, n_anchors, F_H, F_W], [2, B, n_anchors, F_H, F_W]
         return torch.stack([x_shift, y_shift]), torch.stack([w_anchors, h_anchors])
+
+    def _make_pred(self, x, i=0):
+        bs, _, ny, nx = x[i].shape  # x(bs,425,20,20)
+        if self.grid[i].shape[-2:] != x[i].shape[2:4]:
+            self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
+
+        # b_x = sigmoid(t_x) + c_x
+        # b_y = sigmoid(t_y) + c_y
+        # b_w = p_w * e^t_w
+        # b_h = p_h * e^t_h
+        #
+        # x/y compress to [0,1]
+        xy = torch.sigmoid(x[i][..., :2])
+        xy[..., 0] += self.grid[i][0]
+        xy[..., 1] += self.grid[i][1]
+        # exp()
+        wh = torch.exp(x[i][..., 2:4])
+        wh[..., 0] *= self.anchor_grid[i][0]
+        wh[..., 1] *= self.anchor_grid[i][1]
+
+        # [bs, n_anchors, f_h, f_w, 4] -> [bs, n_anchors, f_h*f_w, 4]
+        pred_boxes = torch.cat((xy, wh), dim=4).reshape(bs, self.na, -1, 4)
+
+        return pred_boxes
 
     def _build_mask(self, bs, nx=20, ny=20, i=0):
         d = self.device
