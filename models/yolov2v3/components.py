@@ -67,11 +67,11 @@ class YOLOv2Detect(nn.Module):
         z = []  # inference output
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
-            # YOLOv2 use 5 anchors
-            bs, _, ny, nx = x[i].shape  # x(bs,425,20,20) to x(bs,5,20,20,85)
-            x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
+                # YOLOv2 use 5 anchors
+                bs, _, ny, nx = x[i].shape  # x(bs,425,20,20) to x(bs,5,20,20,85)
+                x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
                 if self.dynamic or self.grid[i].shape[-2:] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
 
@@ -113,13 +113,13 @@ class YOLOv2Detect(nn.Module):
         t = self.anchors[i].dtype
 
         # grid coordinate
-        # [F_size] -> [B, num_anchors, H, W]
+        # [F] -> [B, n_anchors, F_H, F_W]
         x_shift = torch.broadcast_to(torch.arange(nx), (bs, self.na, ny, nx)).to(dtype=t, device=d)
-        # [F_size] -> [f_size, 1] -> [B, num_anchors, H, W]
+        # [F] -> [F, 1] -> [B, n_anchors, F_H, F_W]
         y_shift = torch.broadcast_to(torch.arange(ny).reshape(ny, 1), (bs, self.na, ny, nx)).to(dtype=t, device=d)
 
         # broadcast anchors to all grids
-        # [num_anchors] -> [1, num_anchors, 1, 1] -> [B, num_anchors, H, W]
+        # [n_anchors] -> [1, n_anchors, 1, 1] -> [B, n_anchors, F_H, F_W]
         w_anchors = torch.broadcast_to(self.anchors[i][:, 0].reshape(1, self.na, 1, 1),
                                        [bs, self.na, ny, nx]).to(dtype=t, device=d)
         h_anchors = torch.broadcast_to(self.anchors[i][:, 1].reshape(1, self.na, 1, 1),
