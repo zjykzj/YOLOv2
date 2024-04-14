@@ -11,8 +11,6 @@
 """
 from typing import List
 
-import copy
-
 import numpy as np
 
 import torch
@@ -133,11 +131,10 @@ def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
 
 class YOLOv2Loss(nn.Module):
 
-    def __init__(self, model, num_classes=20, ignore_thresh=0.5,
+    def __init__(self, model, ignore_thresh=0.5,
                  coord_scale=1.0, noobj_scale=1.0, obj_scale=5.0, class_scale=1.0):
         super(YOLOv2Loss, self).__init__()
         device = next(model.parameters()).device  # get model device
-        h = model.hyp  # hyperparameters
 
         m = de_parallel(model).model[-1]  # Detect() module
         self.na = m.na  # number of anchors
@@ -147,7 +144,7 @@ class YOLOv2Loss(nn.Module):
         self.anchors = m.anchors
         self.device = device
 
-        self.num_classes = num_classes
+        self.no = self.nc + 5  # number of outputs per anchor
         self.ignore_thresh = ignore_thresh
 
         self.noobj_scale = noobj_scale
@@ -193,29 +190,29 @@ class YOLOv2Loss(nn.Module):
             box_target = box_target.reshape(-1, 4)[box_mask > 0]
             box_pred = torch.cat((xy_conf[..., :2], wh), dim=-1).reshape(-1, 4)[box_mask > 0]
 
-            box_scale = torch.sqrt(box_scale.reshape(-1)[box_mask > 0])
+            box_scale = torch.sqrt(box_scale.reshape(-1)[box_mask > 0]).reshape(-1, 1)
             box_loss = F.mse_loss(box_pred * box_scale, box_target, reduction='mean')
 
             # --------------------------------------
             # iou loss
             # [bi, n_anchors, f_h*f_w, 1] -> [bs*n_anchors*f_h*f_w]
-            iou_mask = iou_mask.reshaep(-1)
+            iou_mask = iou_mask.reshape(-1)
 
-            obj_iou_target = iou_target[iou_mask == 2]
-            obj_iou_pred = xy_conf[..., 2][iou_mask == 2]
+            obj_iou_target = iou_target.reshape(-1)[iou_mask == 2]
+            obj_iou_pred = xy_conf[..., 2].reshape(-1)[iou_mask == 2]
             obj_iou_loss = F.mse_loss(obj_iou_pred, obj_iou_target, reduction='mean')
 
-            noobj_iou_target = iou_target[iou_mask == 1]
-            noobj_iou_pred = xy_conf[..., 2][iou_mask == 1]
+            noobj_iou_target = iou_target.reshape(-1)[iou_mask == 1]
+            noobj_iou_pred = xy_conf[..., 2].reshape(-1)[iou_mask == 1]
             noobj_iou_loss = F.mse_loss(noobj_iou_pred, noobj_iou_target, reduction='mean')
 
             # --------------------------------------
             # class loss
             # [bi, n_anchors, f_h*f_w, 1] -> [bs*n_anchors*f_h*f_w]
-            class_mask = class_mask.reshaep(-1)
-            class_target = class_target[class_mask > 0]
-            class_pred = x[..., 5:].reshape(-1, self.num_classes)[class_mask > 0]
-            class_loss = F.cross_entropy(class_pred, class_target, reduction='mean')
+            class_mask = class_mask.reshape(-1)
+            class_target = class_target.reshape(-1)[class_mask > 0]
+            class_pred = x[..., 5:].reshape(-1, self.nc)[class_mask > 0]
+            class_loss = F.cross_entropy(class_pred, class_target.long(), reduction='mean')
 
             # calculate the loss, normalized by batch size.
             lcls += class_loss * self.class_scale
@@ -248,7 +245,7 @@ class YOLOv2Loss(nn.Module):
             # 第一步：计算所有预测框和所有标注框两两之间的IOU
             #
             # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj]
-            ious = bboxes_iou(pred_boxes.reshape(-1, 4), gt_boxes, xyxy=False)
+            ious = bboxes_iou(pred_boxes[bi].reshape(-1, 4), gt_boxes, xyxy=False)
             ious = ious.reshape(self.na, -1, num_obj)
             # 计算每个网格中每个预测框的最大IoU
             # [n_anchors, f_h*f_w, 1]
@@ -263,7 +260,7 @@ class YOLOv2Loss(nn.Module):
             #
             # [4, n_anchors, f_h, f_w] -> [n_anchors, f_h, f_w, 4] -> [n_anchors, f_h*f_w, 4]
             all_anchors = torch.cat(
-                (self.grid[i][bi], self.anchor_grid[i][bi]), dim=0
+                (self.grid[i][:, bi], self.anchor_grid[i][:, bi]), dim=0
             ).permute(1, 2, 3, 0).reshape(self.na, -1, 4)
 
             # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj]
@@ -285,10 +282,10 @@ class YOLOv2Loss(nn.Module):
                 # update box_target, box_mask
                 # 获取该标注框在对应网格上与所有锚点框的IoU
                 # [n_anchors, f_h*f_w, num_obj] -> [n_anchors]
-                overlaps_in_cell = overlaps[:, cell_idx, ni]
+                overlaps_in_cell = overlaps[:, cell_idx, ni].long()
                 # 选择IoU最大的锚点框下标
                 argmax_anchor_idx = torch.argmax(overlaps_in_cell)
-                target_delta = make_deltas(all_anchors[argmax_anchor_idx, overlaps_in_cell].unsqueeze(0),
+                target_delta = make_deltas(all_anchors[argmax_anchor_idx, cell_idx].unsqueeze(0),
                                            gt_box.unsqueeze(0)).squeeze(0)
 
                 box_target[bi, argmax_anchor_idx, cell_idx, :] = target_delta
@@ -332,6 +329,7 @@ class YOLOv2Loss(nn.Module):
 
     def _make_pred(self, x, i=0):
         bs, _, ny, nx = x.shape  # x(bs,425,20,20)
+        x = x.view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
         if self.grid[i].shape[-2:] != x.shape[2:4]:
             self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
 
