@@ -81,17 +81,21 @@ class YOLOv2Detect(nn.Module):
                 # b_h = p_h * e^t_h
                 #
                 # x/y/conf compress to [0,1]
+                # [bs, 5, 20, 20, 3]
                 xy_conf = torch.sigmoid(x[i][..., np.r_[:2, 4:5]])
                 xy_conf[..., 0] += self.grid[i][0]
                 xy_conf[..., 1] += self.grid[i][1]
                 # exp()
+                # [bs, 5, 20, 20, 2]
                 wh = torch.exp(x[i][..., 2:4])
                 wh[..., 0] *= self.anchor_grid[i][0]
                 wh[..., 1] *= self.anchor_grid[i][1]
                 # calculate classification probability
+                # [bs, 5, 20, 20, 80]
                 probs = torch.softmax(x[i][..., 5:], dim=-1)
 
                 # [xcyc, wh, conf, probs]
+                # [bs, 5, 20, 20, 85]
                 y = torch.cat((xy_conf[..., :2], wh, xy_conf[..., 2:], probs), dim=4)
                 # Scale relative to image width/height
                 y[..., :4] *= self.stride[i]
