@@ -23,11 +23,13 @@ def create_data():
 
     torch.manual_seed(42)
     # [image_id, class_id, xc, yc, w, h]
-    targets = torch.abs(torch.randn((20, 6)) * img_size).to(torch.int)
-    targets[:, 0] = targets[:, 0] % bs
-    targets[:, 1] = targets[:, 1] % nc
-    targets[:, 1:] = targets[:, 1:] % img_size
-    print(f"- targets shape: {targets.shape}\n- targets[0]: {targets[0]}\n- targets[-1]: {targets[-1]}")
+    targets = torch.abs(torch.randn((20, 6)) * img_size).to(torch.float32)
+    targets[:, 0] = targets[:, 0].int() % bs
+    targets[:, 1] = targets[:, 1].int() % nc
+    targets[:, 2:] = targets[:, 2:] % img_size / img_size
+    print(f"- targets shape: {targets.shape}")
+    print(f"- targets type: {type(targets)} dtype: {targets.dtype}")
+    print(f"- targets[0]: {targets[0]}\n- targets[-1]: {targets[-1]}")
 
     return data, targets
 
@@ -59,14 +61,14 @@ if __name__ == '__main__':
     data, targets = create_data()
     hyp = '../data/hyps/hyp.scratch-low.yaml'
 
-    model = Model('../models/yolov2-fast.yaml', ch=3, nc=80, anchors=None)  # create
+    model = Model('../models/yolov2v3/yolov2-fast.yaml', ch=3, nc=80, anchors=None)  # create
     model.hyp = hyp
     print(f"- model.stride: {model.stride}\n- Detect.anchors: {model.model[-1].anchors}")
     det(data, targets, model)
 
     print('*' * 100)
 
-    model = Model('../models/yolov2-fast_plus.yaml', ch=3, nc=80, anchors=None)  # create
+    model = Model('../models/yolov2v3/yolov2-fast_plus.yaml', ch=3, nc=80, anchors=None)  # create
     model.hyp = hyp
     print(f"- model.stride: {model.stride}\n- Detect.anchors: {model.model[-1].anchors}")
     det(data, targets, model)
