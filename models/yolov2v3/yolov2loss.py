@@ -219,7 +219,7 @@ class YOLOv2Loss(nn.Module):
             lbox += box_loss * self.obj_scale
             lobj += obj_iou_loss * self.obj_scale + noobj_iou_loss * self.noobj_scale
 
-        return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
+        return (lbox + lobj + lcls), torch.cat((lbox, lobj, lcls)).detach()
 
     def build_targets(self, x, targets, i=0):
         bs, _, ny, nx = x.shape  # x(bs,425,20,20)
