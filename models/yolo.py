@@ -29,7 +29,7 @@ from utils.plots import feature_visualization
 from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
                                time_sync)
 
-from yolov2v3.components import ResBlock, Reorg, YOLOv2Detect
+from models.yolov2v3.components import ResBlock, Reorg, YOLOv2Detect
 
 try:
     import thop  # for FLOPs computation
