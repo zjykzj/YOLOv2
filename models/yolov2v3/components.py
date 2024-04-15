@@ -60,6 +60,7 @@ class YOLOv2Detect(nn.Module):
         self.grid = [torch.empty(0) for _ in range(self.nl)]  # init grid
         self.anchor_grid = [torch.empty(0) for _ in range(self.nl)]  # init anchor grid
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
+        # print(f"m.anchors: {self.anchors}")
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
@@ -100,7 +101,7 @@ class YOLOv2Detect(nn.Module):
                 # Scale relative to image width/height
                 y[..., :4] *= self.stride[i]
 
-                z.append(y.view(bs, self.na * nx * ny, self.no))
+                z.append(y.view(bs, self.na * ny * nx, self.no))
 
         # 训练阶段，返回特征层数据（List[Tensor]） [1, 5, 8, 8, 85]
         # 1: 批量大小
