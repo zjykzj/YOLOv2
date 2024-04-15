@@ -223,8 +223,8 @@ class YOLOv2Loss(nn.Module):
 
             box_scale = box_scale.reshape(-1)[box_mask > 0].reshape(-1, 1)
             # print(box_scale)
-            # box_loss = F.mse_loss(box_pred * box_scale, box_target * box_scale, reduction='mean')
-            box_loss = F.mse_loss(box_pred, box_target, reduction='mean')
+            box_loss = F.mse_loss(box_pred * box_scale, box_target * box_scale, reduction='mean')
+            # box_loss = F.mse_loss(box_pred, box_target, reduction='mean')
             # print(f"box_loss: {box_loss} - box_pred shape: {box_pred.shape}")
             # print(box_pred[:5])
             # print(box_target[:5])
@@ -349,7 +349,8 @@ class YOLOv2Loss(nn.Module):
                 pred_box = pred_boxes[bi, argmax_anchor_idx, cell_idx]
                 w_i = pred_box[2] / nx
                 h_i = pred_box[3] / ny
-                # assert w_i <= 1 and h_i <= 1, f"w_i: {w_i} - h_i: {h_i}"
+                # print(f"w_i: {w_i} - h_i: {h_i} - scale: {2 - w_i * h_i}")
+                assert 0 <= w_i <= 1 and 0 <= h_i <= 1, f"w_i: {w_i} - h_i: {h_i}"
                 box_scale[bi, argmax_anchor_idx, cell_idx, :] = torch.sqrt(2 - w_i * h_i)
 
                 # update iou target and iou mask
@@ -413,6 +414,8 @@ class YOLOv2Loss(nn.Module):
 
         # [bs, n_anchors, f_h, f_w, 4] -> [bs, n_anchors, f_h*f_w, 4]
         pred_boxes = torch.cat((xy, wh), dim=4).reshape(bs, self.na, -1, 4)
+        pred_boxes[..., 0::2] = torch.clamp(pred_boxes[..., 0::2], 0, nx)
+        pred_boxes[..., 1::2] = torch.clamp(pred_boxes[..., 1::2], 0, ny)
 
         return pred_boxes
 
