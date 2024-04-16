@@ -68,11 +68,11 @@ class YOLOv2Detect(nn.Module):
         z = []  # inference output
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
+            # YOLOv2 use 5 anchors
+            bs, _, ny, nx = x[i].shape  # x(bs,425,20,20) to x(bs,5,20,20,85)
+            x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
-                # YOLOv2 use 5 anchors
-                bs, _, ny, nx = x[i].shape  # x(bs,425,20,20) to x(bs,5,20,20,85)
-                x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
                 if self.dynamic or self.grid[i].shape[-2:] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
 
@@ -116,6 +116,10 @@ class YOLOv2Detect(nn.Module):
     def _make_grid(self, bs, nx=20, ny=20, i=0):
         d = self.anchors[i].device
         t = self.anchors[i].dtype
+
+        # print(f"anchors: {self.anchors}")
+        # print(f"stride: {self.stride}")
+        # print(f"nc: {self.nc}")
 
         # grid coordinate
         # [F] -> [B, n_anchors, F_H, F_W]
