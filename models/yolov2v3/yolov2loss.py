@@ -5,9 +5,6 @@
 @File    : loss.py
 @Author  : zj
 @Description:
-
-对于损失函数而言，它应该是支持逐层特征的计算的，不管是YOLOv2Loss还是YOLOv3Loss
-
 """
 from typing import List
 
@@ -42,8 +39,7 @@ def bboxes_iou(bboxes_a: Tensor, bboxes_b: Tensor, xyxy=True) -> Tensor:
 
     from: https://github.com/chainer/chainercv
     """
-    # bboxes_a: [N_a, 4]
-    # bboxes_b: [N_b, 4]
+    # bboxes_a: [N_a, 4] bboxes_b: [N_b, 4]
     if bboxes_a.shape[1] != 4 or bboxes_b.shape[1] != 4:
         raise IndexError
 
@@ -231,10 +227,6 @@ class YOLOv2Loss(nn.Module):
                 box_loss = F.mse_loss(box_pred, box_target, reduction='none')
                 box_loss *= box_scale
                 box_loss = box_loss.sum()
-            # box_loss = F.mse_loss(box_pred, box_target, reduction='mean')
-            # print(f"box_loss: {box_loss} - box_pred shape: {box_pred.shape}")
-            # print(box_pred[:5])
-            # print(box_target[:5])
 
             # --------------------------------------
             # iou loss
@@ -294,18 +286,8 @@ class YOLOv2Loss(nn.Module):
             gt_boxes[..., 1::2] *= ny
             gt_cls_ids = gt_targets[..., 1].long()
 
-            # 第一步：计算所有预测框和所有标注框两两之间的IOU
-            #
             # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj] -> [n_anchors, f_h*f_w, num_obj]
             ious = bboxes_iou(pred_boxes[bi].reshape(-1, 4), gt_boxes, xyxy=False).reshape(self.na, -1, num_obj)
-            # 每个网格中每个预测框和标注框计算得到的最大IoU
-            # [n_anchors, f_h*f_w, 1]
-            # max_iou, _ = torch.max(ious, dim=-1, keepdim=True)
-
-            # 第二步：计算每个网格上锚点框与标注框的IoU，目的：为每个标注框匹配一个预测框
-            #
-            # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj]
-            # overlaps = bboxes_iou(all_anchors.reshape(-1, 4), gt_boxes, xyxy=False).reshape(self.na, -1, num_obj)
             for ni in range(num_obj):
                 # compute the center of each gt box to determine which cell it falls on
                 # assign it to a specific anchor by choosing max IoU
@@ -319,7 +301,6 @@ class YOLOv2Loss(nn.Module):
                 # update box_target, box_mask
                 # 获取该标注框在对应网格上与所有锚点框的IoU
                 # [n_anchors, f_h*f_w, num_obj] -> [n_anchors]
-                # overlaps_in_cell = overlaps[:, cell_idx, ni]
                 overlaps_in_cell = ious[:, cell_idx, ni]
                 argmax_anchor_idx = torch.argmax(overlaps_in_cell)
 
@@ -333,21 +314,15 @@ class YOLOv2Loss(nn.Module):
                 box_scale[bi, argmax_anchor_idx, cell_idx, :] = 2 - w_i * h_i
 
                 # update iou target and iou mask
-                # iou_target[bi, argmax_anchor_idx, cell_idx, :] = max_iou[argmax_anchor_idx, cell_idx, :]
-                if ious[argmax_anchor_idx, cell_idx, ni] > self.ignore_thresh:
+                if overlaps_in_cell[overlaps_in_cell] > self.ignore_thresh:
                     iou_mask[bi, argmax_anchor_idx, cell_idx, :] = 0
                 else:
-                    iou_target[bi, argmax_anchor_idx, cell_idx, :] = ious[argmax_anchor_idx, cell_idx, ni]
+                    iou_target[bi, argmax_anchor_idx, cell_idx, :] = overlaps_in_cell[overlaps_in_cell]
                     iou_mask[bi, argmax_anchor_idx, cell_idx, :] = 2
 
                 # update cls_target, cls_mask
                 class_target[bi, argmax_anchor_idx, cell_idx, :] = gt_class
                 class_mask[bi, argmax_anchor_idx, cell_idx, :] = 1
-
-            # we ignore the gradient of predicted boxes whose IoU with any gt box is greater than cfg.threshold
-            # n_pos = torch.nonzero(max_iou.view(-1) > self.ignore_thresh).numel()
-            # if n_pos > 0:
-            #     box_mask[bi][max_iou >= self.ignore_thresh] = 0
 
         return box_target, box_mask, box_scale, iou_target, iou_mask, class_target, class_mask
 
