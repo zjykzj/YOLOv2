@@ -1,28 +1,24 @@
 # -*- coding: utf-8 -*-
 
 """
-@date: 2023/4/15 下午4:44
-@file: yololoss.py
-@author: zj
-@description:
-假定输入的target标注框坐标格式为[x_c, y_c, w, h]
-预测框经过计算后，得到的也是[x_c, y_c, w, h]
+@Time    : 2024/3/17 20:22
+@File    : loss.py
+@Author  : zj
+@Description:
 
-锚点框的宽高是相对于整幅图像的，同样的，标注框的宽高也是相对于整幅图像的，所以可以计算锚点框与标注框之间的IoU
+对于损失函数而言，它应该是支持逐层特征的计算的，不管是YOLOv2Loss还是YOLOv3Loss
 
-同样的，预测框经过转换后也是相对于整幅图像的，所以可以计算预测框与标注框之间的IoU
 """
+from typing import List
 
 import numpy as np
 
 import torch
 from torch import nn
 from torch import Tensor
-
 import torch.nn.functional as F
 
-
-# from yolo.util.box_utils import xywh2xyxy, bboxes_iou
+from utils.torch_utils import de_parallel
 
 
 def bboxes_iou(bboxes_a: Tensor, bboxes_b: Tensor, xyxy=True) -> Tensor:
@@ -103,30 +99,35 @@ def bboxes_iou(bboxes_a: Tensor, bboxes_b: Tensor, xyxy=True) -> Tensor:
     return area_i / (area_a[:, None] + area_b - area_i)
 
 
-def xywh2xyxy(boxes, is_center=False):
-    assert len(boxes.shape) >= 2 and boxes.shape[-1] == 4
-    if isinstance(boxes, np.ndarray):
-        boxes_xxyy = np.zeros(boxes.shape)
-    else:
-        boxes_xxyy = boxes.new_zeros(boxes.shape)
-    if is_center:
-        # [x_c, y_c, w, h] -> [x1, y1, x2, y2]
-        boxes_xxyy[..., 0] = (boxes[..., 0] - boxes[..., 2] / 2)
-        boxes_xxyy[..., 1] = (boxes[..., 1] - boxes[..., 3] / 2)
-        boxes_xxyy[..., 2] = (boxes[..., 0] + boxes[..., 2] / 2)
-        boxes_xxyy[..., 3] = (boxes[..., 1] + boxes[..., 3] / 2)
-    else:
-        # [x1, y1, w, h] -> [x1, y1, x2, y2]
-        boxes_xxyy[..., 0] = boxes[..., 0]
-        boxes_xxyy[..., 1] = boxes[..., 1]
-        boxes_xxyy[..., 2] = (boxes[..., 0] + boxes[..., 2])
-        boxes_xxyy[..., 3] = (boxes[..., 1] + boxes[..., 3])
-    return boxes_xxyy
-
-
 def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
     """
-    Calculate the delta values σ(t_x), σ(t_y), exp(t_w), exp(t_h) used for transforming box1 to  box2
+    特征层输出：[t_x, t_y, t_w, t_h]
+    锚点框坐标：[c_x, c_y, p_w, p_h]
+    预测框坐标：[b_x, b_y, b_w, b_h]
+    标注框坐标：[g_x, g_y, g_w, g_h]
+
+    根据特征层输出和锚点框坐标计算预测框坐标
+
+    b_x = sigmoid(t_x) + c_x
+    b_y = sigmoid(t_y) + c_y
+    b_w = p_w * e^t_w
+    b_h = p_h * e^t_h
+
+    目标是使得[b_x, b_y, b_w, b_h] == [g_x, g_y, g_w, g_h]，上式等价于
+
+    g_x = sigmoid(t_x) + c_x
+    g_y = sigmoid(t_y) + c_y
+    g_w = p_w * e^t_w
+    g_h = p_h * e^t_h
+
+    所以计算差值如下：
+
+    sigmoid(t_x) = g_x - c_x
+    sigmoid(t_y) = g_y - c_y
+    e^t_w = g_w / p_w
+    e^t_h = g_h / p_h
+
+    Calculate the delta values σ(t_x), σ(t_y), exp(t_w), exp(t_h) used for transforming box1 to box2
     sigmoid(t_x) = b_x - c_x
     sigmoid(t_y) = b_y - c_y
     e^t_w = b_w / p_w
@@ -159,24 +160,20 @@ def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
 
 class YOLOv2Loss(nn.Module):
 
-    def __init__(self, model, ignore_thresh=0.5,
+    def __init__(self, model, ignore_thresh=0.6,
                  coord_scale=1.0, noobj_scale=1.0, obj_scale=5.0, class_scale=1.0):
         super(YOLOv2Loss, self).__init__()
         device = next(model.parameters()).device  # get model device
 
-        from utils.torch_utils import de_parallel
         m = de_parallel(model).model[-1]  # Detect() module
-        # self.na = m.na  # number of anchors
-        # self.nc = m.nc  # number of classes
-        # self.nl = m.nl  # number of layers
-        # assert self.nl == 1, "YOLOv2Loss supports single-layer feature loss calculation, starting from YOLOv3Loss, it supports multi-layer feature loss"
-        self.anchors = m.anchors[0]
-        self.num_anchors = len(self.anchors)
-        print(f"m.anchors: {self.anchors} - shape: {self.anchors.shape}")
+        self.na = m.na  # number of anchors
+        self.nc = m.nc  # number of classes
+        self.nl = m.nl  # number of layers
+        assert self.nl == 1, "YOLOv2Loss supports single-layer feature loss calculation, starting from YOLOv3Loss, it supports multi-layer feature loss"
+        self.anchors = m.anchors
         self.device = device
-        self.num_classes = m.nc
 
-        # self.no = self.nc + 5  # number of outputs per anchor
+        self.no = self.nc + 5  # number of outputs per anchor
         self.ignore_thresh = ignore_thresh
 
         self.noobj_scale = noobj_scale
@@ -184,300 +181,238 @@ class YOLOv2Loss(nn.Module):
         self.class_scale = class_scale
         self.coord_scale = coord_scale
 
-        # self.grid = [torch.empty(0) for _ in range(self.nl)]  # init grid
-        # self.anchor_grid = [torch.empty(0) for _ in range(self.nl)]  # init anchor grid
+        self.grid = [torch.empty(0) for _ in range(self.nl)]  # init grid
+        self.anchor_grid = [torch.empty(0) for _ in range(self.nl)]  # init anchor grid
 
-    # def __init__(self, anchors, num_classes=20, ignore_thresh=0.5,
-    #              coord_scale=1.0, noobj_scale=1.0, obj_scale=1.0, class_scale=1.0):
-    #     super(YOLOv2Loss, self).__init__()
-    #     self.anchors = anchors
-    #     self.num_classes = num_classes
-    #     self.ignore_thresh = ignore_thresh
-    #
-    #     self.noobj_scale = noobj_scale
-    #     self.obj_scale = obj_scale
-    #     self.class_scale = class_scale
-    #     self.coord_scale = coord_scale
-    #
-    #     self.num_anchors = len(anchors)
-
-    def build_mask(self, B, H, W, dtype, device):
-        # [B, H*W, num_anchors, 1]
-        iou_target = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
-        iou_mask = torch.ones((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
-
-        # [B, H*W, num_anchors, 4]
-        box_target = torch.zeros((B, H * W, self.num_anchors, 4)).to(dtype=dtype, device=device)
-        box_mask = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
-        box_scale = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
-
-        # [B, H*W, num_anchors, 1]
-        class_target = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
-        class_mask = torch.zeros((B, H * W, self.num_anchors, 1)).to(dtype=dtype, device=device)
-
-        return iou_target, iou_mask, box_target, box_mask, box_scale, class_target, class_mask
-
-    def make_pred_boxes(self, outputs):
-        dtype = outputs.dtype
-        device = outputs.device
-
-        B, C, H, W = outputs.shape[:4]
-        # [B, num_anchors * (5+num_classes), H, W] ->
-        # [B, num_anchors, 5+num_classes, H, W] ->
-        # [B, num_anchors, H, W, 5+num_classes]
-        outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, H, W) \
-            .permute(0, 1, 3, 4, 2)
-
-        # grid coordinate
-        # [F_size] -> [num_anchors, H, W]
-        x_shift = torch.broadcast_to(torch.arange(W),
-                                     (self.num_anchors, H, W)).to(dtype=dtype, device=device)
-        # [F_size] -> [f_size, 1] -> [num_anchors, H, W]
-        y_shift = torch.broadcast_to(torch.arange(H).reshape(H, 1),
-                                     (self.num_anchors, H, W)).to(dtype=dtype, device=device)
-
-        # broadcast anchors to all grids
-        # [num_anchors] -> [num_anchors, 1, 1] -> [num_anchors, H, W]
-        w_anchors = torch.broadcast_to(self.anchors[:, 0].reshape(self.num_anchors, 1, 1),
-                                       [self.num_anchors, H, W]).to(dtype=dtype, device=device)
-        h_anchors = torch.broadcast_to(self.anchors[:, 1].reshape(self.num_anchors, 1, 1),
-                                       [self.num_anchors, H, W]).to(dtype=dtype, device=device)
-
-        # b_x = sigmoid(t_x) + c_x
-        # b_y = sigmoid(t_y) + c_y
-        # b_w = p_w * e^t_w
-        # b_h = p_h * e^t_h
-        #
-        # [B, num_anchors, H, W, 4]
-        pred_boxes = outputs[..., :4]
-        # x/y compress to [0,1]
-        pred_boxes[..., :2] = torch.sigmoid(pred_boxes[..., :2])
-        pred_boxes[..., 0] += x_shift.expand(B, self.num_anchors, H, W)
-        pred_boxes[..., 1] += y_shift.expand(B, self.num_anchors, H, W)
-        # exp()
-        pred_boxes[..., 2:4] = torch.exp(pred_boxes[..., 2:4])
-        pred_boxes[..., 2] *= w_anchors.expand(B, self.num_anchors, H, W)
-        pred_boxes[..., 3] *= h_anchors.expand(B, self.num_anchors, H, W)
-
-        # [B, num_anchors, H, W, 4] -> [B, H, W, num_anchors, 4] -> [B, H*W, num_anchors, 4]
-        pred_boxes = pred_boxes.permute(0, 2, 3, 1, 4).reshape(B, H * W, self.num_anchors, 4)
-        # print(torch.max(pred_boxes))
-        pred_boxes[..., 0::2] = torch.clamp(pred_boxes[..., 0::2], 0, W)
-        pred_boxes[..., 1::2] = torch.clamp(pred_boxes[..., 1::2], 0, H)
-
-        # [4, num_anchors, H, W] -> [H, W, num_anchors, 4]
-        # [x_c, y_c, w, h]
-        all_anchors_x1y1 = torch.stack([x_shift, y_shift, w_anchors, h_anchors]).permute(2, 3, 1, 0)
-        # [H, W, num_anchors, 4] -> [H*W, num_anchors, 4]
-        all_anchors_x1y1 = all_anchors_x1y1.reshape(H * W, self.num_anchors, -1)
-
-        return pred_boxes, all_anchors_x1y1
-
-    def build_targets(self, outputs: Tensor, targets: Tensor):
-        B, C, H, W = outputs.shape[:4]
-        assert C == self.num_anchors * (5 + self.num_classes)
-
-        dtype = outputs.dtype
-        device = outputs.device
-
-        # all_pred_boxes: [B, H*W, num_anchors, 4]
-        # all_anchors_xcyc: [H*W, num_anchors, 4]
-        # [4] = [x_c, y_c, w, h] 坐标相对于网格大小
-        all_pred_boxes, all_anchors_x1y1 = self.make_pred_boxes(outputs)
-        all_anchors_xcyc = all_anchors_x1y1.clone()
-        all_anchors_xcyc[..., :2] += 0.5
-
-        # [B, num_max_det, 5] -> [B, num_max_det] -> [B]
-        gt_num_objs = (targets.sum(dim=2) > 0).sum(dim=1)
-
-        iou_target, iou_mask, box_target, box_mask, box_scale, class_target, class_mask = \
-            self.build_mask(B, H, W, dtype, device)
-        # 逐图像操作
-        for bi in range(B):
-            num_obj = gt_num_objs[bi]
-            if num_obj == 0:
-                # 对于没有标注框的图像，不参与损失计算
-                iou_mask[bi, ...] = 0
-                continue
-            # [num_obj, 4]
-            # [4]: [x_c, y_c, w, h]
-            gt_boxes = targets[bi][:num_obj][..., 1:]
-            # [num_obj]
-            gt_cls_ids = targets[bi][:num_obj][..., 0]
-
-            # 放大到网格大小
-            gt_boxes[..., 0::2] *= W
-            gt_boxes[..., 1::2] *= H
-            # [xc, yc, w, h] -> [x1, y1, x2, y2]
-            gt_boxes_xxyy = xywh2xyxy(gt_boxes, is_center=True)
-
-            # [H*W, num_anchors, 4] -> [H*W*num_anchors, 4]
-            # pred_box: [x_c, y_c, w, h]
-            pred_boxes = all_pred_boxes[bi][..., :4].reshape(-1, 4)
-
-            # 首先计算预测框与标注框的IoU，忽略正样本的置信度损失计算
-            # ious: [H*W*num_anchors, num_obj]
-            ious = bboxes_iou(pred_boxes, gt_boxes, xyxy=False)
-            # [H*W*num_anchors, num_obj] -> [H*W, num_anchors, num_obj]
-            ious = ious.reshape(-1, self.num_anchors, num_obj)
-            # 计算每个网格中每个预测框计算得到的最大IoU
-            # shape: (H * W, num_anchors, 1)
-            max_iou, _ = torch.max(ious, dim=-1, keepdim=True)
-
-            # we ignore the gradient of predicted boxes whose IoU with any gt box is greater than cfg.threshold
-            # 对于正样本(iou大于阈值), 不参与计算
-            # [H*W, Num_anchors, 1] -> [H*W*Num_anchors] -> [n_pos]
-            n_pos = torch.nonzero(max_iou.view(-1) > self.ignore_thresh).numel()
-            if n_pos > 0:
-                # 如果存在, 那么不参与损失计算
-                iou_mask[bi][max_iou >= self.ignore_thresh] = 0
-
-            # 然后计算锚点框与标注框的IoU，保证每个标注框拥有一个对应的正样本
-            # overlaps: [H*W*num_anchors, num_obj] -> [H*W, num_anchors, num_obj]
-            overlaps = bboxes_iou(all_anchors_xcyc.reshape(-1, 4),
-                                  gt_boxes, xyxy=False).reshape(-1, self.num_anchors, num_obj)
-
-            # iterate over all objects
-            # 每个标注框选择一个锚点框进行训练
-            for ni in range(num_obj):
-                # compute the center of each gt box to determine which cell it falls on
-                # assign it to a specific anchor by choosing max IoU
-                # 首先计算锚点框的中心点位于哪个网格, 然后选择其中IoU最大的锚点框参与训练
-
-                # 第t个标注框
-                # [4]: [xc, yc, w, h]
-                gt_box = gt_boxes[ni]
-                # [x1, y1, x2, y2]
-                gt_box_xxyy = gt_boxes_xxyy[ni]
-                # 对应的类别下标
-                gt_class = gt_cls_ids[ni]
-                # 对应网格下标
-                cell_idx_x, cell_idx_y = torch.floor(gt_box[:2])
-                # 网格列表下标
-                cell_idx = cell_idx_y * W + cell_idx_x
-                cell_idx = cell_idx.long()
-
-                # update box_target, box_mask
-                # 获取该标注框在对应网格上与所有锚点框的IoU
-                # [H*W, num_anchors, num_obj] -> [num_anchors]
-                overlaps_in_cell = overlaps[cell_idx, :, ni]
-                # 选择IoU最大的锚点框下标
-                argmax_anchor_idx = torch.argmax(overlaps_in_cell)
-
-                # [H*W, Num_anchors, 4] -> [4]
-                # 获取对应网格中指定锚点框的坐标 [x1, y1, w, h]
-                response_anchor_x1y1 = all_anchors_x1y1[cell_idx, argmax_anchor_idx, :]
-                target_delta = make_deltas(response_anchor_x1y1.unsqueeze(0), gt_box.unsqueeze(0)).squeeze(0)
-
-                box_target[bi, cell_idx, argmax_anchor_idx, :] = target_delta
-                box_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
-                pred_box = all_pred_boxes[bi, cell_idx, argmax_anchor_idx]
-                w_i = pred_box[2] / W
-                h_i = pred_box[3] / H
-                # if torch.isnan(torch.sqrt((2 - w_i * h_i))):
-                #     print(f"w_i: {w_i} - h_i: {h_i} - pred_box: {pred_box}")
-                #     exit(1)
-                # assert 0 <= w_i <= 1 and 0 <= h_i <= 1, f"w_i: {w_i} - h_i: {h_i} - pred_box: {pred_box}"
-                box_scale[bi, cell_idx, argmax_anchor_idx, :] = (2 - w_i * h_i)
-
-                # update cls_target, cls_mask
-                # 赋值对应类别下标, 对应掩码设置为1
-                class_target[bi, cell_idx, argmax_anchor_idx, :] = gt_class
-                class_mask[bi, cell_idx, argmax_anchor_idx, :] = 1
-
-                # update iou target and iou mask
-                iou_target[bi, cell_idx, argmax_anchor_idx, :] = max_iou[cell_idx, argmax_anchor_idx, :]
-                iou_mask[bi, cell_idx, argmax_anchor_idx, :] = 2
-
-        # [B, H*W, num_anchors, 1] -> [B*H*W*num_anchors]
-        iou_target = iou_target.reshape(-1)
-        iou_mask = iou_mask.reshape(-1)
-        # [B, H*W, num_anchors, 4] -> [B*H*W*num_anchors, 4]
-        box_target = box_target.reshape(-1, 4)
-        box_mask = box_mask.reshape(-1)
-        box_scale = box_scale.reshape(-1, 1)
-        class_target = class_target.reshape(-1).long()
-        class_mask = class_mask.reshape(-1)
-
-        return iou_target, iou_mask, box_target, box_mask, box_scale, class_target, class_mask
-
-    def forward(self, p, targets):
+    def forward(self, p: List[Tensor], targets: Tensor):
         """
-        计算损失需要得到
-        1. 标注框坐标和锚点框坐标之间的delta（作为target）
-        2. 输出卷积特征生成的预测框delta（作为预测结果）
+        Perform forward pass of the network.
+
+        Args:
+            p (List[Tensor]): Predictions made by the network.
+            Each item is a tensor with format [bs, n_anchors, feat_h, feat_w, (cxcy, wh, conf, cls_probs)].
+            targets (Tensor): Ground truth targets. Each item format is [image_id, class_id, xc, yc, box_w, box_h].
+
+        Returns:
+            tensor: Loss value computed based on predictions and targets.
         """
+        assert len(p) == self.nl, "The number of feature layers and prediction layers should be equal."
+
         lbox = torch.zeros(1, device=self.device)  # box loss
         lobj = torch.zeros(1, device=self.device)  # object loss
         lcls = torch.zeros(1, device=self.device)  # class loss
+        for i in range(self.nl):
+            box_target, box_mask, box_scale, iou_target, iou_mask, class_target, class_mask = \
+                self.build_targets(p[i].detach().clone(), targets, i)
 
-        for outputs in p:
-            bs, _, ny, nx, _ = outputs.shape
-            # x(bs,5,20,20,85) -> x(bs,5,85,20,20) -> x(bs,425,20,20)
-            outputs = outputs.permute(0, 1, 4, 2, 3).reshape(bs, -1, ny, nx).contiguous()
-
-            new_targets = torch.zeros(bs, 50, 5).to(self.device)
-            for bi in range(bs):
-                if torch.sum(targets[..., 0] == bi) > 0:
-                    sub_targets = targets[targets[..., 0] == bi]
-                    new_targets[bi][:sub_targets.size(0)] = sub_targets[..., 1:]
-
-            iou_target, iou_mask, box_target, box_mask, box_scale, class_target, class_mask = \
-                self.build_targets(outputs.detach().clone(), new_targets)
-
-            B, _, H, W = outputs.shape[:4]
-            # [B, C, H, W] -> [B, num_anchors, 5+num_classes, H, W] -> [B, H, W, num_anchors, 5+num_classes]
-            outputs = outputs.reshape(B, self.num_anchors, 5 + self.num_classes, H, W) \
-                .permute(0, 3, 4, 1, 2)
-            # [B, H, W, num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 5+num_classes]
-            outputs = outputs.reshape(B, -1, 5 + self.num_classes)
+            bs, _, ny, nx, _ = p[i].shape  # pi(bs,5,20,20,85)
+            # pi = p[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
             # x/y/conf compress to [0,1]
-            outputs[..., np.r_[:2, 4:5]] = torch.sigmoid(outputs[..., np.r_[:2, 4:5]])
+            xy_conf = torch.sigmoid(p[i][..., np.r_[:2, 4:5]])
             # exp()
-            outputs[..., 2:4] = torch.exp(outputs[..., 2:4])
+            wh = torch.exp(p[i][..., 2:4])
+            probs = p[i][..., 5:]
 
-            # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 4] -> [B*H*W*num_anchors, 4]
-            pred_deltas = outputs[..., :4].reshape(-1, 4)
-            # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, 1] -> [B*H*W*num_anchors]
-            pred_confs = outputs[..., 4:5].reshape(-1)
-            # [B, H*W*num_anchors, 5+num_classes] -> [B, H*W*num_anchors, num_classes] -> [B*H*W*num_anchors, num_classes]
-            pred_probs = outputs[..., 5:].reshape(-1, self.num_classes)
-
+            box_loss = torch.zeros(1, device=self.device)  # box loss
+            obj_iou_loss = torch.zeros(1, device=self.device)  # object loss
+            noobj_iou_loss = torch.zeros(1, device=self.device)  # object loss
+            class_loss = torch.zeros(1, device=self.device)  # class loss
             # --------------------------------------
             # box loss
-            pred_deltas = pred_deltas[box_mask > 0]
-            box_target = box_target[box_mask > 0]
-            box_scale = torch.sqrt(box_scale[box_mask > 0])
-            box_loss = F.mse_loss(pred_deltas * box_scale, box_target * box_scale, reduction='sum')
-            # print(box_scale)
+            # [bi, n_anchors, f_h*f_w, 1] -> [bs*n_anchors*f_h*f_w]
+            box_mask = box_mask.reshape(-1)
+            # [bi, n_anchors, f_h*f_w, 4] -> [bs*n_anchors*f_h*f_w, 4]
+            if torch.sum(box_mask > 0) > 0:
+                box_target = box_target.reshape(-1, 4)[box_mask > 0]
+                box_pred = torch.cat((xy_conf[..., :2], wh), dim=-1).reshape(-1, 4)[box_mask > 0]
+                box_scale = box_scale.reshape(-1)[box_mask > 0].reshape(-1, 1)
+
+                # print(box_scale)
+                box_loss = F.mse_loss(box_pred, box_target, reduction='none')
+                box_loss *= box_scale
+                box_loss = box_loss.sum()
+            # box_loss = F.mse_loss(box_pred, box_target, reduction='mean')
+            # print(f"box_loss: {box_loss} - box_pred shape: {box_pred.shape}")
+            # print(box_pred[:5])
+            # print(box_target[:5])
 
             # --------------------------------------
             # iou loss
-            obj_pred_confs = pred_confs[iou_mask == 2]
-            obj_iou_target = iou_target[iou_mask == 2]
-            obj_iou_loss = F.mse_loss(obj_pred_confs, obj_iou_target, reduction='sum')
+            # [bi, n_anchors, f_h*f_w, 1] -> [bs*n_anchors*f_h*f_w]
+            iou_mask = iou_mask.reshape(-1)
 
-            noobj_pred_confs = pred_confs[iou_mask == 1]
-            noobj_iou_target = iou_target[iou_mask == 1]
-            noobj_iou_loss = F.mse_loss(noobj_pred_confs, noobj_iou_target, reduction='sum')
+            if torch.sum(iou_mask == 2) > 0:
+                obj_iou_target = iou_target.reshape(-1)[iou_mask == 2]
+                obj_iou_pred = xy_conf[..., 2].reshape(-1)[iou_mask == 2]
+                obj_iou_loss = F.mse_loss(obj_iou_pred, obj_iou_target, reduction='sum')
+
+            if torch.sum(iou_mask == 1) > 0:
+                noobj_iou_target = iou_target.reshape(-1)[iou_mask == 1]
+                noobj_iou_pred = xy_conf[..., 2].reshape(-1)[iou_mask == 1]
+                noobj_iou_loss = F.mse_loss(noobj_iou_pred, noobj_iou_target, reduction='sum')
+
+            # print(f"obj_iou_loss: {obj_iou_loss} - obj_iou_loss shape: {obj_iou_loss.shape}")
+            # print(f"noobj_iou_loss: {noobj_iou_loss} - noobj_iou_loss shape: {noobj_iou_loss.shape}")
 
             # --------------------------------------
             # class loss
-            # ignore the gradient of noobject's target
-            pred_probs = pred_probs[class_mask > 0]
-            class_target = class_target[class_mask > 0]
-            class_loss = F.cross_entropy(pred_probs, class_target, reduction='sum')
-
-            # # calculate the loss, normalized by batch size.
-            # loss = box_loss * self.coord_scale + \
-            #        obj_iou_loss * self.obj_scale + noobj_iou_loss * self.noobj_scale + \
-            #        class_loss * self.class_scale
-            # return loss / B
+            # [bi, n_anchors, f_h*f_w, 1] -> [bs*n_anchors*f_h*f_w]
+            class_mask = class_mask.reshape(-1)
+            if torch.sum(class_mask > 0) > 0:
+                class_target = class_target.reshape(-1)[class_mask > 0]
+                class_pred = probs.reshape(-1, self.nc)[class_mask > 0]
+                class_loss = F.cross_entropy(class_pred, class_target.long(), reduction='sum')
+            # print(f"class_loss: {class_loss} - class_loss shape: {class_loss.shape}")
 
             # calculate the loss, normalized by batch size.
             lbox += box_loss * self.coord_scale
             lobj += obj_iou_loss * self.obj_scale + noobj_iou_loss * self.noobj_scale
             lcls += class_loss * self.class_scale
 
-        # exit(1)
+        lbox /= bs
+        lobj /= bs
+        lcls /= bs
         return (lbox + lobj + lcls), torch.cat((lbox, lobj, lcls)).detach()
+
+    def build_targets(self, pi, targets, i=0):
+        bs, _, ny, nx, _ = pi.shape  # pi(bs,5,20,20,85)
+        pred_boxes = self._make_pred(pi, i)
+        box_target, box_mask, box_scale, iou_target, iou_mask, class_target, class_mask = \
+            self._build_mask(bs, nx, ny, i)
+
+        # [4, n_anchors, f_h, f_w] -> [n_anchors, f_h, f_w, 4] -> [n_anchors, f_h*f_w, 4]
+        all_anchors = torch.cat((self.grid[i][:, 0, :, :, :], self.anchor_grid[i][:, 0, :, :, :]), dim=0
+                                ).permute(1, 2, 3, 0).reshape(self.na, ny * nx, 4)
+
+        for bi in range(bs):
+            num_obj = torch.sum(targets[..., 0] == bi)
+            if num_obj == 0:
+                continue
+            gt_targets = targets[targets[..., 0] == bi]
+            gt_boxes = gt_targets[..., 2:6]
+            gt_boxes[..., 0::2] *= nx
+            gt_boxes[..., 1::2] *= ny
+            gt_cls_ids = gt_targets[..., 1].long()
+
+            # 第一步：计算所有预测框和所有标注框两两之间的IOU
+            #
+            # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj] -> [n_anchors, f_h*f_w, num_obj]
+            ious = bboxes_iou(pred_boxes[bi].reshape(-1, 4), gt_boxes, xyxy=False).reshape(self.na, -1, num_obj)
+            # 每个网格中每个预测框和标注框计算得到的最大IoU
+            # [n_anchors, f_h*f_w, 1]
+            # max_iou, _ = torch.max(ious, dim=-1, keepdim=True)
+
+            # 第二步：计算每个网格上锚点框与标注框的IoU，目的：为每个标注框匹配一个预测框
+            #
+            # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj]
+            # overlaps = bboxes_iou(all_anchors.reshape(-1, 4), gt_boxes, xyxy=False).reshape(self.na, -1, num_obj)
+            for ni in range(num_obj):
+                # compute the center of each gt box to determine which cell it falls on
+                # assign it to a specific anchor by choosing max IoU
+                # 首先计算锚点框的中心点位于哪个网格, 然后选择其中IoU最大的锚点框参与训练
+                # [4]: [xc, yc, w, h]
+                gt_box = gt_boxes[ni]
+                gt_class = gt_cls_ids[ni]
+                cell_idx_x, cell_idx_y = torch.floor(gt_box[:2]).long()
+                cell_idx = cell_idx_y * nx + cell_idx_x
+
+                # update box_target, box_mask
+                # 获取该标注框在对应网格上与所有锚点框的IoU
+                # [n_anchors, f_h*f_w, num_obj] -> [n_anchors]
+                # overlaps_in_cell = overlaps[:, cell_idx, ni]
+                overlaps_in_cell = ious[:, cell_idx, ni]
+                argmax_anchor_idx = torch.argmax(overlaps_in_cell)
+
+                target_delta = make_deltas(all_anchors[argmax_anchor_idx, cell_idx].unsqueeze(0),
+                                           gt_box.unsqueeze(0)).squeeze(0)
+                box_target[bi, argmax_anchor_idx, cell_idx, :] = target_delta
+                box_mask[bi, argmax_anchor_idx, cell_idx, :] = 1
+                pred_box = pred_boxes[bi, argmax_anchor_idx, cell_idx]
+                w_i = pred_box[2] / nx
+                h_i = pred_box[3] / ny
+                box_scale[bi, argmax_anchor_idx, cell_idx, :] = 2 - w_i * h_i
+
+                # update iou target and iou mask
+                # iou_target[bi, argmax_anchor_idx, cell_idx, :] = max_iou[argmax_anchor_idx, cell_idx, :]
+                if ious[argmax_anchor_idx, cell_idx, ni] > self.ignore_thresh:
+                    iou_mask[bi, argmax_anchor_idx, cell_idx, :] = 0
+                else:
+                    iou_target[bi, argmax_anchor_idx, cell_idx, :] = ious[argmax_anchor_idx, cell_idx, ni]
+                    iou_mask[bi, argmax_anchor_idx, cell_idx, :] = 2
+
+                # update cls_target, cls_mask
+                class_target[bi, argmax_anchor_idx, cell_idx, :] = gt_class
+                class_mask[bi, argmax_anchor_idx, cell_idx, :] = 1
+
+            # we ignore the gradient of predicted boxes whose IoU with any gt box is greater than cfg.threshold
+            # n_pos = torch.nonzero(max_iou.view(-1) > self.ignore_thresh).numel()
+            # if n_pos > 0:
+            #     box_mask[bi][max_iou >= self.ignore_thresh] = 0
+
+        return box_target, box_mask, box_scale, iou_target, iou_mask, class_target, class_mask
+
+    def _make_grid(self, bs, nx=20, ny=20, i=0):
+        d = self.device
+        t = self.anchors[i].dtype
+
+        # grid coordinate
+        # [F] -> [B, n_anchors, F_H, F_W]
+        x_shift = torch.broadcast_to(torch.arange(nx), (bs, self.na, ny, nx)).to(dtype=t, device=d)
+        # [F] -> [F, 1] -> [B, n_anchors, F_H, F_W]
+        y_shift = torch.broadcast_to(torch.arange(ny).reshape(ny, 1), (bs, self.na, ny, nx)).to(dtype=t, device=d)
+
+        # broadcast anchors to all grids
+        # [n_anchors] -> [1, n_anchors, 1, 1] -> [B, n_anchors, F_H, F_W]
+        w_anchors = torch.broadcast_to(self.anchors[i][:, 0].reshape(1, self.na, 1, 1),
+                                       [bs, self.na, ny, nx]).to(dtype=t, device=d)
+        h_anchors = torch.broadcast_to(self.anchors[i][:, 1].reshape(1, self.na, 1, 1),
+                                       [bs, self.na, ny, nx]).to(dtype=t, device=d)
+
+        # [2, B, n_anchors, F_H, F_W], [2, B, n_anchors, F_H, F_W]
+        return torch.stack([x_shift, y_shift]), torch.stack([w_anchors, h_anchors])
+
+    def _make_pred(self, pi, i=0):
+        bs, _, ny, nx, _ = pi.shape  # pi(bs,5,85,20,20)
+        if self.grid[i].shape[-2:] != pi.shape[2:4] or self.grid[i].shape[1] != bs:
+            self.grid[i], self.anchor_grid[i] = self._make_grid(bs, nx, ny, i)
+
+        # b_x = sigmoid(t_x) + c_x
+        # b_y = sigmoid(t_y) + c_y
+        # b_w = p_w * e^t_w
+        # b_h = p_h * e^t_h
+        #
+        # x/y compress to [0,1]
+        # [bs, 5, 20, 20, 2]
+        xy = torch.sigmoid(pi[..., :2])
+        xy[..., 0] += self.grid[i][0]
+        xy[..., 1] += self.grid[i][1]
+        # exp([bs, 5, 20, 20, 2])
+        wh = torch.exp(pi[..., 2:4])
+        wh[..., 0] *= self.anchor_grid[i][0]
+        wh[..., 1] *= self.anchor_grid[i][1]
+
+        # [bs, n_anchors, f_h, f_w, 4] -> [bs, n_anchors, f_h*f_w, 4]
+        pred_boxes = torch.cat((xy, wh), dim=4).reshape(bs, self.na, -1, 4)
+        pred_boxes[..., 0::2] = torch.clamp(pred_boxes[..., 0::2], 0, nx)
+        pred_boxes[..., 1::2] = torch.clamp(pred_boxes[..., 1::2], 0, ny)
+
+        return pred_boxes
+
+    def _build_mask(self, bs, nx=20, ny=20, i=0):
+        d = self.device
+        t = self.anchors[i].dtype
+
+        # [B, n_anchors, F_H*F_W, 4]
+        box_target = torch.zeros((bs, self.na, ny * nx, 4)).to(dtype=t, device=d)
+        box_mask = torch.zeros((bs, self.na, ny * nx, 1)).to(dtype=t, device=d)
+        box_scale = torch.zeros((bs, self.na, ny * nx, 1)).to(dtype=t, device=d)
+
+        # [B, n_anchors, F_H*F_W, 1]
+        iou_target = torch.zeros((bs, self.na, ny * nx, 1)).to(dtype=t, device=d)
+        iou_mask = torch.ones((bs, self.na, ny * nx, 1)).to(dtype=t, device=d)
+
+        # [B, n_anchors, F_H*F_W, 1]
+        class_target = torch.zeros((bs, self.na, ny * nx, 1)).to(dtype=t, device=d)
+        class_mask = torch.zeros((bs, self.na, ny * nx, 1)).to(dtype=t, device=d)
+
+        return box_target, box_mask, box_scale, iou_target, iou_mask, class_target, class_mask
