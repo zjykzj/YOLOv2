@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-@Time    : 2024/3/17 20:22
+@Time    : 2024/3/20 20:22
 @File    : loss.py
 @Author  : zj
 @Description:
@@ -137,7 +137,7 @@ def make_deltas(box1: Tensor, box2: Tensor) -> Tensor:
     deltas -- tensor of shape (N, 4) delta values (t_x, t_y, t_w, t_h)
                    used for transforming boxes to reference boxes
     """
-    assert len(box1.shape) == len(box2.shape) == 2
+    # assert len(box1.shape) == len(box2.shape) == 2
     # [N, 4] -> [N]
     t_x = box2[:, 0] - box1[:, 0]
     t_y = box2[:, 1] - box1[:, 1]
@@ -220,13 +220,16 @@ class YOLOv2Loss(nn.Module):
             # [bi, n_anchors, f_h*f_w, 4] -> [bs*n_anchors*f_h*f_w, 4]
             if torch.sum(box_mask > 0) > 0:
                 box_target = box_target.reshape(-1, 4)[box_mask > 0]
-                box_pred = torch.cat((xy_conf[..., :2], wh), dim=-1).reshape(-1, 4)[box_mask > 0]
                 box_scale = box_scale.reshape(-1)[box_mask > 0].reshape(-1, 1)
 
-                # print(box_scale)
-                box_loss = F.mse_loss(box_pred, box_target, reduction='none')
-                box_loss *= box_scale
-                box_loss = box_loss.sum()
+                xy_pred = xy_conf[..., :2].reshape(-1, 2)[box_mask > 0]
+                xy_loss = F.mse_loss(xy_pred, box_target[..., :2], reduction='none')
+
+                wh_pred = wh.reshape(-1, 2)[box_mask > 0]
+                wh_loss = F.mse_loss(wh_pred, box_target[..., 2:], reduction='none')
+                wh_loss *= box_scale
+
+                box_loss = xy_loss.sum() + wh_loss.sum()
 
             # --------------------------------------
             # iou loss
@@ -288,6 +291,22 @@ class YOLOv2Loss(nn.Module):
 
             # ([n_anchors*f_h*f_w, 4], [num_obj, 4]) -> [n_anchors*f_h*f_w, num_obj] -> [n_anchors, f_h*f_w, num_obj]
             ious = bboxes_iou(pred_boxes[bi].reshape(-1, 4), gt_boxes, xyxy=False).reshape(self.na, -1, num_obj)
+
+            # 计算每个网格中每个预测框计算得到的最大IoU
+            # shape: (H * W, num_anchors, 1)
+            max_iou, _ = torch.max(ious, dim=-1, keepdim=True)
+            # we ignore the gradient of predicted boxes whose IoU with any gt box is greater than cfg.threshold
+            # 对于正样本(iou大于阈值), 不参与计算
+            n_pos = torch.nonzero(max_iou.view(-1) > self.ignore_thresh).numel()
+            if n_pos > 0:
+                # 如果存在, 那么不参与损失计算
+                iou_mask[bi][max_iou > self.ignore_thresh] = 0
+
+            # 然后计算锚点框与标注框的IoU，保证每个标注框拥有一个对应的正样本
+            # overlaps: [n_anchors, f_h*f_w, num_obj] -> [n_anchors*f_h*f_w, num_obj]
+            overlaps = bboxes_iou(all_anchors.reshape(-1, 4),
+                                  gt_boxes, xyxy=False).reshape(self.na, -1, num_obj)
+
             for ni in range(num_obj):
                 # compute the center of each gt box to determine which cell it falls on
                 # assign it to a specific anchor by choosing max IoU
@@ -301,7 +320,7 @@ class YOLOv2Loss(nn.Module):
                 # update box_target, box_mask
                 # 获取该标注框在对应网格上与所有锚点框的IoU
                 # [n_anchors, f_h*f_w, num_obj] -> [n_anchors]
-                overlaps_in_cell = ious[:, cell_idx, ni]
+                overlaps_in_cell = overlaps[:, cell_idx, ni]
                 argmax_anchor_idx = torch.argmax(overlaps_in_cell)
 
                 target_delta = make_deltas(all_anchors[argmax_anchor_idx, cell_idx].unsqueeze(0),
@@ -311,14 +330,11 @@ class YOLOv2Loss(nn.Module):
                 pred_box = pred_boxes[bi, argmax_anchor_idx, cell_idx]
                 w_i = pred_box[2] / nx
                 h_i = pred_box[3] / ny
-                box_scale[bi, argmax_anchor_idx, cell_idx, :] = 2 - w_i * h_i
+                box_scale[bi, argmax_anchor_idx, cell_idx, :] = torch.abs(2 - w_i * h_i)
 
                 # update iou target and iou mask
-                if overlaps_in_cell[overlaps_in_cell] > self.ignore_thresh:
-                    iou_mask[bi, argmax_anchor_idx, cell_idx, :] = 0
-                else:
-                    iou_target[bi, argmax_anchor_idx, cell_idx, :] = overlaps_in_cell[overlaps_in_cell]
-                    iou_mask[bi, argmax_anchor_idx, cell_idx, :] = 2
+                iou_target[bi, argmax_anchor_idx, cell_idx, :] = ious[argmax_anchor_idx, cell_idx, ni]
+                iou_mask[bi, argmax_anchor_idx, cell_idx, :] = 2
 
                 # update cls_target, cls_mask
                 class_target[bi, argmax_anchor_idx, cell_idx, :] = gt_class
@@ -368,8 +384,8 @@ class YOLOv2Loss(nn.Module):
 
         # [bs, n_anchors, f_h, f_w, 4] -> [bs, n_anchors, f_h*f_w, 4]
         pred_boxes = torch.cat((xy, wh), dim=4).reshape(bs, self.na, -1, 4)
-        pred_boxes[..., 0::2] = torch.clamp(pred_boxes[..., 0::2], 0, nx)
-        pred_boxes[..., 1::2] = torch.clamp(pred_boxes[..., 1::2], 0, ny)
+        # pred_boxes[..., 0::2] = torch.clamp(pred_boxes[..., 0::2], 0, nx)
+        # pred_boxes[..., 1::2] = torch.clamp(pred_boxes[..., 1::2], 0, ny)
 
         return pred_boxes
 
