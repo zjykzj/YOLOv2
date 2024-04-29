@@ -4,7 +4,7 @@
 ## YOLOv2-fast
 
 ```shell
-python classify/train.py --model runs/yolov2-fast_coco_wo_pretrained/weights/best.pt --cutoff 8 --data imagenet --img 224 --batch-size 256 --device 1
+python classify/train.py --model runs/yolov2-fast_coco_wo_pretrained/weights/best.pt --cutoff 8 --data imagenet --img 224 --batch-size 256 --device 0
 ...
 Model summary: 32 layers, 8754440 parameters, 8754440 gradients, 21.8 GFLOPs
 ...
@@ -34,7 +34,7 @@ Visualize:       https://netron.app
 ## YOLOv2
 
 ```shell
-# python classify/train.py --model runs/yolov2_coco_wo_pretrained/weights/best.pt --cutoff 18 --data imagenet --img 224 --batch-size 256 --device 1
+# python classify/train.py --model runs/yolov2_coco_wo_pretrained/weights/best.pt --cutoff 18 --data imagenet --img 224 --batch-size 256 --device 0
 ...
 Model summary: 62 layers, 17035656 parameters, 17035656 gradients, 42.8 GFLOPs
 ...
@@ -65,7 +65,7 @@ Visualize:       https://netron.app
 ## ShuffleNetV2
 
 ```shell
-# python classify/train.py --model shufflenet_v2_x1_0 --data imagenet --img 224 --batch-size 256 --device 1
+# python classify/train.py --model shufflenet_v2_x1_0 --data imagenet --img 224 --batch-size 256 --device 0
 ...
 Model summary: 205 layers, 2278604 parameters, 2278604 gradients, 3.3 GFLOPs
 ...
