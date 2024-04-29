@@ -3,8 +3,7 @@ nc: 80  # number of classes
 depth_multiple: 1.0  # model depth multiple
 width_multiple: 1.0  # layer channel multiple
 anchors:
-  - [ 12.995, 15.398, 25.905, 37.697, 62.199, 62.933, 107.29, 148.17, 293.6, 281.88 ]  # P5/32 for coco
-#  - [ 46.882, 60.875, 88.097, 137.39, 211.37, 157.08, 192.52, 324.86, 450.84, 358.17 ]  # P5/32 for VOC
+  - [ 13,15, 25,38, 62,61, 104,142, 282,273 ]  # P5/32 for coco
 
 # YOLOv2 Fast_Darknet19
 backbone:

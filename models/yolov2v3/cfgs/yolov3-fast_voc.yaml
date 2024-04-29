@@ -1,11 +1,11 @@
 # Parameters
-nc: 80  # number of classes
+nc: 20  # number of classes
 depth_multiple: 1.0  # model depth multiple
 width_multiple: 1.0  # layer channel multiple
 anchors:
-  - [ 10,13, 16,30, 33,23 ]  # P3/8
-  - [ 30,61, 62,45, 59,119 ]  # P4/16
-  - [ 116,90, 156,198, 373,326 ]  # P5/32 for coco
+  - [ 35,54, 85,71, 69,149 ]  # P3/8
+  - [ 161,144, 133,263, 224,318 ]  # P4/16
+  - [ 404,211, 345,430, 538,386 ]  # P5/32 for VOC
 
 # YOLOv3 Darknet53
 backbone:
