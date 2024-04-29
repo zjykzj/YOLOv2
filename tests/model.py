@@ -61,21 +61,35 @@ if __name__ == '__main__':
     data, targets = create_data()
     hyp = '../data/hyps/hyp.scratch-low.yaml'
 
-    model = Model('../models/yolov2v3/yolov2-fast.yaml', ch=3, nc=80, anchors=None)  # create
+    model = Model('../models/yolov2v3/cfgs/yolov2-fast.yaml', ch=3, nc=80, anchors=None)  # create
     model.hyp = hyp
     print(f"- model.stride: {model.stride}\n- Detect.anchors: {model.model[-1].anchors}")
     det(data, targets, model)
 
     print('*' * 100)
 
-    model = Model('../models/yolov2v3/yolov2-fast_plus.yaml', ch=3, nc=80, anchors=None)  # create
+    model = Model('../models/yolov2v3/cfgs/yolov2.yaml', ch=3, nc=80, anchors=None)  # create
     model.hyp = hyp
     print(f"- model.stride: {model.stride}\n- Detect.anchors: {model.model[-1].anchors}")
     det(data, targets, model)
 
     print('*' * 100)
 
-    model = Model('../models/yolov5n.yaml', ch=3, nc=80, anchors=None)  # create
+    model = Model('../models/yolov2v3/cfgs/yolov2_voc.yaml', ch=3, nc=20, anchors=None)  # create
+    model.hyp = hyp
+    print(f"- model.stride: {model.stride}\n- Detect.anchors: {model.model[-1].anchors}")
+    det(data, targets, model)
+
+    print('*' * 100)
+
+    model = Model('../models/yolov2v3/cfgs/yolov2-fast_voc.yaml', ch=3, nc=20, anchors=None)  # create
+    model.hyp = hyp
+    print(f"- model.stride: {model.stride}\n- Detect.anchors: {model.model[-1].anchors}")
+    det(data, targets, model)
+
+    print('*' * 100)
+
+    model = Model('../models/yolov5s.yaml', ch=3, nc=80, anchors=None)  # create
     model.hyp = hyp
     print(f"- model.stride: {model.stride}\n- Detect.anchors: {model.model[-1].anchors}")
     det(data, targets, model)
