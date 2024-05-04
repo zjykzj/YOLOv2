@@ -194,6 +194,7 @@
 
 ## 最近新闻
 
+* ***[2024/05/04][v1.0.0](https://github.com/zjykzj/YOLOv2/releases/tag/v1.0.0). 重构YOLOv2工程，集成yolov5-v7.0，重新实现YOLOv2/YOLOv2-fast以及YOLOv2Loss。***
 * ***[2023/07/16][v0.3.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.3.0). 添加[ultralytics/yolov5](https://github.com/ultralytics/yolov5)([485da42](https://github.com/ultralytics/yolov5/commit/485da42273839d20ea6bdaf142fd02c1027aba61)) 预处理实现。***
 * ***[2023/06/28][v0.2.1](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.1). 重构数据模块。***
 * ***[2023/05/21][v0.2.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.0). 重构损失函数，并且增加了Darknet-53作为Backbone。***

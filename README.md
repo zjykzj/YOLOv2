@@ -194,6 +194,7 @@
 
 ## Latest News
 
+* ***[2024/05/04][v1.0.0](https://github.com/zjykzj/YOLOv2/releases/tag/v1.0.0). Refactoring YOLOv2 project, integrating yolov5 v7.0, reimplementing YOLOv2/YOLOv2-fast and YOLOv2Loss.***
 * ***[2023/07/16][v0.3.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.3.0). Add [ultralytics/yolov5](https://github.com/ultralytics/yolov5)([485da42](https://github.com/ultralytics/yolov5/commit/485da42273839d20ea6bdaf142fd02c1027aba61)) transforms.***
 * ***[2023/06/28][v0.2.1](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.1). Refactor data module.***
 * ***[2023/05/21][v0.2.0](https://github.com/zjykzj/YOLOv2/releases/tag/v0.2.0). Reconstructed loss function and add Darknet53 as a backbone.***
