@@ -28,7 +28,7 @@ def test_yolov5_loss():
             hyp = yaml.safe_load(f)  # load hyps dict
             # if 'anchors' not in hyp:  # anchors commented in hyp.yaml
             #     hyp['anchors'] = 3
-        model = Model('models/yolov2v3/yolov2-fast_plus.yaml', ch=3, nc=80, anchors=None)  # create
+        model = Model('models/yolov5s.yaml', ch=3, nc=80, anchors=None)  # create
         model.hyp = hyp
         print(f"model.stride: {model.stride}")
 
@@ -59,7 +59,7 @@ def test_yolov2_loss():
             hyp = yaml.safe_load(f)  # load hyps dict
             # if 'anchors' not in hyp:  # anchors commented in hyp.yaml
             #     hyp['anchors'] = 3
-        model = Model('models/yolov2v3/yolov2-fast.yaml', ch=3, nc=80, anchors=None)  # create
+        model = Model('models/yolov2v3/cfgs/yolov2-fast.yaml', ch=3, nc=80, anchors=None)  # create
         model.hyp = hyp
         print(f"model.stride: {model.stride}")
 
