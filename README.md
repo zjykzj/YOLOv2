@@ -227,9 +227,9 @@ docker run -it --runtime nvidia --gpus=all --shm-size=16g -v /etc/localtime:/etc
 ### Train
 
 ```shell
-python train.py --data VOC.yaml --weights "" --cfg yolov2_voc.yaml --img 640 --device 0 --yolov2loss
-python train.py --data VOC.yaml --weights "" --cfg yolov2-fast_voc.yaml --img 640 --device 0 --yolov2loss
-python train.py --data coco.yaml --weights "" --cfg yolov2.yaml --img 640 --device 0 --yolov2loss
+python3 train.py --data VOC.yaml --weights "" --cfg yolov2_voc.yaml --img 640 --device 0 --yolov2loss
+python3 train.py --data VOC.yaml --weights "" --cfg yolov2-fast_voc.yaml --img 640 --device 0 --yolov2loss
+python3 train.py --data coco.yaml --weights "" --cfg yolov2.yaml --img 640 --device 0 --yolov2loss
 python3 train.py --data coco.yaml --weights "" --cfg yolov2-fast.yaml --img 640 --device 0 --yolov2loss
 ```
 
